@@ -1,0 +1,20 @@
+:root { color-scheme: dark; --bg: #16130f; --panel: #221d17; --ink: #efe4c8; --mute: #a89c84; --line: #3a3128; --good: #66bc8e; --bad: #e8603f; --warn: #d9a441; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.wrap { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
+@media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+h1 { font-size: 16px; margin: 0; } h2 { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin: 4px 0 0; }
+button { font: inherit; color: var(--ink); background: #2e271f; border: 1px solid #4a3e30; border-radius: 6px; padding: 8px 10px; cursor: pointer; text-align: left; }
+button:hover:not(:disabled) { border-color: var(--warn); } button:disabled { opacity: .4; cursor: default; }
+button.dark { background: #4a1a12; border-color: #7a2a1a; } button.primary { background: #b8913c; color: #1f1a14; font-weight: 700; text-align: center; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.meter { background: #1a1612; border-radius: 6px; padding: 6px; } .meter b { font-size: 18px; display: block; }
+.bar { height: 6px; background: #3a3128; border-radius: 3px; overflow: hidden; } .bar i { display: block; height: 100%; }
+.chip { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 12px; font-weight: 700; background: #2a231b; border: 1px solid #6b5a42; }
+.chip.good { border-color: var(--good); color: #cdefd9; } .chip.bad { border-color: var(--bad); color: #f8cbbe; } .chip.warn { border-color: var(--warn); color: #f2dfa8; }
+.news { background: #efe4c8; color: #1f1a14; border-radius: 4px; padding: 10px; } .news b { font-size: 16px; }
+.mute { color: var(--mute); font-size: 12px; } .rep { font-size: 13px; } .rep.bad { color: #f8cbbe; } .rep.ok { color: #cdefd9; } .rep.warn { color: #f2dfa8; }
+pre { font-size: 11px; max-height: 70vh; overflow: auto; background: #0e0c0a; padding: 8px; border-radius: 6px; margin: 0; }
+select, input { font: inherit; background: #1a1612; color: var(--ink); border: 1px solid #4a3e30; border-radius: 6px; padding: 6px; }
