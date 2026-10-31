@@ -225,7 +225,11 @@ export function buildView(ctx: Ctx): any {
 
   // ---- form
   v.rollName = () => run(G.rollName);
+  v.first = s.first;
+  v.setFirst = (val: string) => run((x) => G.setHero(x, { first: val.slice(0, 16) }));
+  v.setSurname = (val: string) => run((x) => G.setHero(x, { surname: val.slice(0, 16) }));
   v.genderOpts = ([['m', 'Пан'], ['f', 'Пані']] as const).map(([g, t]) => ({ t, mark: s.gender === g ? 'x' : '', pick: () => run((x) => G.setHero(x, { gender: g })) }));
+  v.faceOpts = [0, 1, 2].map((i) => ({ src: 'art/heroes/' + s.gender + (i + 1) + '.jpg', label: 'Фото ' + (i + 1), border: s.face === i ? '3px solid #8E2A1F' : '1px solid #8C7E58', rot: ['-2deg', '1deg', '-1deg'][i], filter: s.face === i ? 'none' : 'grayscale(0.55) contrast(0.95)', pick: () => run((x) => G.setHero(x, { face: i })) }));
   v.originOpts = C.origins.map((o, i) => ({ t: s.gender === 'f' ? o.tf : o.t, d: o.d, fx: o.fx, mark: s.origin === i ? 'x' : '', bg: s.origin === i ? 'rgba(176,141,60,0.18)' : 'transparent', border: s.origin === i ? '2px solid #8E2A1F' : '1px solid #8C7E58', pick: () => run((x) => G.setHero(x, { origin: i })) }));
   v.dreamOpts = C.dreams.map((d, i) => ({ t: d.t, g: d.g, bg: s.dream === i ? '#1F1A14' : 'transparent', border: s.dream === i ? '2px solid #1F1A14' : '1px solid #8C7E58', tc: s.dream === i ? '#F3E9D2' : '#1F1A14', gc: s.dream === i ? '#D9B870' : '#5A4630', pick: () => run((x) => G.setHero(x, { dream: i })) }));
   v.signForm = () => run(G.signForm);

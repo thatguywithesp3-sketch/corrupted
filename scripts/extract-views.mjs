@@ -29,6 +29,36 @@ function toAst(node) {
   return { t: 'e', n: node.name, a: attrs, ch };
 }
 
+// ---- additions on top of the canvas markup (game-only UI)
+const LABEL = 'font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #5A4630';
+const FACE_ROW = [
+  { t: 'e', n: 'div', a: { style: LABEL }, ch: [{ t: 'x', v: 'ФОТО ДЛЯ АНКЕТИ' }] },
+  { t: 'e', n: 'div', a: { style: 'display: flex; gap: 8px; margin-top: -4px' }, ch: [
+    { t: 'for', v: '{{faceOpts}}', as: 'f', ch: [
+      { t: 'e', n: 'button', a: { class: 'b3d', onClick: '{{f.pick}}', 'aria-label': '{{f.label}}', style: 'flex: 1; height: 86px; padding: 3px 3px 10px; background: #FFFDF6; border: {{f.border}}; cursor: pointer; transform: rotate({{f.rot}}); box-shadow: 0 2px 4px rgba(0,0,0,0.3)' }, ch: [
+        { t: 'e', n: 'span', a: { style: 'display: block; width: 100%; height: 100%; background-image: url({{f.src}}); background-size: cover; background-position: center 18%; filter: {{f.filter}}' }, ch: [] }
+      ] }
+    ] }
+  ] }
+];
+const INPUT = 'flex: 1; min-width: 0; width: 100%; padding: 0; margin: 0; border: none; outline: none; background: transparent; font: inherit; color: inherit; line-height: inherit';
+function inject(node) {
+  if (!node || !node.ch) return;
+  // editable name: the handwritten "{{fullName}}" line becomes two inputs in the same style
+  if (node.t === 'e' && node.ch.length === 1 && node.ch[0].t === 'x' && node.ch[0].v.trim() === '{{fullName}}') {
+    node.a.style = node.a.style.replace('white-space: nowrap; overflow: hidden', 'display: flex; gap: 8px');
+    node.ch = [
+      { t: 'e', n: 'input', a: { 'aria-label': 'Ім’я', value: '{{first}}', onInput: '{{setFirst}}', maxlength: '16', style: INPUT }, ch: [] },
+      { t: 'e', n: 'input', a: { 'aria-label': 'Прізвище', value: '{{surname}}', onInput: '{{setSurname}}', maxlength: '16', style: INPUT + '; flex: 1.25' }, ch: [] }
+    ];
+    return;
+  }
+  node.ch.forEach((c) => { if (c.t === 'x' && c.v.includes('Киньте кубик')) c.v = 'Впишіть ім’я та прізвище або киньте кубик. Прізвище стане назвою роду.'; });
+  const i = node.ch.findIndex((c) => c.t === 'e' && (c.ch || []).some((x) => x.t === 'for' && x.v === '{{genderOpts}}'));
+  if (i >= 0) node.ch.splice(i + 1, 0, ...FACE_ROW);
+  node.ch.forEach(inject);
+}
+
 for (let n = 1; n <= 7; n++) {
   const html = fs.readFileSync(path.join(root, `prototype/eras/era${n}.dc.html`), 'utf8');
   const inner = html.split(/<x-dc[^>]*>/)[1].split('</x-dc>')[0];
@@ -38,6 +68,7 @@ for (let n = 1; n <= 7; n++) {
   const body = inner.replace(/<helmet>[\s\S]*?<\/helmet>/, '');
   const doc = parseDocument(body, { lowerCaseAttributeNames: false, lowerCaseTags: false, recognizeSelfClosing: true, decodeEntities: true });
   const ast = doc.children.map(toAst).filter((x) => x && x.t !== 'x');
+  inject(ast[0]);
   fs.writeFileSync(path.join(outDir, `era${n}.json`), JSON.stringify({ fonts, css, root: ast[0] }));
   console.log(`view era${n}: ${JSON.stringify(ast[0]).length} bytes`);
 }

@@ -151,6 +151,8 @@ export interface GameState {
   first: string;
   surname: string;
   gender: Gender;
+  /** portrait preset of the founder (0..2, per gender); heirs get null until heir portraits exist */
+  face: number | null;
   origin: number;
   dream: number;
   gen: number;

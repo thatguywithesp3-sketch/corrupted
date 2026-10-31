@@ -75,9 +75,11 @@ function renderNodes(nodes: DcNode[], scope: Scope, key: string): ReactNode[] {
         if (typeof fn === 'function') props.onClick = (e: MouseEvent) => { if (backdrop && e.target !== e.currentTarget) return; e.stopPropagation(); fn(); };
         continue;
       }
+      if (a === 'onInput') { const fn = evalOne(scope, raw); if (typeof fn === 'function') props.onChange = (e: { target: { value: string } }) => fn(e.target.value); continue; }
       const val = interp(scope, raw);
       if (a === 'style') props.style = parseStyle(val);
       else if (a === 'class') props.className = val;
+      else if (a === 'maxlength') props.maxLength = Number(val);
       else props[camel(a)] = val;
     }
     out.push(createElement(n.n, props, ...renderNodes(n.ch, scope, k)));

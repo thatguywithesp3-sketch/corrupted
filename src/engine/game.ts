@@ -17,7 +17,7 @@ export function newGame(seed: number, era = 1): GameState {
   const C = getEra(era);
   return {
     v: 1, rng: seed >>> 0, era, screen: 'form',
-    first: C.defaultHero.first, surname: C.defaultHero.surname, gender: C.defaultHero.gender, origin: 0, dream: 0,
+    first: C.defaultHero.first, surname: C.defaultHero.surname, gender: C.defaultHero.gender, face: 0, origin: 0, dream: 0,
     gen: 1, tavro: false, shadow: 0, blood: false, thrBase: RULES.threatPerYear, launBonus: 0,
     year: C.startYear, served: 0, rank: 0,
     ...RULES.start, cash: 0, floor: 0, wh: 0,
@@ -293,7 +293,7 @@ function fitAlloc(a: Alloc, s: GameState): Alloc {
 
 // ============================================================ actions: form
 
-export interface HeroPatch { first?: string; surname?: string; gender?: Gender; origin?: number; dream?: number }
+export interface HeroPatch { first?: string; surname?: string; gender?: Gender; face?: number; origin?: number; dream?: number }
 
 export function setHero(s: GameState, patch: HeroPatch): GameState {
   const n = clone(s);
@@ -314,6 +314,9 @@ export function rollName(s: GameState): GameState {
 
 export function signForm(s: GameState): GameState {
   const n = clone(s);
+  const C0 = getEra(n.era);
+  n.first = n.first.trim() || C0.defaultHero.first;
+  n.surname = n.surname.trim() || C0.defaultHero.surname;
   if (n.origin === 0) { n.system += 10; n.patron += 5; }
   if (n.origin === 1) { n.people += 10; n.thrBase = 1; }
   if (n.origin === 2) { n.clean += 800; n.launBonus = 200; }
@@ -646,7 +649,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   const n = newGame(s.rng, nextEra);
   n.rng = s.rng; n.history = clone(s.history);
   const tr = h.trait === null ? null : getEra(nextEra).traits[h.trait] || null;
-  n.screen = 'morning'; n.surname = s.surname; n.first = h.first; n.gender = h.g; n.dream = s.dream;
+  n.screen = 'morning'; n.surname = s.surname; n.first = h.first; n.gender = h.g; n.dream = s.dream; n.face = null;
   n.gen = e.eraOver ? 1 : s.gen + 1;
   if (!e.eraOver) n.year = s.year + 1;
   const H = RULES.heir;
