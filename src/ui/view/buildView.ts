@@ -340,6 +340,8 @@ export function buildView(ctx: Ctx): any {
     return { name: k.first, role: stageName(k) + ' · ' + k.age + ' р.', pills: [pill('heart', String(k.l), k.l <= 30 ? 'bad' : 'paper')].concat(k.k ? [pill('ear', String(k.k), k.k >= 40 ? 'bad' : 'paper')] : []),
       mark: pay ? '✓' : '✗', cost: fk(G.allowance(k)), payBg: pay ? '#B08D3C' : '#5E1A12', payColor: pay ? '#1F1A14' : '#F3E9D2', warn: k.l <= 30, warnText: k.k >= 35 ? 'МОЖЕ ЗДАТИ' : 'МОЖЕ ПІТИ', toggle: () => run((x) => G.toggleKidPay(x, k.id)) };
   });
+  const por = G.portraitFor(s.era, s.gen, s.gender, s.face);
+  v.hasPortrait = !!por; v.portrait = por || '';
   v.famIc = icon('fam', 12); v.famLabel = 'Родина ' + LKs.length;
   v.albumOn = ui.album; v.openAlbum = () => setUi({ album: true }); v.closeAlbum = () => setUi({ album: false });
   const TR = C.traits, stars = (p: number) => '★★★'.slice(0, G.kidStars({ prep: p })) + '☆☆☆'.slice(0, 3 - G.kidStars({ prep: p }));
@@ -447,7 +449,8 @@ export function buildView(ctx: Ctx): any {
     fx: h.trait === null ? (h.nephew ? 'Покровитель −10' : '—') : TR[h.trait].fx + (h.prep >= 80 ? ' · старт на посаду вище' : ''),
     stars: stars(h.prep), hasAssets: h.assets > 0, assets: '+ ' + fmt(h.assets) + ' кр. на ' + (h.g === 'f' ? 'її' : 'його') + ' ім’я',
     minor: h.age < G.RULES.heir.minorAge, minorText: 'Неповнолітн' + (h.g === 'f' ? 'я' : 'ій') + ': до повноліття опікун забере 30% статку',
-    l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => run((x) => G.pickHeir(x, h.id))
+    l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => run((x) => G.pickHeir(x, h.id)),
+    ...(() => { const f = G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
   }));
   v.eraOver = e.eraOver; v.dynastyOver = e.dynastyOver;
   v.showRestart = e.dynastyOver || e.campaignOver;

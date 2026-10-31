@@ -114,7 +114,7 @@ export interface Kin {
   why: string;
 }
 
-export interface Heir extends Kin { nephew?: boolean }
+export interface Heir extends Kin { nephew?: boolean; /** portrait preset index (0..2) the heir will have as head of the family */ face?: number }
 
 export interface ReportLine { t: string; tone: 'ok' | 'warn' | 'bad' | 'neu'; icon: string; strong?: boolean }
 

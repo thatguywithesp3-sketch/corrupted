@@ -35,8 +35,8 @@ const FACE_ROW = [
   { t: 'e', n: 'div', a: { style: LABEL }, ch: [{ t: 'x', v: 'ФОТО ДЛЯ АНКЕТИ' }] },
   { t: 'e', n: 'div', a: { style: 'display: flex; gap: 8px; margin-top: -4px' }, ch: [
     { t: 'for', v: '{{faceOpts}}', as: 'f', ch: [
-      { t: 'e', n: 'button', a: { class: 'b3d', onClick: '{{f.pick}}', 'aria-label': '{{f.label}}', style: 'flex: 1; height: 86px; padding: 3px 3px 10px; background: #FFFDF6; border: {{f.border}}; cursor: pointer; transform: rotate({{f.rot}}); box-shadow: 0 2px 4px rgba(0,0,0,0.3)' }, ch: [
-        { t: 'e', n: 'span', a: { style: 'display: block; width: 100%; height: 100%; background-image: url({{f.src}}); background-size: cover; background-position: center 18%; filter: {{f.filter}}' }, ch: [] }
+      { t: 'e', n: 'button', a: { class: 'b3d', onClick: '{{f.pick}}', 'aria-label': '{{f.label}}', style: 'flex: 1; height: 182px; padding: 3px 3px 12px; background: #FFFDF6; border: {{f.border}}; cursor: pointer; transform: rotate({{f.rot}}); box-shadow: 0 2px 4px rgba(0,0,0,0.3)' }, ch: [
+        { t: 'e', n: 'span', a: { style: 'display: block; width: 100%; height: 100%; background-image: url({{f.src}}); background-size: cover; background-position: center top; filter: {{f.filter}}' }, ch: [] }
       ] }
     ] }
   ] }
@@ -53,9 +53,27 @@ function inject(node) {
     ];
     return;
   }
-  node.ch.forEach((c) => { if (c.t === 'x' && c.v.includes('Киньте кубик')) c.v = 'Впишіть ім’я та прізвище або киньте кубик. Прізвище стане назвою роду.'; });
+  // compact form so the full-height founder photos fit
+  if (node.t === 'e' && node.n === 'button' && node.a.onClick === '{{o.pick}}') node.a.style = node.a.style.replace('min-height: 52px', 'min-height: 42px').replace('padding: 6px 10px', 'padding: 4px 10px');
+  if (node.t === 'e' && node.n === 'button' && node.a.onClick === '{{d.pick}}') node.a.style = node.a.style.replace('min-height: 46px', 'min-height: 38px');
+  if (node.t === 'e' && node.n === 'button' && node.a.onClick === '{{g.pick}}') node.a.style = node.a.style.replace('min-height: 44px', 'min-height: 36px');
+  node.ch = node.ch.filter((c) => !(c.t === 'e' && c.ch && c.ch.length === 1 && c.ch[0].t === 'x' && c.ch[0].v.trim() === '{{o.d}}'));
+  node.ch.forEach((c) => { if (c.t === 'x' && c.v.includes('Киньте кубик')) c.v = 'Прізвище стане назвою роду. Кубик — випадкове ім’я.'; });
   const i = node.ch.findIndex((c) => c.t === 'e' && (c.ch || []).some((x) => x.t === 'for' && x.v === '{{genderOpts}}'));
   if (i >= 0) node.ch.splice(i + 1, 0, ...FACE_ROW);
+  // hero portrait on the brass name plate
+  const j = node.ch.findIndex((c) => c.t === 'e' && (c.a.style || '').startsWith('flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px') && (c.ch || []).some((x) => x.t === 'e' && x.ch && x.ch[0] && x.ch[0].t === 'x' && x.ch[0].v.trim() === '{{plateName}}'));
+  if (j >= 0) node.ch.splice(j, 0, { t: 'if', v: '{{hasPortrait}}', ch: [
+    { t: 'e', n: 'button', a: { onClick: '{{openAlbum}}', 'aria-label': 'Портрет', style: 'width: 30px; height: 40px; flex-shrink: 0; margin: -2px -3px; padding: 2px; background: #F7F0DE; border: 1px solid #6E531E; box-shadow: 0 1px 3px rgba(0,0,0,0.45); cursor: pointer' }, ch: [
+      { t: 'e', n: 'span', a: { style: 'display: block; width: 100%; height: 100%; background-image: url({{portrait}}); background-size: cover; background-position: center top' }, ch: [] }
+    ] }
+  ] });
+  // heir cards on the will get the portrait the heir will have
+  if (node.t === 'e' && node.n === 'button' && node.a.onClick === '{{h.pick}}') {
+    node.ch.unshift({ t: 'if', v: '{{h.hasFace}}', ch: [
+      { t: 'e', n: 'span', a: { style: 'display: block; align-self: stretch; height: 120px; margin: -4px -4px 4px; background-image: url({{h.face}}); background-size: cover; background-position: center top; border: 1px solid #8C7E58' }, ch: [] }
+    ] });
+  }
   node.ch.forEach(inject);
 }
 

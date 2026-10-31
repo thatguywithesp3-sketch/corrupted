@@ -47,6 +47,14 @@ export const raidOdds = (s: GameState) =>
   Math.round(Math.min(RULES.raidMaxOdds, clamp100(s.threat) / RULES.raidThreatDivisor + (s.tavro ? RULES.raidBrandedBonus : 0)) * 100);
 export const dangerZone = (s: GameState) => (s.tavro ? RULES.dangerZoneBranded : RULES.dangerZone);
 
+/** Portrait sets that exist (public/art). Founder of era I uses heroes/, every later head uses heirs/eN-. */
+export const PORTRAIT_ERAS = [1, 2, 3, 4, 5];
+export function portraitFor(era: number, gen: number, g: Gender, face: number | null | undefined): string | null {
+  if (face === null || face === undefined) return null;
+  if (era === 1 && gen === 1) return `art/heroes/${g}${face + 1}.jpg`;
+  return PORTRAIT_ERAS.includes(era) ? `art/heirs/e${era}-${g}${face + 1}.jpg` : null;
+}
+
 export const kidStage = (k: Kin) => (k.age < 12 ? 'child' : k.age < 18 ? 'teen' : 'adult') as 'child' | 'teen' | 'adult';
 export const allowance = (k: Kin) => RULES.family.allowance[kidStage(k)];
 export const liveKids = (s: GameState) => s.kids.filter((k) => !k.gone);
@@ -270,6 +278,12 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
     const N = getEra(n.era).names;
     heirs.push({ id: 'nephew', first: N.m[(n.year + 3) % N.m.length], g: 'm', trait: null, l: 35, k: 0, prep: 0, assets: 0, age: 20, gone: false, why: '', nephew: true });
   }
+  // distinct portrait per heir of the same gender
+  (['m', 'f'] as Gender[]).forEach((g) => {
+    const pool = [0, 1, 2];
+    for (let i = pool.length - 1; i > 0; i--) { const j = randInt(n, i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    heirs.filter((h) => h.g === g).forEach((h, i) => { h.face = pool[i % 3]; });
+  });
   n.heirs = dynastyOver || campaignOver ? [] : heirs;
   n.screen = 'ending';
   return n;
@@ -649,7 +663,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   const n = newGame(s.rng, nextEra);
   n.rng = s.rng; n.history = clone(s.history);
   const tr = h.trait === null ? null : getEra(nextEra).traits[h.trait] || null;
-  n.screen = 'morning'; n.surname = s.surname; n.first = h.first; n.gender = h.g; n.dream = s.dream; n.face = null;
+  n.screen = 'morning'; n.surname = s.surname; n.first = h.first; n.gender = h.g; n.dream = s.dream; n.face = h.face ?? null;
   n.gen = e.eraOver ? 1 : s.gen + 1;
   if (!e.eraOver) n.year = s.year + 1;
   const H = RULES.heir;
