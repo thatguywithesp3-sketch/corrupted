@@ -91,7 +91,7 @@ export interface EraContent {
   words: EraWords;
   meters: Record<Meter, MeterInfo>;
   strings: Record<string, string>;
-  theme: { look: Record<string, unknown>; colors: Record<string, string>; icons: Record<string, string> };
+  theme: { look: Record<string, unknown>; colors: Record<string, string>; icons: Record<string, string>; colorMap: Record<string, string> };
 }
 
 // ---------- state ----------

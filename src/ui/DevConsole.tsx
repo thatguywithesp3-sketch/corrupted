@@ -176,7 +176,7 @@ export function DevConsole() {
   }
 
   return (
-    <div className="wrap">
+    <div className="dev"><div className="wrap">
       <div className="card">
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <h1>{rank} {s.first} {s.surname}</h1>
@@ -198,6 +198,6 @@ export function DevConsole() {
         <h2>Стан (JSON)</h2>
         <pre>{JSON.stringify(s, null, 1)}</pre>
       </div>
-    </div>
+    </div></div>
   );
 }

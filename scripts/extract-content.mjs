@@ -13,6 +13,7 @@ const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const base = JSON.parse(fs.readFileSync(path.join(root, 'src/data/strings.base.uk.json'), 'utf8'));
 delete base._comment;
 const pairs = JSON.parse(fs.readFileSync(path.join(root, 'prototype/era-pairs.json'), 'utf8'));
+const colorMaps = JSON.parse(fs.readFileSync(path.join(root, 'prototype/era-colors.json'), 'utf8'));
 
 function loadComponent(n) {
   const html = fs.readFileSync(path.join(root, `prototype/eras/era${n}.dc.html`), 'utf8');
@@ -82,7 +83,7 @@ for (let n = 1; n <= 7; n++) {
     },
     meters: c.meterInfo(),
     strings,
-    theme: { look: c.look(), colors: c.colors(), icons: c.paths() }
+    theme: { look: c.look(), colors: c.colors(), icons: c.paths(), colorMap: colorMaps[String(n)] || {} }
   };
   fs.writeFileSync(path.join(outDir, `era${n}.json`), JSON.stringify(content, null, 1));
   console.log(`era${n}: ${content.schemes.length} schemes, ${content.choices.length} choices, ${Object.keys(strings).length} strings` +
