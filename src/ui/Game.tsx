@@ -4,6 +4,7 @@ import * as G from '../engine';
 import type { GameState } from '../engine';
 import { DcView, type DcNode } from './dc/DcView';
 import { buildView, freshUi, type UiState } from './view/buildView';
+import { MainMenu } from './MainMenu';
 import v1 from '../data/views/era1.json';
 import v2 from '../data/views/era2.json';
 import v3 from '../data/views/era3.json';
@@ -17,9 +18,10 @@ const VIEWS = [v1, v2, v3, v4, v5, v6, v7] as unknown as EraView[];
 const SAVE_KEY = 'corrupted.save.v1';
 const W = 390, H = 844;
 
-function loadSave(): GameState {
+const newSeed = () => (Date.now() ^ (Math.random() * 1e9)) >>> 0;
+function readSave(): GameState | null {
   try { const raw = localStorage.getItem(SAVE_KEY); if (raw) { const s = JSON.parse(raw); if (s && s.v === 1) return s; } } catch { /* no storage */ }
-  return G.newGame((Date.now() ^ (Math.random() * 1e9)) >>> 0);
+  return null;
 }
 
 /** Inject the era's fonts and texture CSS once per era. */
@@ -48,9 +50,11 @@ function useFitScale() {
 }
 
 export function Game() {
-  const [s, setS] = useState<GameState>(loadSave);
+  const [s, setS] = useState<GameState>(() => readSave() || G.newGame(newSeed()));
+  const [hasSave, setHasSave] = useState(() => !!readSave());
+  const [mode, setMode] = useState<'menu' | 'play'>('menu');
   const [ui, setUiState] = useState<UiState>(freshUi);
-  useEffect(() => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ } }, [s]);
+  useEffect(() => { if (mode !== 'play') return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); setHasSave(true); } catch { /* ignore */ } }, [s, mode]);
   useEraAssets(s.era);
   const k = useFitScale();
 
@@ -63,8 +67,16 @@ export function Game() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      <div style={{ width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
-        <DcView root={VIEWS[s.era - 1].root} view={view} />
+      <div style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
+        {mode === 'menu' ? (
+          <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
+        ) : (
+          <>
+            <DcView root={VIEWS[s.era - 1].root} view={view} />
+            <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
+              style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
+          </>
+        )}
       </div>
     </div>
   );
