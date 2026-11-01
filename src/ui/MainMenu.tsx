@@ -18,8 +18,9 @@ const S = {
   art: { position: 'absolute', inset: 0, backgroundImage: 'url(art/menu-gallery.jpg)', backgroundSize: 'auto 100%', backgroundPosition: 'center top' },
   shade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 380, background: 'linear-gradient(180deg, rgba(11,8,7,0) 0%, rgba(11,8,7,0.82) 38%, #0b0807 70%)' },
   title: { position: 'absolute', left: 116, top: 279, width: 160, height: 184, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, textAlign: 'center', background: 'radial-gradient(ellipse at 50% 40%, rgba(70,14,10,0.55), rgba(20,4,3,0.75))', boxShadow: 'inset 0 0 24px rgba(0,0,0,0.8)' },
-  paper: { position: 'absolute', left: 64, top: 296, width: 262, height: 168, boxSizing: 'border-box', padding: '10px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, background: 'linear-gradient(180deg, #F1E7CC, #E2D3AE)', color: '#2A2418', transform: 'rotate(-2deg)', boxShadow: '0 8px 18px rgba(0,0,0,0.65), inset 0 0 22px rgba(120,90,40,0.3)' },
-  logo: { position: 'absolute', left: 72, top: 330, width: 246, transform: 'rotate(-5deg)', mixBlendMode: 'multiply', pointerEvents: 'none' },
+  frameBg: { position: 'absolute', left: 116, top: 280, width: 162, height: 186, background: 'radial-gradient(ellipse at 50% 45%, #2A1410, #0E0705 75%)', boxShadow: 'inset 0 0 26px rgba(0,0,0,0.9)' },
+  seal: { position: 'absolute', left: 112, top: 290, width: 170, filter: 'drop-shadow(0 8px 10px rgba(0,0,0,0.7))', pointerEvents: 'none' },
+  wordmark: { position: 'absolute', left: 0, right: 0, top: 506, textAlign: 'center', fontFamily: "'Abril Fatface', 'Old Standard TT', serif", fontSize: 40, letterSpacing: 2, color: '#E8C978', textShadow: '0 2px 0 #3A2408, 0 0 22px rgba(232,201,120,0.25)' },
   word: { fontFamily: "'Ruslan Display', 'Old Standard TT', serif", fontSize: 29, lineHeight: 1, color: '#E8C978', textShadow: '0 2px 0 #3A2408, 0 0 18px rgba(232,201,120,0.25)', letterSpacing: 0.5 },
   sub: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#D9B870' },
   dates: { fontSize: 12, fontStyle: 'italic', color: '#BFAE86' },
@@ -49,12 +50,9 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
     <div style={S.root}>
       <div style={S.art} />
       <div style={S.shade} />
-      <div style={S.paper}>
-        <span style={{ fontSize: 9, letterSpacing: 1.5, fontWeight: 700, whiteSpace: 'nowrap' }}>СПРАВА №&nbsp;1874 · ЗБЕРІГАТИ ВІЧНО</span>
-        <span style={{ fontSize: 9, fontStyle: 'italic', color: '#5A4630' }}>Рід Грабсів · Вальдорія</span>
-        {[78, 60, 84].map((w, i) => <span key={i} style={{ height: 3, width: w + '%', background: 'rgba(42,36,24,0.28)', marginTop: i === 0 ? 8 : 4 }} />)}
-      </div>
-      <img src="art/logo/stamp.png" alt="Corrupted!" style={S.logo} />
+      <div style={S.frameBg} />
+      <img src="art/brand/seal.png" alt="" style={S.seal} />
+      <div style={S.wordmark}>CORRUPTED!</div>
 
       {panel === 'none' && (
         <div style={S.menu}>
