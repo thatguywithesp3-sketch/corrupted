@@ -209,10 +209,7 @@ export function Onboarding({ s, run }: Props) {
             </div>
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, fontSize: 11, color: MUTE }}>
-          <span>Аркуш {step + 1} з {BLANKS.length}</span>
-        </div>
-        {step !== last && <span style={{ position: 'absolute', right: 18, bottom: 44, padding: '3px 10px', border: `2px solid ${RED}`, color: RED, fontSize: 13, fontWeight: 700, letterSpacing: 2, transform: 'rotate(-8deg)', opacity: 0.6 }}>{b.stamp}</span>}
+        {step !== last && <span style={{ position: 'absolute', right: 18, bottom: 26, padding: '3px 10px', border: `2px solid ${RED}`, color: RED, fontSize: 13, fontWeight: 700, letterSpacing: 2, transform: 'rotate(-8deg)', opacity: 0.6 }}>{b.stamp}</span>}
       </div>
 
       <div style={{ display: 'flex', gap: 10 }}>
