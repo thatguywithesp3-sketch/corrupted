@@ -25,9 +25,9 @@ const S = {
   sub: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#D9B870' },
   dates: { fontSize: 12, fontStyle: 'italic', color: '#BFAE86' },
   menu: { position: 'absolute', left: 28, right: 28, bottom: 34, display: 'flex', flexDirection: 'column', gap: 12 },
-  plaque: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%', minHeight: 58, padding: '9px 14px', border: '1px solid #6E531E', borderRadius: 3, cursor: 'pointer', background: 'linear-gradient(180deg, #E9CF86 0%, #C29A45 48%, #9C7631 100%)', boxShadow: '0 3px 0 #4A3812, 0 8px 18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,244,214,0.7), inset 0 0 0 3px rgba(110,83,30,0.35)', color: '#2A1B08', fontFamily: 'inherit' },
+  plaque: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', gap: 2, width: '100%', minHeight: 58, padding: '9px 14px', border: '1px solid #6E531E', borderRadius: 3, cursor: 'pointer', background: 'linear-gradient(180deg, #E9CF86 0%, #C29A45 48%, #9C7631 100%)', boxShadow: '0 3px 0 #4A3812, 0 8px 18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,244,214,0.7), inset 0 0 0 3px rgba(110,83,30,0.35)', color: '#2A1B08', fontFamily: 'inherit' },
   plaqueQuiet: { background: 'linear-gradient(180deg, #3A2A1A, #241A10)', color: '#E6D9BC', border: '1px solid #6E531E', boxShadow: '0 3px 0 #120c06, inset 0 0 0 3px rgba(176,141,60,0.25)' },
-  pTitle: { fontSize: 18, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' },
+  pTitle: { fontSize: 18, lineHeight: 1.2, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' },
   pSub: { fontSize: 12, fontStyle: 'italic', opacity: 0.85 }
 } as const satisfies Record<string, React.CSSProperties>;
 

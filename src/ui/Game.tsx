@@ -5,6 +5,7 @@ import type { GameState } from '../engine';
 import { DcView, type DcNode } from './dc/DcView';
 import { buildView, freshUi, type UiState } from './view/buildView';
 import { MainMenu } from './MainMenu';
+import { Onboarding } from './Onboarding';
 import v1 from '../data/views/era1.json';
 import v2 from '../data/views/era2.json';
 import v3 from '../data/views/era3.json';
@@ -72,7 +73,7 @@ export function Game() {
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
-            <DcView root={VIEWS[s.era - 1].root} view={view} />
+            {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={VIEWS[s.era - 1].root} view={view} />}
             <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
               style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
           </>
