@@ -2,6 +2,7 @@
 // an explanation of what it is and how it affects the game, and Back / Next.
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import * as G from '../engine';
+import { Die } from './Die';
 import { EdisonBulbs } from './EdisonBulbs';
 import type { GameState } from '../engine';
 
@@ -61,8 +62,7 @@ export function Onboarding({ s, run }: Props) {
             </label>
           ))}
         </div>
-        <button className="b3d" onClick={() => run(G.rollName)} aria-label="Випадкове ім’я" title="Випадкове ім’я"
-          style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 8, border: `2px solid ${INK}`, background: 'linear-gradient(180deg, #F4EAD0, #DCCDA4)', boxShadow: `0 3px 0 ${INK}`, cursor: 'pointer', fontSize: 26, lineHeight: 1 }}>⚄</button>
+        <Die onRoll={() => run(G.rollName)} label="Випадкове ім’я" />
       </div>
       <Note what="Ім’я засновника роду. Кубик підкаже випадкове ім’я цієї епохи."
         effect="Прізвище стане назвою вашої династії на всі сім епох. Імена спадкоємців гра придумає сама." />
