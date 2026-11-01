@@ -149,10 +149,12 @@ export function buildView(ctx: Ctx): any {
     const x = cl(s[m]), locked = m === 'patron' && s.shadow > 0;
     if (pv) {
       const dd = locked ? 0 : pv[k] || 0, nx = cl(x + dd), tc = (dd ? tone(m, x, x + dd) : 'neu') === 'bad' ? '#E8603F' : '#66BC8E';
-      return { ic: icon(m, 16), val: dd ? x + '→' + nx : String(x), color: Cc[m], border: dd ? '1.5px solid ' + tc : '1.5px solid transparent', hasD: dd !== 0, arrow: dd > 0 ? '▲' : '▼', arrowColor: tc };
+      const bad = (dd ? tone(m, x, x + dd) : 'neu') === 'bad';
+      return { ic: icon(m, 16), val: String(nx), color: Cc[m], border: '1.5px solid transparent', plain: false, hasD: false, arrow: '', arrowColor: tc,
+        hasPv: true, dTxt: dd ? (dd > 0 ? '▲ ' : '▼ ') + Math.abs(nx - x) : '±0', was: dd ? 'з ' + x : '', dBg: dd ? (bad ? '#E8603F' : '#66BC8E') : 'rgba(230,217,188,0.14)', dFg: dd ? '#1F1A14' : 'rgba(230,217,188,0.6)' };
     }
     const d = s.last[k] || 0, danger = m === 'threat' ? x >= 70 : (x <= dz || x >= 100 - dz) && !locked;
-    return { ic: icon(m, 16), val: String(x), color: Cc[m], border: danger ? '1.5px solid #E8603F' : '1.5px solid transparent', hasD: d !== 0, arrow: d > 0 ? '▲' : '▼', arrowColor: '#E6D9BC' };
+    return { ic: icon(m, 16), val: String(x), color: Cc[m], border: danger ? '1.5px solid #E8603F' : '1.5px solid transparent', plain: true, hasD: d !== 0, arrow: d > 0 ? '▲' : '▼', arrowColor: '#E6D9BC', hasPv: false, dTxt: '', was: '', dBg: '', dFg: '' };
   });
   v.L = L;
   v.hudGauges = L.hud === 'gauge'; v.hudLamps = L.hud === 'lamps'; v.hudLcd = L.hud === 'lcd'; v.hudGloss = L.hud === 'gloss'; v.hudChips = L.hud === 'chips'; v.hudRings = L.hud === 'rings';

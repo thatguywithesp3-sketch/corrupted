@@ -41,6 +41,24 @@ const FACE_ROW = [
     ] }
   ] }
 ];
+const ICON16 = { t: 'e', n: 'span', a: { style: 'width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0' }, ch: [
+  { t: 'e', n: 'svg', a: { width: '24', height: '24', 'aria-hidden': 'true', style: 'flex-shrink: 0; overflow: visible; transform: scale({{x.ic.k}}); fill: none; stroke: {{x.ic.stroke}}; stroke-width: {{x.ic.sw}}; fill-rule: evenodd; stroke-linejoin: round' }, ch: [{ t: 'e', n: 'path', a: { d: '{{x.ic.path}}' }, ch: [] }] }
+] };
+const MINI_ITEM = [
+  { t: 'e', n: 'span', a: { style: 'flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 3px; border-radius: 9px; border: {{x.border}}' }, ch: [
+    { t: 'e', n: 'span', a: { style: 'display: flex; align-items: center; gap: 3px' }, ch: [
+      ICON16,
+      { t: 'e', n: 'span', a: { style: 'font-size: 15px; font-weight: 700; line-height: 1; color: {{x.color}}; white-space: nowrap' }, ch: [{ t: 'x', v: '{{x.val}}' }] },
+      { t: 'if', v: '{{x.plain}}', ch: [{ t: 'if', v: '{{x.hasD}}', ch: [{ t: 'e', n: 'span', a: { style: 'font-size: 9px; color: {{x.arrowColor}}' }, ch: [{ t: 'x', v: '{{x.arrow}}' }] }] }] }
+    ] },
+    { t: 'if', v: '{{x.hasPv}}', ch: [
+      { t: 'e', n: 'span', a: { style: 'display: flex; align-items: center; gap: 3px; white-space: nowrap; line-height: 1' }, ch: [
+        { t: 'e', n: 'span', a: { style: 'font-size: 10.5px; font-weight: 700; padding: 1px 5px 2px; border-radius: 7px; background: {{x.dBg}}; color: {{x.dFg}}' }, ch: [{ t: 'x', v: '{{x.dTxt}}' }] },
+        { t: 'e', n: 'span', a: { style: 'font-size: 9px; color: rgba(230,217,188,0.55)' }, ch: [{ t: 'x', v: '{{x.was}}' }] }
+      ] }
+    ] }
+  ] }
+];
 const INPUT = 'flex: 1; min-width: 0; width: 100%; padding: 0; margin: 0; border: none; outline: none; background: transparent; font: inherit; color: inherit; line-height: inherit';
 function inject(node) {
   if (!node || !node.ch) return;
@@ -74,6 +92,13 @@ function inject(node) {
       { t: 'e', n: 'span', a: { style: 'display: block; align-self: stretch; height: 120px; margin: -4px -4px 4px; background-image: url({{h.face}}); background-size: cover; background-position: center top; border: 1px solid #8C7E58' }, ch: [] }
     ] });
   }
+  // HUD mini meters: "what if" preview as value + delta chip instead of a cramped "34→36 ▲" pill
+  if (node.t === 'for' && node.v === '{{mini}}') node.ch = MINI_ITEM;
+  if (node.t === 'e' && node.n === 'span' && node.ch.length === 1 && node.ch[0].t === 'x' && node.ch[0].v === 'ЯКЩО ТАК') {
+    node.a.style = 'font-size: 8px; font-weight: 700; letter-spacing: 1px; line-height: 1.15; color: #1F1A14; background: #D9A441; padding: 3px 4px; width: 30px; text-align: center; flex-shrink: 0; box-shadow: 0 1px 0 rgba(0,0,0,0.4)';
+  }
+  const plus = node.t !== 'e' ? -1 : node.ch.findIndex((c) => c.t === 'e' && c.n === 'span' && c.ch && c.ch.length === 1 && c.ch[0].t === 'x' && c.ch[0].v === '+' && /width: 30px/.test(c.a.style || ''));
+  if (plus >= 0) node.ch[plus] = { t: 'if', v: '{{hudTitleShow}}', ch: [node.ch[plus]] };
   node.ch.forEach(inject);
 }
 
