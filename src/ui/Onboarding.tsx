@@ -59,6 +59,39 @@ function Note({ what, effect }: { what: string; effect: string }) {
   );
 }
 
+
+/** a filled-in line of the blank: handwriting on the rule, the printed caption under it */
+const Field = ({ label, value, big }: { label: string; value: string; big?: boolean }) => (
+  <div>
+    <div style={{ fontFamily: HAND, fontSize: big ? 26 : 19, lineHeight: 1.05, color: BLUE, borderBottom: `1px solid ${INK}`, padding: '0 4px 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transform: 'rotate(-0.6deg)' }}>{value}</div>
+    <div style={{ fontSize: 8.5, letterSpacing: 1.4, color: MUTE, marginTop: 2, textTransform: 'uppercase' }}>{label}</div>
+  </div>
+);
+
+/** steel gem paperclip: wire with a lit top edge and its shadow on the paper */
+const CLIP = 'M5.5 16 V34 A2 2 0 0 0 9.5 34 V6 A3.75 3.75 0 0 0 2 6 V38 A5.5 5.5 0 0 0 13 38 V20';
+const Paperclip = () => (
+  <svg width="21" height="60" viewBox="-1 -3 17 48" style={{ position: 'absolute', left: 10, top: -20, overflow: 'visible', transform: 'rotate(-4deg)', zIndex: 2 }} aria-hidden="true">
+    <defs><linearGradient id="clip-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#F4F4F0" /><stop offset=".4" stopColor="#9EA2A4" /><stop offset=".7" stopColor="#D8DAD6" /><stop offset="1" stopColor="#6C7072" /></linearGradient></defs>
+    <path d={CLIP} fill="none" stroke="rgba(30,20,8,0.45)" strokeWidth="1.8" strokeLinecap="round" transform="translate(1.6 2.2)" style={{ filter: 'blur(0.9px)' }} />
+    <path d={CLIP} fill="none" stroke="#5E6264" strokeWidth="1.9" strokeLinecap="round" />
+    <path d={CLIP} fill="none" stroke="url(#clip-steel)" strokeWidth="1.3" strokeLinecap="round" />
+    <path d="M2.4 9 V30 M9.1 9 V24" stroke="rgba(255,255,255,0.75)" strokeWidth=".45" strokeLinecap="round" />
+  </svg>
+);
+
+/** the applicant's photo card, clipped to the blank with a paperclip */
+const ClippedPhoto = ({ src }: { src: string }) => (
+  <div style={{ position: 'relative', flexShrink: 0, marginTop: 6, transform: 'rotate(-3deg)' }}>
+    <div style={{ width: 78, height: 100, padding: '4px 4px 12px', background: '#FBF7EA', boxShadow: '0 1px 1px rgba(40,25,8,0.5), 3px 5px 8px rgba(40,25,8,0.35)', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', height: '100%', backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.15) contrast(1.02)', boxShadow: 'inset 0 0 6px rgba(60,40,10,0.35)' }} />
+    </div>
+    {/* slight lift of the photo under the clip's pressure */}
+    <span style={{ position: 'absolute', left: 6, top: 0, width: 20, height: 26, background: 'linear-gradient(180deg, rgba(0,0,0,0.1), transparent)', pointerEvents: 'none' }} />
+    <Paperclip />
+  </div>
+);
+
 export function Onboarding({ s, run }: Props) {
   const [step, setStep] = useState(0);
   const C = G.getEra(s.era);
@@ -166,17 +199,18 @@ export function Onboarding({ s, run }: Props) {
         <div style={{ borderTop: `3px double ${INK}` }} />
         {body}
         <div style={{ flex: 1 }} />
+        {step === last && (
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '0 2px' }}>
+            {face && <ClippedPhoto src={face} />}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7, paddingTop: 2 }}>
+              <Field label="Заявник" value={`${s.first} ${s.surname}`} big />
+              <Field label="Походження" value={s.gender === 'f' ? origin.tf : origin.t} />
+              <Field label="Мета життя" value={dream.t} />
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, fontSize: 11, color: MUTE }}>
           <span>Аркуш {step + 1} з {BLANKS.length}</span>
-          {step === last && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {face && <span style={{ width: 34, height: 44, backgroundImage: `url(${face})`, backgroundSize: 'cover', backgroundPosition: 'center top', border: '1px solid #8C7E58' }} />}
-              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <span style={{ fontFamily: HAND, fontSize: 24, color: BLUE, lineHeight: 1 }}>{s.first} {s.surname}</span>
-                <span>{s.gender === 'f' ? origin.tf : origin.t} · {dream.t}</span>
-              </span>
-            </span>
-          )}
         </div>
         {step !== last && <span style={{ position: 'absolute', right: 18, bottom: 44, padding: '3px 10px', border: `2px solid ${RED}`, color: RED, fontSize: 13, fontWeight: 700, letterSpacing: 2, transform: 'rotate(-8deg)', opacity: 0.6 }}>{b.stamp}</span>}
       </div>
