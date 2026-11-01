@@ -68,26 +68,48 @@ const Field = ({ label, value, big }: { label: string; value: string; big?: bool
   </div>
 );
 
-/** steel gem paperclip: wire with a lit top edge and its shadow on the paper */
-const CLIP = 'M5.5 16 V34 A2 2 0 0 0 9.5 34 V6 A3.75 3.75 0 0 0 2 6 V38 A5.5 5.5 0 0 0 13 38 V20';
+/** Steel gem paperclip slid over the left edge of the blank, holding the photo.
+ *  Drawn in its vertical form and turned sideways (x↔y). The closed end stays outside the sheet on the desk;
+ *  the inner tongue lies on the photo; the outer loop runs behind the sheet — visible only past the edge,
+ *  and inside it shows as a faint ridge pressed through the paper. */
+const CLIP_FRONT = 'M5.5 16 V34 A2 2 0 0 0 9.5 34 V6 A3.75 3.75 0 0 0 2 6';
+const CLIP_BACK = 'M2 6 V38 A5.5 5.5 0 0 0 13 38 V20';
+const EDGE = 9; // where the sheet's edge crosses the clip (clip units, along its length)
+const Wire = ({ d, shade }: { d: string; shade?: boolean }) => (
+  <>
+    <path d={d} fill="none" stroke={shade ? '#4A4E50' : '#5E6264'} strokeWidth="1.9" strokeLinecap="round" />
+    <path d={d} fill="none" stroke={shade ? '#8A8E8E' : 'url(#clip-steel)'} strokeWidth="1.25" strokeLinecap="round" />
+  </>
+);
 const Paperclip = () => (
-  <svg width="21" height="60" viewBox="-1 -3 17 48" style={{ position: 'absolute', left: 10, top: -20, overflow: 'visible', transform: 'rotate(-4deg)', zIndex: 2 }} aria-hidden="true">
-    <defs><linearGradient id="clip-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#F4F4F0" /><stop offset=".4" stopColor="#9EA2A4" /><stop offset=".7" stopColor="#D8DAD6" /><stop offset="1" stopColor="#6C7072" /></linearGradient></defs>
-    <path d={CLIP} fill="none" stroke="rgba(30,20,8,0.45)" strokeWidth="1.8" strokeLinecap="round" transform="translate(1.6 2.2)" style={{ filter: 'blur(0.9px)' }} />
-    <path d={CLIP} fill="none" stroke="#5E6264" strokeWidth="1.9" strokeLinecap="round" />
-    <path d={CLIP} fill="none" stroke="url(#clip-steel)" strokeWidth="1.3" strokeLinecap="round" />
-    <path d="M2.4 9 V30 M9.1 9 V24" stroke="rgba(255,255,255,0.75)" strokeWidth=".45" strokeLinecap="round" />
+  <svg width="74" height="27" viewBox="-1 -1 46 17" style={{ position: 'absolute', left: -20, top: 16, overflow: 'visible', zIndex: 2 }} aria-hidden="true">
+    <defs>
+      <linearGradient id="clip-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#F4F4F0" /><stop offset=".4" stopColor="#9EA2A4" /><stop offset=".7" stopColor="#D8DAD6" /><stop offset="1" stopColor="#6C7072" /></linearGradient>
+      <clipPath id="clip-out"><rect x="-5" y="-5" width="25" height={EDGE + 5} /></clipPath>
+      <clipPath id="clip-in"><rect x="-5" y={EDGE} width="25" height="60" /></clipPath>
+    </defs>
+    <g transform="matrix(0,1,1,0,0,0)">
+      {/* outer loop behind the sheet: seen on the desk past the edge, pressed through the paper inside */}
+      <path d={CLIP_BACK} fill="none" stroke="rgba(20,10,2,0.5)" strokeWidth="2" strokeLinecap="round" transform="translate(1.4 1.2)" clipPath="url(#clip-out)" style={{ filter: 'blur(0.8px)' }} />
+      <g clipPath="url(#clip-out)"><Wire d={CLIP_BACK} shade /></g>
+      <g clipPath="url(#clip-in)">
+        <path d={CLIP_BACK} fill="none" stroke="rgba(90,60,25,0.22)" strokeWidth="1.6" transform="translate(0.5 0.5)" />
+        <path d={CLIP_BACK} fill="none" stroke="rgba(255,250,235,0.35)" strokeWidth="0.8" transform="translate(-0.4 -0.4)" />
+      </g>
+      {/* inner tongue on the photo, with its shadow */}
+      <path d={CLIP_FRONT} fill="none" stroke="rgba(30,20,8,0.45)" strokeWidth="1.8" strokeLinecap="round" transform="translate(1.2 1.6)" style={{ filter: 'blur(0.7px)' }} />
+      <Wire d={CLIP_FRONT} />
+      <path d="M5.1 17 V32 M9.1 12 V30" stroke="rgba(255,255,255,0.75)" strokeWidth=".45" strokeLinecap="round" />
+    </g>
   </svg>
 );
 
-/** the applicant's photo card, clipped to the blank with a paperclip */
+/** the applicant's photo card, near the left edge of the blank, clipped to it */
 const ClippedPhoto = ({ src }: { src: string }) => (
-  <div style={{ position: 'relative', flexShrink: 0, marginTop: 6, transform: 'rotate(-3deg)' }}>
-    <div style={{ width: 78, height: 100, padding: '4px 4px 12px', background: '#FBF7EA', boxShadow: '0 1px 1px rgba(40,25,8,0.5), 3px 5px 8px rgba(40,25,8,0.35)', boxSizing: 'border-box' }}>
+  <div style={{ position: 'relative', flexShrink: 0, marginLeft: -14, marginTop: 4 }}>
+    <div style={{ width: 82, height: 104, padding: '4px 4px 12px', background: '#FBF7EA', boxShadow: '0 1px 1px rgba(40,25,8,0.5), 3px 5px 8px rgba(40,25,8,0.35)', boxSizing: 'border-box', transform: 'rotate(-1.5deg)' }}>
       <div style={{ width: '100%', height: '100%', backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.15) contrast(1.02)', boxShadow: 'inset 0 0 6px rgba(60,40,10,0.35)' }} />
     </div>
-    {/* slight lift of the photo under the clip's pressure */}
-    <span style={{ position: 'absolute', left: 6, top: 0, width: 20, height: 26, background: 'linear-gradient(180deg, rgba(0,0,0,0.1), transparent)', pointerEvents: 'none' }} />
     <Paperclip />
   </div>
 );
