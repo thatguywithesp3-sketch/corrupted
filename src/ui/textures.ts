@@ -1,88 +1,85 @@
-// Era materials for CTAs (every button with class "b3d").
-// The button keeps its own colour; a texture layer on top adds wear: scratches, rubbed corners,
-// grime, gloss, chips — whatever the materials of that era's offices would show.
-// Applied via a wrapper class `era-N` on the screen.
+// Room & materials layer.
+// 1) One light source per era (desk lamp, bare bulb, fluorescent tube, window, screen). Every button is lit
+//    from it: bright lit edge, shaded far edge, contact shadow + soft cast shadow onto the surface.
+// 2) Buttons sit IN the surface: a dark groove around them, as if set into the desk top.
+// 3) Wear is soft patina, not scratches: rubbed-bright centre where fingers press, fine grain.
+// 4) A room-light pass over the whole screen: lamp pool + vignette, tinted per era.
 
-function rng(seed: number) {
-  let a = seed >>> 0;
-  return () => { let t = (a = (a + 0x6d2b79f5) >>> 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-}
 const uri = (svg: string) => `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+const grain = (freq: number, alpha: number, seed = 3) =>
+  uri(`<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="2" seed="${seed}"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${alpha} 0"/></filter><rect width="180" height="180" filter="url(#n)"/></svg>`);
+/** soft cloudy patina: low-frequency blotches, no lines */
+const patina = (alpha: number, seed: number, light = false) =>
+  uri(`<svg xmlns="http://www.w3.org/2000/svg" width="260" height="120"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.018 0.05" numOctaves="3" seed="${seed}"/><feColorMatrix values="0 0 0 0 ${light ? 1 : 0}  0 0 0 0 ${light ? 0.95 : 0}  0 0 0 0 ${light ? 0.85 : 0}  0 0 0 ${alpha} ${-alpha * 0.35}"/></filter><rect width="260" height="120" filter="url(#p)"/></svg>`);
 
-/** fine random scratches, mostly along `angle` (deg) */
-function scratches(seed: number, n: number, angle: number, spread: number, color: string, w = 240, h = 90) {
-  const r = rng(seed); let p = '';
-  for (let i = 0; i < n; i++) {
-    const x = r() * w, y = r() * h, len = 6 + r() * 34, a = ((angle + (r() - 0.5) * spread) * Math.PI) / 180;
-    const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len, cx = (x + x2) / 2 + (r() - 0.5) * 4, cy = (y + y2) / 2 + (r() - 0.5) * 4;
-    p += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}" stroke="${color}" stroke-opacity="${(0.25 + r() * 0.6).toFixed(2)}" stroke-width="${(0.35 + r() * 0.6).toFixed(2)}" fill="none"/>`;
-  }
-  return uri(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${p}</svg>`);
+interface Light {
+  /** where the light comes from: [x%, y%] of the screen */
+  lamp: [number, number];
+  hi: string; lo: string;
+  /** contact + cast shadow onto the surface */
+  cast: string;
+  /** groove around the button (cut into the surface) */
+  groove: string;
+  wear: string[];
+  /** whole-screen room light */
+  room: string;
 }
-/** irregular blobs: chips, specks, smudges */
-function blobs(seed: number, n: number, rMin: number, rMax: number, color: string, w = 200, h = 80) {
-  const r = rng(seed); let p = '';
-  for (let i = 0; i < n; i++) {
-    const cx = r() * w, cy = r() * h, rad = rMin + r() * (rMax - rMin); let d = '';
-    for (let k = 0; k < 7; k++) { const a = (k / 7) * Math.PI * 2, rr = rad * (0.6 + r() * 0.6); d += (k ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); }
-    p += `<path d="${d}Z" fill="${color}" fill-opacity="${(0.4 + r() * 0.6).toFixed(2)}"/>`;
-  }
-  return uri(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${p}</svg>`);
-}
-const noise = (freq: number, alpha: number, seed = 3) =>
-  uri(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="3" seed="${seed}"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${alpha} 0"/></filter><rect width="160" height="160" filter="url(#n)"/></svg>`);
-const corners = (c: string, r: number) =>
-  ['0 0', '100% 0', '0 100%', '100% 100%'].map((p) => `radial-gradient(circle at ${p}, ${c}, transparent ${r}px)`).join(', ');
 
-interface Material { layers: string[]; blend: string; opacity: number; shadow?: string; extra?: string }
-const ERA: Record<number, Material> = {
-  // 1870s · gilt brass, mahogany, leather: hairline scratches, brushed lines, rubbed bright corners, grime in the edges
-  1: {
-    layers: [corners('rgba(255,236,190,0.55)', 9), scratches(11, 32, 15, 70, '#FFF6DC'), scratches(12, 22, -20, 60, '#2A1A08'),
-      'repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px)', noise(0.9, 0.35, 4)],
-    blend: 'overlay', opacity: 0.65, shadow: 'inset 0 0 0 1px rgba(60,40,10,0.35), inset 0 0 10px rgba(40,25,5,0.45)'
-  },
-  // 1918 · linocut poster, rough paper, stencil: missing ink specks, ink bleed, torn fibres
-  2: {
-    layers: [blobs(21, 45, 0.5, 1.8, '#F2E6CF'), blobs(22, 30, 0.5, 1.4, '#000'), noise(0.6, 0.5, 7), corners('rgba(242,230,207,0.6)', 6)],
-    blend: 'normal', opacity: 0.35, shadow: 'inset 0 0 0 2px rgba(0,0,0,0.18)'
-  },
-  // 1949 · enamel, bakelite, lacquered desk: chipped enamel, crazing, deep gloss band
-  3: {
-    layers: ['linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 45%, transparent 50%)', blobs(31, 9, 1.5, 4, '#1A1410', 220, 90),
-      scratches(32, 14, 90, 180, '#FFFFFF'), noise(1.2, 0.25, 9), corners('rgba(20,14,10,0.55)', 7)],
-    blend: 'normal', opacity: 0.45, shadow: 'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 4px rgba(0,0,0,0.3)'
-  },
-  // 1990s · laminate, cheap plastic, photocopies: scuff streaks, toner noise, yellowed tape on a corner
-  4: {
-    layers: [scratches(41, 45, -35, 25, '#FFFFFF', 240, 90), noise(1.6, 0.5, 11), 'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.12) 48%, transparent 56%)'],
-    blend: 'overlay', opacity: 0.85, shadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)'
-  },
-  // 2000s · chrome, glossy plastic, lacquered SUV: wet gloss, specular glint, fingerprint smudge
-  5: {
-    layers: ['linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.12) 46%, rgba(0,0,0,0.08) 54%, transparent 100%)',
-      'radial-gradient(ellipse 22px 14px at 82% 70%, rgba(255,255,255,0.18), transparent)', 'radial-gradient(circle 3px at 12% 18%, rgba(255,255,255,0.95), transparent)'],
-    blend: 'normal', opacity: 0.8, shadow: 'inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(0,0,0,0.25)'
-  },
-  // 2010s · matte flat design, soft-touch plastic: almost clean, fine grain only
-  6: { layers: [noise(1.4, 0.18, 13)], blend: 'overlay', opacity: 1, shadow: 'inset 0 -2px 0 rgba(0,0,0,0.12)' },
-  // 2020s · glass, OLED, screens: diagonal sheen, faint scanlines, dead-pixel speck
-  7: {
-    layers: ['linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.14) 32%, transparent 44%)', 'repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px)',
-      blobs(71, 3, 0.6, 1, '#00E5FF', 200, 60)],
-    blend: 'screen', opacity: 0.9, shadow: 'inset 0 0 0 1px rgba(0,229,255,0.18)'
-  }
+const L: Record<number, Light> = {
+  // 1870s · warm desk lamp upper-left, mahogany desk, gilt brass
+  1: { lamp: [15, 0], hi: 'rgba(255,236,190,0.55)', lo: 'rgba(40,20,4,0.5)', cast: 'drop-shadow(2px 3px 1.5px rgba(20,8,0,0.55)) drop-shadow(6px 10px 9px rgba(20,8,0,0.35))',
+    groove: 'rgba(28,12,4,0.6)', wear: ['radial-gradient(ellipse 70% 60% at 50% 55%, rgba(255,240,205,0.14), transparent 70%)', patina(0.2, 5, true), grain(1.1, 0.1, 4)],
+    room: 'radial-gradient(ellipse 85% 55% at 18% 0%, rgba(255,200,120,0.18), transparent 60%), radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(18,8,2,0.5) 100%)' },
+  // 1918 · bare bulb overhead, cold office, paper and plywood
+  2: { lamp: [50, 0], hi: 'rgba(255,245,225,0.35)', lo: 'rgba(0,0,0,0.45)', cast: 'drop-shadow(0 3px 1.5px rgba(0,0,0,0.5)) drop-shadow(0 10px 9px rgba(0,0,0,0.3))',
+    groove: 'rgba(10,6,4,0.5)', wear: [patina(0.22, 9), grain(0.8, 0.14, 7)],
+    room: 'radial-gradient(ellipse 60% 45% at 50% 0%, rgba(255,235,200,0.15), transparent 65%), radial-gradient(ellipse 120% 90% at 50% 45%, transparent 50%, rgba(5,3,2,0.55) 100%)' },
+  // 1949 · green-shade lamp upper-right on a lacquered desk
+  3: { lamp: [82, 3], hi: 'rgba(255,250,230,0.5)', lo: 'rgba(10,10,0,0.45)', cast: 'drop-shadow(-2px 3px 1.5px rgba(10,8,0,0.5)) drop-shadow(-6px 10px 9px rgba(10,8,0,0.3))',
+    groove: 'rgba(12,10,4,0.55)', wear: ['linear-gradient(180deg, rgba(255,255,255,0.16), transparent 48%)', patina(0.16, 13, true), grain(1.2, 0.08, 9)],
+    room: 'radial-gradient(ellipse 80% 50% at 82% 0%, rgba(220,255,200,0.13), transparent 60%), radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(6,8,4,0.5) 100%)' },
+  // 1990s · fluorescent tube overhead, laminate desk
+  4: { lamp: [50, 0], hi: 'rgba(235,255,250,0.45)', lo: 'rgba(0,0,0,0.38)', cast: 'drop-shadow(0 3px 1px rgba(0,0,0,0.45)) drop-shadow(0 8px 8px rgba(0,0,0,0.25))',
+    groove: 'rgba(0,0,0,0.42)', wear: [patina(0.16, 17, true), grain(1.6, 0.1, 11)],
+    room: 'linear-gradient(180deg, rgba(210,255,240,0.09), transparent 35%), radial-gradient(ellipse 120% 90% at 50% 45%, transparent 60%, rgba(0,4,2,0.4) 100%)' },
+  // 2000s · warm halogen spots, glossy surfaces
+  5: { lamp: [30, 0], hi: 'rgba(255,255,255,0.65)', lo: 'rgba(0,0,0,0.32)', cast: 'drop-shadow(1px 3px 1.5px rgba(0,0,0,0.45)) drop-shadow(3px 12px 11px rgba(0,0,0,0.3))',
+    groove: 'rgba(0,0,0,0.32)', wear: ['linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0.06) 46%, transparent 52%)'],
+    room: 'radial-gradient(ellipse 70% 45% at 30% 0%, rgba(255,230,180,0.15), transparent 60%), radial-gradient(ellipse 120% 90% at 50% 45%, transparent 60%, rgba(0,0,0,0.32) 100%)' },
+  // 2010s · daylight from a big window on the left
+  6: { lamp: [0, 30], hi: 'rgba(255,255,255,0.5)', lo: 'rgba(0,0,0,0.18)', cast: 'drop-shadow(3px 3px 2px rgba(0,0,0,0.16)) drop-shadow(8px 8px 12px rgba(0,0,0,0.1))',
+    groove: 'rgba(0,0,0,0.1)', wear: [grain(1.4, 0.06, 13)],
+    room: 'linear-gradient(90deg, rgba(255,255,255,0.09), transparent 45%), radial-gradient(ellipse 130% 95% at 50% 45%, transparent 65%, rgba(0,0,0,0.16) 100%)' },
+  // 2020s · dark room, cold screen glow from the front
+  7: { lamp: [50, 100], hi: 'rgba(160,240,255,0.32)', lo: 'rgba(0,0,0,0.42)', cast: 'drop-shadow(0 -2px 5px rgba(0,229,255,0.12)) drop-shadow(0 6px 10px rgba(0,0,0,0.5))',
+    groove: 'rgba(0,0,0,0.45)', wear: ['linear-gradient(120deg, transparent 25%, rgba(255,255,255,0.07) 35%, transparent 45%)'],
+    room: 'radial-gradient(ellipse 90% 50% at 50% 100%, rgba(0,229,255,0.09), transparent 70%), radial-gradient(ellipse 120% 90% at 50% 45%, transparent 50%, rgba(0,0,0,0.45) 100%)' }
 };
+
+/** lit edge + shaded edge, following the light direction */
+function bevel(l: Light) {
+  const [x, y] = l.lamp;
+  const h = x < 35 ? 'left' : x > 65 ? 'right' : '', v = y <= 50 ? 'top' : 'bottom';
+  const opp = (s: string) => ({ left: 'right', right: 'left', top: 'bottom', bottom: 'top' } as Record<string, string>)[s];
+  const lit = [v, h].filter(Boolean).join(' '), far = [opp(v), h ? opp(h) : ''].filter(Boolean).join(' ');
+  // "to far" starts at the lit side; "to lit" starts at the far side
+  return [`linear-gradient(to ${far}, ${l.hi} 0px, transparent 5px)`, `linear-gradient(to ${lit}, ${l.lo} 0px, transparent 6px)`];
+}
 
 export function textureCss(): string {
   let css = '.b3d{position:relative;isolation:isolate}';
   css += '.b3d::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1}';
-  for (const [n, m] of Object.entries(ERA)) {
-    css += `.era-${n} .b3d::after{background-image:${m.layers.join(',')};background-size:${m.layers.map((l) => (l.startsWith('url') ? 'auto' : '100% 100%')).join(',')};mix-blend-mode:${m.blend};opacity:${m.opacity}${m.shadow ? ';box-shadow:' + m.shadow : ''}}`;
-    if (m.extra) css += `.era-${n} .b3d:not([class*="tx-"])::before{${m.extra}}`;
+  css += '.room-light{position:absolute;inset:0;pointer-events:none;z-index:95}';
+  for (const [n, l] of Object.entries(L)) {
+    const layers = [...bevel(l), ...l.wear];
+    const sizes = layers.map((x) => (x.startsWith('url') ? 'auto' : '100% 100%')).join(',');
+    const contact = l.cast.split(') drop-shadow')[0] + ')';
+    css += `.era-${n} .b3d{filter:${l.cast};outline:2px solid ${l.groove};outline-offset:1px}`;
+    css += `.era-${n} .b3d:active{filter:${contact} brightness(0.94)}`;
+    css += `.era-${n} .b3d::after{background-image:${layers.join(',')};background-size:${sizes}}`;
+    css += `.era-${n} .room-light{background:${l.room}}`;
   }
-  // keep text crisp above the wear on very small controls
-  css += '.b3d[aria-label="Головне меню"]::after{display:none}';
+  css += '.b3d[aria-label="Головне меню"]{filter:none;outline:none}.b3d[aria-label="Головне меню"]::after{display:none}';
   return css;
 }
 

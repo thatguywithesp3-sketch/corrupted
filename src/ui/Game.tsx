@@ -80,6 +80,7 @@ export function Game() {
               style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
           </>
         )}
+        <div className="room-light" />
       </div>
     </div>
   );
