@@ -2,6 +2,7 @@
 // an explanation of what it is and how it affects the game, and Back / Next.
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import * as G from '../engine';
+import { EdisonBulbs } from './EdisonBulbs';
 import type { GameState } from '../engine';
 
 interface Props { s: GameState; run: (f: (x: GameState) => GameState) => void }
@@ -133,10 +134,8 @@ export function Onboarding({ s, run }: Props) {
   );
 
   return (
-    <div className="tx-wood" style={{ position: 'relative', width: 390, height: 844, boxSizing: 'border-box', padding: '34px 14px 14px', background: '#4A2618', display: 'flex', flexDirection: 'column', gap: 10, fontFamily: "'Old Standard TT', serif", color: INK, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
-        {BLANKS.map((_, i) => <span key={i} style={{ width: i === step ? 26 : 10, height: 10, borderRadius: 5, background: i <= step ? '#D9B870' : 'rgba(217,184,112,0.3)', transition: 'width .2s' }} />)}
-      </div>
+    <div className="tx-wood" style={{ position: 'relative', width: 390, height: 844, boxSizing: 'border-box', padding: '8px 14px 14px', background: '#4A2618', display: 'flex', flexDirection: 'column', gap: 10, fontFamily: "'Old Standard TT', serif", color: INK, overflow: 'hidden' }}>
+      <EdisonBulbs count={BLANKS.length} step={step} />
 
       <div className="tx-paper" key={step} style={{ position: 'relative', flex: 1, minHeight: 0, padding: '16px 16px 18px', background: b.paper, transform: `rotate(${b.tilt}deg)`, boxShadow: '0 12px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', gap: 12, animation: 'blankIn .28s ease-out' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, letterSpacing: 2, color: MUTE }}>
