@@ -29,11 +29,20 @@ const Mark = ({ on }: { on: boolean }) => (
 );
 const Label = ({ children }: { children: ReactNode }) => <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: MUTE }}>{children}</div>;
 
+function NoteBox({ title, color, tint, children }: { title: string; color: string; tint: string; children: ReactNode }) {
+  return (
+    <div style={{ padding: '7px 11px 9px', background: tint, borderLeft: `3px solid ${color}`, fontSize: 13, lineHeight: 1.35 }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color, letterSpacing: 0.3, marginBottom: 2 }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
 function Note({ what, effect }: { what: string; effect: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '9px 11px', background: 'rgba(42,58,106,0.07)', borderLeft: `3px solid ${BLUE}`, fontSize: 13, lineHeight: 1.35 }}>
-      <span><b>Що це.</b> {what}</span>
-      <span><b style={{ color: RED }}>У грі.</b> {effect}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <NoteBox title="Що це" color={BLUE} tint="rgba(42,58,106,0.09)">{what}</NoteBox>
+      <NoteBox title="У грі" color={RED} tint="rgba(150,40,20,0.08)">{effect}</NoteBox>
     </div>
   );
 }
