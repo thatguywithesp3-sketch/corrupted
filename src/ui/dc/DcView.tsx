@@ -66,6 +66,8 @@ function renderNodes(nodes: DcNode[], scope: Scope, key: string): ReactNode[] {
       if (Array.isArray(list)) list.forEach((item, j) => out.push(createElement(Fragment, { key: k + ':' + j }, ...renderNodes(n.ch, { ...scope, [n.as]: item }, k + ':' + j))));
       return;
     }
+    // hand-built React scene plugged into the template (see Game.tsx: withSlots)
+    if (n.n === 'dc-slot') { const node = scope.slots?.[n.a.name]; if (node) out.push(createElement(Fragment, { key: k }, node)); return; }
     const props: Record<string, any> = { key: k };
     for (const [a, raw] of Object.entries(n.a)) {
       if (a === 'onClick') {

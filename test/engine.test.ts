@@ -3,6 +3,7 @@ import {
   ERA_COUNT, docsFor, getEra, lockSafe, newGame, signForm, toOffice, signScheme, setAppetite, allTo, available, unhidden, kidStashTarget, str
 } from '../src/engine';
 import type { GameState } from '../src/engine';
+import * as G from '../src/engine';
 import { playCampaign, STYLES, botRng, botStep } from '../src/sim/bot';
 
 const meters = (s: GameState) => [s.patron, s.people, s.system];
@@ -92,4 +93,24 @@ describe('full campaigns (bot)', () => {
       }
     });
   }
+});
+
+describe('banker bribe', () => {
+  const evening = () => {
+    return { ...signForm(newGame(7)), screen: 'evening', cash: 5000 } as GameState;
+  };
+  it('limit deal raises the laundering limit for one evening and costs dirty money', () => {
+    const s0 = evening(), lim0 = G.launderLimit(s0);
+    const s1 = G.setBank(s0, 'limit');
+    expect(G.launderLimit(s1)).toBe(lim0 + G.bankerBoost(s0));
+    expect(available(s1)).toBe(available(s0) - G.bankerCost(s0, 'limit'));
+    const s2 = lockSafe(allTo(s1, 'laun'));
+    expect(s2.bank).toBeNull();
+    expect(s2.threat).toBeGreaterThanOrEqual(s1.threat + 2);
+  });
+  it('fee deal cuts the commission', () => {
+    const s0 = evening(), s1 = G.setBank(s0, 'fee');
+    expect(G.launderFee(s1)).toBe(0.03);
+    expect(G.setBank(s1, 'fee').bank).toBeNull();
+  });
 });

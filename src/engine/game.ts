@@ -3,6 +3,7 @@ import { rand, randInt } from './rng';
 import { RULES } from './rules';
 import { clamp100, fmt, fk } from './text';
 import type {
+  BankDeal,
   AccKey, Alloc, Choice, ChoiceOption, Delta, Doc, EndKind, GameState, Gender, Heir, Kin, Offer, ReportLine, Who
 } from './types';
 
@@ -39,10 +40,17 @@ export const rankName = (s: GameState, rank = s.rank) => {
 };
 export const take = (s: GameState, budget: number, ap: number) =>
   Math.round((budget * RULES.appetite[ap] * getEra(s.era).ranks[s.rank].mult) / 10) * 10;
-export const launderLimit = (s: GameState) => getEra(s.era).ranks[s.rank].limit + s.launBonus;
+const baseLaunderLimit = (s: GameState) => getEra(s.era).ranks[s.rank].limit + s.launBonus;
+const up50 = (v: number) => Math.ceil(v / 50) * 50;
+/** what the banker asks tonight for each deal */
+export const bankerCost = (s: GameState, deal: BankDeal) => up50(baseLaunderLimit(s) * (deal === 'limit' ? RULES.banker.limitCost : RULES.banker.feeCost));
+export const bankerBoost = (s: GameState) => up50(baseLaunderLimit(s) * RULES.banker.limitBoost);
+export const launderLimit = (s: GameState) => baseLaunderLimit(s) + (s.bank === 'limit' ? bankerBoost(s) : 0);
+export const launderFee = (s: GameState) => (s.bank === 'fee' ? RULES.banker.fee : RULES.launderFee);
+const bribeTotal = (s: GameState) => (s.bank ? bankerCost(s, s.bank) : 0);
 export const owedTotal = (s: GameState) => ACCS.reduce((t, k) => t + (s.pay[k] !== false ? s.owed[k] || 0 : 0), 0);
 /** dirty money available to hide tonight (after paying accomplices) */
-export const available = (s: GameState) => Math.max(0, s.cash - owedTotal(s));
+export const available = (s: GameState) => Math.max(0, s.cash - owedTotal(s) - bribeTotal(s));
 export const raidOdds = (s: GameState) =>
   Math.round(Math.min(RULES.raidMaxOdds, clamp100(s.threat) / RULES.raidThreatDivisor + (s.tavro ? RULES.raidBrandedBonus : 0)) * 100);
 export const dangerZone = (s: GameState) => (s.tavro ? RULES.dangerZoneBranded : RULES.dangerZone);
@@ -439,6 +447,15 @@ export function toggleKidPay(s: GameState, id: string): GameState {
   const n = clone(s); n.kidPay[id] = n.kidPay[id] === false; return n;
 }
 
+/** Bribe the banker for tonight (or cancel). Paid from dirty money in the drawer when the safe is locked. */
+export function setBank(s: GameState, deal: BankDeal | null): GameState {
+  const n = clone(s);
+  if (deal && s.bank !== deal && s.cash - owedTotal(s) < bankerCost(s, deal)) return n;
+  n.bank = deal && s.bank !== deal ? deal : null;
+  n.alloc = fitAlloc(n.alloc, n);
+  return n;
+}
+
 export function sameAsLast(s: GameState): GameState {
   if (!s.lastAlloc) return s;
   const n = clone(s); n.alloc = fitAlloc(s.lastAlloc, s); return n;
@@ -468,14 +485,20 @@ export function lockSafe(s: GameState): GameState {
   });
   n.kidPay = {};
 
+  if (s.bank) {
+    const cost = bankerCost(s, s.bank);
+    n.cash -= cost; n.threat += RULES.banker.threat[s.bank];
+    rep.push(line(s.bank === 'limit' ? S(n, 'rep.bankLimit', { amt: fmt(cost), lim: fmt(launderLimit(s)) }) : S(n, 'rep.bankFee', { amt: fmt(cost), fee: Math.round(RULES.banker.fee * 100) }), 'neu', 'laun'));
+  }
+
   const a = fitAlloc(n.alloc, s);
   n.cash = Math.max(0, n.cash - a.floor - a.wh - a.laun - a.kid);
   const kt = kidStashTarget(n);
   if (a.kid > 0 && kt) { kt.assets += a.kid; kt.k = clamp100(kt.k + Math.round(a.kid / 100) * 2); rep.push(line(S(n, 'rep.kidStash', { name: kt.first, amt: fmt(a.kid) }), 'ok', 'kid')); }
   n.floor += a.floor; n.wh += a.wh;
   if (a.wh > 0) n.acc.otto.k = clamp100(n.acc.otto.k + 5);
-  if (a.laun > 0) { const net = Math.round(a.laun * (1 - RULES.launderFee)); n.clean += net; rep.push(line(S(n, 'rep.laundered', { amt: fmt(a.laun), net: fmt(net) }), 'ok', 'laun')); }
-  n.lastAlloc = a; n.alloc = emptyAlloc();
+  if (a.laun > 0) { const net = Math.round(a.laun * (1 - launderFee(s))); n.clean += net; rep.push(line(S(n, 'rep.laundered', { amt: fmt(a.laun), net: fmt(net) }), 'ok', 'laun')); }
+  n.lastAlloc = a; n.alloc = emptyAlloc(); n.bank = null;
 
   ACCS.forEach((k) => {
     const x = n.acc[k], I = RULES.insider;

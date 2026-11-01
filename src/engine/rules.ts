@@ -5,6 +5,8 @@ export const RULES = {
   appetite: [0.05, 0.1, 0.2],
   accShare: 0.2, // accomplice's cut of every scheme
   launderFee: 0.1,
+  /** yearly bribe to the banker: either a higher laundering limit or a lower fee, for this evening only */
+  banker: { limitCost: 0.3, limitBoost: 0.6, feeCost: 0.15, fee: 0.03, threat: { limit: 2, fee: 1 } },
   start: { patron: 50, people: 50, system: 50, threat: 10, clean: 1000 },
   dangerZone: 15,
   dangerZoneBranded: 19,

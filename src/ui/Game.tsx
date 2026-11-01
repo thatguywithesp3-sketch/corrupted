@@ -1,5 +1,5 @@
 // The game: engine state + UI state → view-model → era template.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as G from '../engine';
 import type { GameState } from '../engine';
 import { DcView, type DcNode } from './dc/DcView';
@@ -7,6 +7,10 @@ import { buildView, freshUi, type UiState } from './view/buildView';
 import { MainMenu } from './MainMenu';
 import { Onboarding } from './Onboarding';
 import { injectTextures } from './textures';
+import { Ledger } from './scene/Ledger';
+import { NightScene } from './scene/NightScene';
+import { FamilyStrip } from './scene/FamilyStrip';
+import { WindowLight, phaseOf } from './scene/WindowLight';
 injectTextures();
 import v1 from '../data/views/era1.json';
 import v2 from '../data/views/era2.json';
@@ -18,6 +22,32 @@ import v7 from '../data/views/era7.json';
 
 interface EraView { fonts: string[]; css: string; root: DcNode }
 const VIEWS = [v1, v2, v3, v4, v5, v6, v7] as unknown as EraView[];
+/** Eras whose evening / night / family are hand-built React scenes plugged into the template. */
+const SCENE_ERAS = new Set([1]);
+
+/** Replace template blocks with slots for the React scenes (evening ledger, night report, HUD family rail). */
+function withSlots(root: DcNode): DcNode {
+  const r = JSON.parse(JSON.stringify(root)) as DcNode & { ch: DcNode[] };
+  const slot = (name: string): DcNode => ({ t: 'e', n: 'dc-slot', a: { name }, ch: [] });
+  const isFlexMain = (n: DcNode) => n.t === 'e' && /flex: 1/.test(n.a.style || '');
+  r.ch.forEach((n) => {
+    if (n.t !== 'if') return;
+    if (n.v === '{{isEvening}}') n.ch = [slot('evening')];
+    if (n.v === '{{isNight}}' && n.ch.some(isFlexMain)) n.ch = [slot('night')];
+    if (n.v === '{{hudOn}}' && n.ch.length >= 2) n.ch.splice(1, 0, slot('family'));
+  });
+  // the old "Family N" pill squeezed into the name plate
+  const drop = (n: DcNode) => { if (n.t !== 'x') n.ch = n.ch.filter((c) => !(c.t === 'e' && c.a['aria-label'] === 'Родинний альбом')); if (n.t !== 'x') n.ch.forEach(drop); };
+  drop(r);
+  return r;
+}
+const SLOTTED = new Map<number, DcNode>();
+const rootFor = (era: number) => {
+  if (!SCENE_ERAS.has(era)) return VIEWS[era - 1].root;
+  if (!SLOTTED.has(era)) SLOTTED.set(era, withSlots(VIEWS[era - 1].root));
+  return SLOTTED.get(era)!;
+};
+
 const SAVE_KEY = 'corrupted.save.v1';
 const W = 390, H = 844;
 
@@ -66,7 +96,19 @@ export function Game() {
     setUiState((u) => ({ ...u, pend: null, pendD: null }));
   }, []);
   const setUi = useCallback((p: Partial<UiState>) => setUiState((u) => ({ ...u, ...p })), []);
-  const view = useMemo(() => buildView({ s, ui, run, setUi }), [s, ui, run, setUi]);
+  // the last evening, to show the year's changes on the night report
+  const eve = useRef<GameState | null>(null);
+  if (s.screen === 'evening') eve.current = s;
+  const scenes = SCENE_ERAS.has(s.era);
+  const view = useMemo(() => {
+    const v = buildView({ s, ui, run, setUi });
+    if (scenes) v.slots = {
+      evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} /> : null,
+      night: s.screen === 'night' ? <NightScene key={s.year} s={s} run={run} before={eve.current} /> : null,
+      family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} />
+    };
+    return v;
+  }, [s, ui, run, setUi, scenes]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -75,11 +117,12 @@ export function Game() {
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
-            {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={VIEWS[s.era - 1].root} view={view} />}
+            {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
             <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
               style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
           </>
         )}
+        {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
         <div className="room-light" />
       </div>
     </div>

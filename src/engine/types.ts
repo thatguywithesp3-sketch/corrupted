@@ -141,6 +141,9 @@ export interface Campaign { round: number; me: number; rival: number; fraud: num
 
 export interface Alloc { floor: number; wh: number; laun: number; kid: number }
 
+/** tonight's deal with the banker (evening only) */
+export type BankDeal = 'limit' | 'fee';
+
 export type StampKind = 'signed' | 'declined' | 'decided' | 'dark';
 
 export interface GameState {
@@ -178,6 +181,8 @@ export interface GameState {
   owed: Partial<Record<AccKey, number>>;
   pay: Partial<Record<AccKey, boolean>>;
   alloc: Alloc;
+  /** banker bribed tonight (cleared when the safe is locked) */
+  bank?: BankDeal | null;
   lastAlloc: Alloc | null;
   last: Delta;
   headline: string;
