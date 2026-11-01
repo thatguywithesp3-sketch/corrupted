@@ -6,6 +6,8 @@ import { DcView, type DcNode } from './dc/DcView';
 import { buildView, freshUi, type UiState } from './view/buildView';
 import { MainMenu } from './MainMenu';
 import { Onboarding } from './Onboarding';
+import { injectTextures } from './textures';
+injectTextures();
 import v1 from '../data/views/era1.json';
 import v2 from '../data/views/era2.json';
 import v3 from '../data/views/era3.json';
@@ -68,7 +70,7 @@ export function Game() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      <div style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
+      <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
         {mode === 'menu' ? (
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
