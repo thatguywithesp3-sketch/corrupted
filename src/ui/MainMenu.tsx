@@ -20,7 +20,7 @@ const S = {
   title: { position: 'absolute', left: 116, top: 279, width: 160, height: 184, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, textAlign: 'center', background: 'radial-gradient(ellipse at 50% 40%, rgba(70,14,10,0.55), rgba(20,4,3,0.75))', boxShadow: 'inset 0 0 24px rgba(0,0,0,0.8)' },
   frameBg: { position: 'absolute', left: 116, top: 280, width: 162, height: 186, background: 'radial-gradient(ellipse at 50% 45%, #2A1410, #0E0705 75%)', boxShadow: 'inset 0 0 26px rgba(0,0,0,0.9)' },
   seal: { position: 'absolute', left: 112, top: 290, width: 170, filter: 'drop-shadow(0 8px 10px rgba(0,0,0,0.7))', pointerEvents: 'none' },
-  wordmark: { position: 'absolute', left: 0, right: 0, top: 506, textAlign: 'center', fontFamily: "'Abril Fatface', 'Old Standard TT', serif", fontSize: 40, letterSpacing: 2, color: '#E8C978', textShadow: '0 2px 0 #3A2408, 0 0 22px rgba(232,201,120,0.25)' },
+  wordmark: { position: 'absolute', left: 30, top: 508, width: 330, filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.9)) drop-shadow(0 4px 14px rgba(0,0,0,0.95)) drop-shadow(0 0 30px rgba(0,0,0,0.8))', pointerEvents: 'none' },
   word: { fontFamily: "'Ruslan Display', 'Old Standard TT', serif", fontSize: 29, lineHeight: 1, color: '#E8C978', textShadow: '0 2px 0 #3A2408, 0 0 18px rgba(232,201,120,0.25)', letterSpacing: 0.5 },
   sub: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#D9B870' },
   dates: { fontSize: 12, fontStyle: 'italic', color: '#BFAE86' },
@@ -52,7 +52,7 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
       <div style={S.shade} />
       <div style={S.frameBg} />
       <img src="art/brand/seal.png" alt="" style={S.seal} />
-      <div style={S.wordmark}>CORRUPTED!</div>
+      <img src="art/brand/wordmark.png" alt="Corrupted!" style={S.wordmark} />
 
       {panel === 'none' && (
         <div style={S.menu}>

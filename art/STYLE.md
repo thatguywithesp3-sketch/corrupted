@@ -27,6 +27,14 @@
 | Адаптивна іконка Android (передній план, печатка в безпечній зоні 66%) | `store/android/ic_launcher_foreground.png` |
 | Адаптивна іконка Android (фон) | `store/android/ic_launcher_background.png` |
 
+Лого-напис:
+
+| Призначення | Файл |
+|---|---|
+| Горизонтальний (печатка + напис), для ПК, банерів, магазинів | `art/brand/lockup-horizontal.png`, вирізаний: `lockup-horizontal-cutout.png` |
+| Вертикальний | `art/brand/lockup-vertical.png` |
+| Тільки напис «CORRUPTED!» (у меню під рамою) | `art/brand/wordmark-cutout.png` |
+
 Штампи з `art/logo/` лишаються як допоміжна графіка епох (штампи на документах, екрани кінця).
 
 ## Ідея
