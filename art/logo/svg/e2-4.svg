@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f15" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="23" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="32" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f15)">
+     <rect x="24" y="70" width="452" height="200" fill="#111"/>
+     <polygon points="24,70 160,70 24,200" fill="#C4161C"/><polygon points="476,270 340,270 476,140" fill="#C4161C"/>
+     <text x="250" y="206" font-family="Rubik Mono One" font-size="62" fill="#F2E6CF" text-anchor="middle" textLength="410" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <text x="250" y="116" font-family="Russo One" font-size="20" fill="#F2E6CF" text-anchor="middle" letter-spacing="10">ГЕТЬ ЧЕСНІСТЬ!</text></g></svg>

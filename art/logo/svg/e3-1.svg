@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f16" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="29" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="38" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.4" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter><path id="p17" d="M 250 52 A 118 118 0 1 1 249.9 52" fill="none"/></defs><g filter="url(#f16)" transform="rotate(-12 250 170)" fill="#4B3A9E">
+     <circle cx="250" cy="170" r="146" fill="none" stroke="#4B3A9E" stroke-width="4"/><circle cx="250" cy="170" r="140" fill="none" stroke="#4B3A9E" stroke-width="1.5"/><circle cx="250" cy="170" r="98" fill="none" stroke="#4B3A9E" stroke-width="2"/>
+     <text font-family="Oswald" font-weight="700" font-size="20" textLength="712" lengthAdjust="spacing"><textPath href="#p17">МІНІСТЕРСТВО ДЕРЖАВНОГО ПЛАНУ ВАЛЬДОРІЇ • ДЛЯ ДОКУМЕНТІВ •</textPath></text>
+     <text x="250" y="152" font-family="PT Mono" font-size="17" fill="#4B3A9E" text-anchor="middle" >ВИСНОВОК:</text>
+     <text x="250" y="194" font-family="Oswald" font-size="40" fill="#4B3A9E" text-anchor="middle" font-weight="700" textLength="176" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <line x1="176" y1="210" x2="324" y2="210" stroke="#4B3A9E" stroke-width="2"/><text x="250" y="230" font-family="PT Mono" font-size="14" fill="#4B3A9E" text-anchor="middle" >«___» ________ 1949</text></g></svg>

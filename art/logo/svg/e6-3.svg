@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f32" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="79" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="1.2" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="88" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.8" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f32)" transform="rotate(-6 250 170)">
+     <rect x="60" y="96" width="380" height="148" fill="none" stroke="#E0245E" stroke-width="3"/>
+     <text x="250" y="210" font-family="Bebas Neue" font-size="96" fill="#E0245E" text-anchor="middle" textLength="340" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <text x="250" y="128" font-family="Montserrat" font-size="13" fill="#E0245E" text-anchor="middle" font-weight="700" letter-spacing="2">ЛАЙКІВ: 12 400 · ПОШИРЕНЬ: 3 100</text></g></svg>

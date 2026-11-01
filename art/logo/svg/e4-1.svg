@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f23" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="47" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="1.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="56" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.2" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter><filter id="f24" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="49" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="3" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="58" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.1" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><rect x="30" y="40" width="440" height="260" fill="#F1EEE4"/>
+     <g filter="url(#f23)" font-family="PT Mono" fill="#1A1A1A"><text x="44" y="62" font-size="13">31-12-1993 23:58  FROM: +380 44 000 00 00   P.01</text>
+     <line x1="44" y1="70" x2="456" y2="70" stroke="#1A1A1A" stroke-width="1"/><rect x="44" y="82" width="380" height="7" fill="#1A1A1A" opacity=".35"/><rect x="44" y="112" width="343" height="7" fill="#1A1A1A" opacity=".35"/><rect x="44" y="142" width="306" height="7" fill="#1A1A1A" opacity=".35"/><rect x="44" y="172" width="269" height="7" fill="#1A1A1A" opacity=".35"/><rect x="44" y="202" width="372" height="7" fill="#1A1A1A" opacity=".35"/><rect x="44" y="232" width="335" height="7" fill="#1A1A1A" opacity=".35"/></g>
+     <g filter="url(#f24)" transform="rotate(-11 250 190)"><rect x="70" y="140" width="360" height="104" fill="none" stroke="#1A1A1A" stroke-width="6"/>
+     <text x="250" y="216" font-family="Black Ops One" font-size="70" fill="#1A1A1A" text-anchor="middle" textLength="330" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text></g></svg>

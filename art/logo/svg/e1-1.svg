@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f1" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="12" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 4" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter><radialGradient id="g2" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#D2453A"/><stop offset=".55" stop-color="#9E1C16"/><stop offset="1" stop-color="#5C0C08"/></radialGradient>
+     <path id="p3" d="M 148 172 A 102 102 0 0 1 352 172" fill="none"/><path id="p4" d="M 136 172 A 114 114 0 0 0 364 172" fill="none"/></defs><g filter="url(#f1)"><path d="M250 24 C306 20 344 50 368 78 C404 88 418 130 414 164 C434 200 412 246 380 266 C366 304 320 322 280 316 C244 336 198 328 168 308 C126 310 92 276 86 240 C60 210 66 164 84 134 C82 92 118 60 158 52 C182 30 218 20 250 24 Z" fill="url(#g2)"/></g>
+     <circle cx="250" cy="172" r="128" fill="none" stroke="#5C0C08" stroke-width="5" opacity=".6"/>
+     <circle cx="250" cy="172" r="84" fill="#C23A2E" stroke="#5C0C08" stroke-width="3"/>
+     <circle cx="250" cy="172" r="84" fill="none" stroke="#F0A090" stroke-width="1.2" opacity=".35" transform="translate(-1.2 -1.2)"/>
+     <text font-family="IM Fell English SC" font-size="20" fill="#F2B0A0" fill-opacity=".75" letter-spacing="7"><textPath href="#p3" startOffset="50%" text-anchor="middle">VALDORIA · 1874</textPath></text>
+     <text font-family="IM Fell English SC" font-size="17" fill="#F2B0A0" fill-opacity=".75" letter-spacing="4"><textPath href="#p4" startOffset="50%" text-anchor="middle">SIGILLUM · CORRUPTIONIS</textPath></text>
+     <text x="250" y="168" font-family="Abril Fatface" font-size="34" fill="#4A0906" text-anchor="middle" textLength="150" lengthAdjust="spacingAndGlyphs">CORRUPTED</text>
+     <text x="250" y="214" font-family="Abril Fatface" font-size="44" fill="#4A0906" text-anchor="middle" >!</text></svg>

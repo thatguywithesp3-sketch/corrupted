@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f9" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="13" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="3" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="22" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.2" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f9)">
+     <polygon points="30,250 470,90 470,150 30,310" fill="#C4161C"/>
+     <polygon points="30,60 300,60 270,110 30,110" fill="#111"/>
+     <text x="165" y="96" font-family="Russo One" font-size="30" fill="#F2E6CF" text-anchor="middle" letter-spacing="8">ВИРОК</text>
+     <text x="252" y="222" font-family="Stalinist One" font-size="40" fill="#F2E6CF" text-anchor="middle" transform="rotate(-20 250 200)" textLength="400" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text></g></svg>

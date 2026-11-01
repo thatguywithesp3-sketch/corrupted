@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f28" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="67" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="1.2" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="76" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.9" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f28)"><polygon points="466.0,170.0 408.9,192.2 449.6,228.2 384.7,233.3 402.7,277.5 340.0,264.8 332.7,310.4 281.6,281.8 250.0,322.0 218.4,281.8 167.3,310.4 160.0,264.8 97.3,277.5 115.3,233.3 50.4,228.2 91.1,192.2 34.0,170.0 91.1,147.8 50.4,111.8 115.3,106.7 97.3,62.5 160.0,75.2 167.3,29.6 218.4,58.2 250.0,18.0 281.6,58.2 332.7,29.6 340.0,75.2 402.7,62.5 384.7,106.7 449.6,111.8 408.9,147.8 " fill="#FFE200" stroke="#D0021B" stroke-width="6"/>
+     <text x="250" y="130" font-family="Bowlby One SC" font-size="24" fill="#D0021B" text-anchor="middle" transform="rotate(-6 250 170)">ЕКСКЛЮЗИВ!</text>
+     <text x="250" y="200" font-family="Bowlby One SC" font-size="58" fill="#111" text-anchor="middle" transform="rotate(-6 250 170)" textLength="350" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <text x="250" y="236" font-family="Archivo Black" font-size="18" fill="#D0021B" text-anchor="middle" transform="rotate(-6 250 170)">ФОТО НА СТОР. 3</text></g></svg>

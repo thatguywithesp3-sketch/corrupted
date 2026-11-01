@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs></defs><polygon points="396.0,170.0 373.6,203.1 376.4,243.0 340.5,260.5 323.0,296.4 283.1,293.6 250.0,316.0 216.9,293.6 177.0,296.4 159.5,260.5 123.6,243.0 126.4,203.1 104.0,170.0 126.4,136.9 123.6,97.0 159.5,79.5 177.0,43.6 216.9,46.4 250.0,24.0 283.1,46.4 323.0,43.6 340.5,79.5 376.4,97.0 373.6,136.9" fill="#E0245E"/>
+     <circle cx="250" cy="170" r="108" fill="none" stroke="#FFF" stroke-width="3" stroke-dasharray="2 6"/>
+     <path d="M196 116 l20 20 l40 -40" fill="none" stroke="#FFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" transform="translate(30 0)"/>
+     <text x="250" y="210" font-family="Montserrat" font-size="40" fill="#FFF" text-anchor="middle" font-weight="900" textLength="200" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <text x="250" y="238" font-family="Montserrat" font-size="13" fill="#FFF" text-anchor="middle" font-weight="700" letter-spacing="2">ПІДТВЕРДЖЕНИЙ АКАУНТ</text></svg>

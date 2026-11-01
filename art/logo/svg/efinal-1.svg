@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f33" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="101" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="110" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.3" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f33)" transform="rotate(-8 250 170)">
+     <rect x="28" y="84" width="444" height="172" rx="8" fill="none" stroke="#C0201A" stroke-width="8"/>
+     <rect x="42" y="98" width="416" height="144" rx="4" fill="none" stroke="#C0201A" stroke-width="2.5"/>
+     <text x="250" y="126" font-family="Oswald" font-size="15" fill="#C0201A" text-anchor="middle" font-weight="700" letter-spacing="4">СПРАВА РОДУ ГРАБСІВ · 1874 — 2024</text>
+     <text x="250" y="214" font-family="Alfa Slab One" font-size="84" fill="#C0201A" text-anchor="middle" textLength="396" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <text x="250" y="238" font-family="Oswald" font-size="13" fill="#C0201A" text-anchor="middle" font-weight="700" letter-spacing="3">ПІДСТАВИ ДЛЯ ЗАКРИТТЯ СПРАВИ — ВІДСУТНІ</text></g></svg>

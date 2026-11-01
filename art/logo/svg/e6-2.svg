@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs></defs><g transform="rotate(-5 250 170)"><rect x="44" y="104" width="412" height="132" rx="66" fill="#FFF" stroke="#111" stroke-width="4"/>
+     <rect x="58" y="118" width="384" height="104" rx="52" fill="#00A8A8"/>
+     <text x="250" y="194" font-family="Montserrat" font-size="60" fill="#FFF" text-anchor="middle" font-weight="900" textLength="340" lengthAdjust="spacingAndGlyphs">#CORRUPTED</text></g>
+     <circle cx="430" cy="110" r="26" fill="#E0245E" stroke="#FFF" stroke-width="4"/><text x="430" y="119" font-family="Montserrat" font-size="24" fill="#FFF" text-anchor="middle" font-weight="900">!</text></svg>

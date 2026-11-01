@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f31" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="71" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="80" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.4" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f31)" transform="rotate(-8 250 170)">
+     <rect x="44" y="92" width="412" height="156" rx="16" fill="none" stroke="#D0021B" stroke-width="9"/>
+     <text x="250" y="206" font-family="Archivo Black" font-size="78" fill="#D0021B" text-anchor="middle" textLength="370" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text>
+     <text x="250" y="236" font-family="Archivo Black" font-size="16" fill="#D0021B" text-anchor="middle" letter-spacing="6">ВИДАНО ДЛЯ ЕФІРУ</text></g></svg>

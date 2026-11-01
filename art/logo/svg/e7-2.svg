@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs></defs><rect x="30" y="70" width="440" height="200" rx="10" fill="#0B0F14"/><circle cx="54" cy="92" r="6" fill="#FF5F56"/><circle cx="74" cy="92" r="6" fill="#FFBD2E"/><circle cx="94" cy="92" r="6" fill="#27C93F"/>
+     <text x="52" y="136" font-family="Space Mono" font-size="16" fill="#7CFC9A">$ audit --family grabs</text>
+     <text x="52" y="160" font-family="Space Mono" font-size="16" fill="#7CFC9A">&gt; 150 years scanned...</text>
+     <text x="250" y="222" font-family="Space Mono" font-size="54" fill="#FF1744" text-anchor="middle" font-weight="700" textLength="390" lengthAdjust="spacingAndGlyphs">[CORRUPTED!]</text>
+     <rect x="52" y="240" width="14" height="20" fill="#7CFC9A"/></svg>

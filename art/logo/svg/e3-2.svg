@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f18" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="31" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="40" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.3" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter></defs><g filter="url(#f18)" transform="rotate(5 250 170)">
+     <rect x="50" y="100" width="400" height="140" fill="none" stroke="#B01E22" stroke-width="5"/>
+     <text x="250" y="134" font-family="PT Mono" font-size="18" fill="#B01E22" text-anchor="middle" letter-spacing="2">ЦІЛКОМ ТАЄМНО · ЕКЗ. ЄДИНИЙ</text>
+     <line x1="70" y1="146" x2="430" y2="146" stroke="#B01E22" stroke-width="2"/>
+     <text x="250" y="222" font-family="Oswald" font-size="76" fill="#B01E22" text-anchor="middle" font-weight="700" textLength="360" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text></g></svg>

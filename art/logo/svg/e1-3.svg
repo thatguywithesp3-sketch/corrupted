@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f6" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="8" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="4" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="17" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.6" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter><radialGradient id="g7" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#2A1206"/><stop offset=".7" stop-color="#4A2410"/><stop offset="1" stop-color="#7A4A22" stop-opacity="0"/></radialGradient></defs><ellipse cx="250" cy="170" rx="236" ry="130" fill="url(#g7)" opacity=".55"/>
+     <g filter="url(#f6)" fill="#1E0C04"><ellipse cx="250" cy="170" rx="205" ry="104" fill="none" stroke="#1E0C04" stroke-width="10"/>
+     <text x="250" y="194" font-family="Rye" font-size="66" fill="#1E0C04" text-anchor="middle" textLength="330" lengthAdjust="spacingAndGlyphs">CORRUPTED</text>
+     <path d="M250 96 l10 18 h-20 z M250 244 l10 -18 h-20 z" />
+     <text x="422" y="194" font-family="Rye" font-size="66" fill="#1E0C04" text-anchor="middle" >!</text></g></svg>

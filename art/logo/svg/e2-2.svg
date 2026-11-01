@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340"><defs><filter id="f10" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="17" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="3" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="26" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3.2 0 0 0 2.3" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter><path id="p11" d="M 142 170 A 108 108 0 0 1 358 170" fill="none"/><path id="p12" d="M 138 170 A 112 112 0 0 0 362 170" fill="none"/></defs><g filter="url(#f10)" transform="rotate(10 250 170)">
+     <circle cx="250" cy="170" r="140" fill="none" stroke="#C4161C" stroke-width="6"/><circle cx="250" cy="170" r="94" fill="none" stroke="#C4161C" stroke-width="3"/>
+     <text font-family="Russo One" font-size="22" fill="#C4161C" letter-spacing="4"><textPath href="#p11" startOffset="50%" text-anchor="middle">РЕВКОМ ВАЛЬДОРІЇ</textPath></text>
+     <text font-family="Russo One" font-size="16" fill="#C4161C" letter-spacing="3"><textPath href="#p12" startOffset="50%" text-anchor="middle">НАДЗВИЧАЙНА КОМІСІЯ · 1918</textPath></text>
+     <rect x="150" y="142" width="200" height="56" fill="#C4161C"/>
+     <text x="250" y="184" font-family="Russo One" font-size="38" fill="#F2E6CF" text-anchor="middle" textLength="184" lengthAdjust="spacingAndGlyphs">CORRUPTED!</text></g></svg>
