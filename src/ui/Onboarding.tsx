@@ -22,8 +22,20 @@ const BLANKS: Blank[] = [
 
 const box = (on: boolean): CSSProperties => ({
   display: 'flex', alignItems: 'center', gap: 10, width: '100%', boxSizing: 'border-box', padding: '10px 12px', textAlign: 'left', cursor: 'pointer',
-  background: on ? 'rgba(176,141,60,0.18)' : 'transparent', border: on ? `2px solid ${RED}` : '1px solid #8C7E58', color: INK, fontFamily: 'inherit'
+  // opaque card so the cast shadow never doubles the text; the chosen card is lit by the lamp
+  background: on ? 'radial-gradient(ellipse 90% 120% at 35% 30%, #FFF8DE 0%, #FBE9B4 60%, #F1D894 100%)' : CARD,
+  boxShadow: on ? 'inset 0 0 0 1px rgba(255,255,255,0.7), inset 0 0 16px rgba(255,190,80,0.45), 0 0 12px rgba(255,190,90,0.45)' : 'inset 0 0 0 1px rgba(255,255,255,0.35)',
+  border: on ? `2px solid ${RED}` : '1px solid #8C7E58', color: INK, fontFamily: 'inherit', textShadow: 'none'
 });
+const CARD = '#F6EEDA';
+/** effect line "Система +10 · Покровитель +5" → separate inked tags */
+const Tags = ({ text }: { text: string }) => (
+  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+    {text.split(' · ').map((t, i) => (
+      <span key={i} style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2, color: '#F6EEDA', background: BLUE, padding: '2px 7px', borderRadius: 2, boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.3)' }}>{t}</span>
+    ))}
+  </span>
+);
 const Mark = ({ on }: { on: boolean }) => (
   <span style={{ width: 20, height: 20, flexShrink: 0, border: `2px solid ${INK}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: HAND, fontSize: 24, lineHeight: 1, color: RED }}>{on ? 'x' : ''}</span>
 );
@@ -115,8 +127,8 @@ export function Onboarding({ s, run }: Props) {
             <Mark on={s.origin === i} />
             <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <b style={{ fontSize: 16 }}>{s.gender === 'f' ? o.tf : o.t}</b>
-              <i style={{ fontSize: 12, color: MUTE }}>{o.d}</i>
-              <span style={{ fontSize: 12, fontWeight: 700, color: BLUE }}>{o.fx}</span>
+              <i style={{ fontSize: 13.5, color: '#3A2A18', lineHeight: 1.25 }}>{o.d}</i>
+              <Tags text={o.fx} />
             </span>
           </button>
         ))}
@@ -131,7 +143,7 @@ export function Onboarding({ s, run }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {C.dreams.map((d, i) => (
           <button key={i} className="b3d" onClick={() => run((x) => G.setHero(x, { dream: i }))}
-            style={{ ...box(s.dream === i), flexDirection: 'column', alignItems: 'flex-start', gap: 3, minHeight: 74, background: s.dream === i ? INK : 'transparent', color: s.dream === i ? '#F3E9D2' : INK, border: s.dream === i ? `2px solid ${INK}` : '1px solid #8C7E58' }}>
+            style={{ ...box(s.dream === i), flexDirection: 'column', alignItems: 'flex-start', gap: 3, minHeight: 74, background: s.dream === i ? INK : CARD, color: s.dream === i ? '#F3E9D2' : INK, border: s.dream === i ? `2px solid ${INK}` : '1px solid #8C7E58' }}>
             <b style={{ fontSize: 14, lineHeight: 1.15 }}>{d.t}</b>
             <span style={{ fontSize: 11, color: s.dream === i ? '#D9B870' : MUTE }}>{d.g}</span>
           </button>
