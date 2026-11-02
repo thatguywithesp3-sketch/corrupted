@@ -303,38 +303,35 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
         <span aria-hidden="true" style={{ position: 'absolute', left: 26, top: 0, bottom: 0, width: 1.5, background: 'rgba(190,60,50,0.55)' }} />
         {[18, 110, 202, 294].map((y) => <span key={y} aria-hidden="true" style={{ position: 'absolute', left: 7, top: y, width: 12, height: 12, borderRadius: '50%', background: '#2A1D12', boxShadow: 'inset 0 2px 3px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.4)' }} />)}
 
+        {children}
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          {/* the portrait is pinned in photo corners; a stand-in until it is painted */}
-          <span style={{ position: 'relative', width: 86, height: 108, flexShrink: 0, background: `radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: `2px solid ${INK}`, boxShadow: '2px 4px 8px rgba(0,0,0,0.5)', transform: 'rotate(-2.5deg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Ruslan Display', serif", fontSize: 52, color: 'rgba(246,238,218,0.9)' }}>
-            {surname(rv.name)[0]}
-            {[{ top: -3, left: -3, r: 0 }, { top: -3, right: -3, r: 90 }, { bottom: -3, right: -3, r: 180 }, { bottom: -3, left: -3, r: 270 }].map((s, i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', ...s, width: 14, height: 14, background: '#F1E6C8', border: `1px solid ${INK}`, clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: `rotate(${s.r}deg)` } as CSSProperties} />)}
+          {/* the portrait, pinned in photo corners */}
+          <span style={{ position: 'relative', width: 100, height: 132, flexShrink: 0, background: `url(art/rivals/${rv.id}.jpg) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: `2px solid ${INK}`, boxShadow: '2px 5px 10px rgba(0,0,0,0.5)', transform: 'rotate(-2.5deg)' }}>
+            {[{ top: -3, left: -3, r: 0 }, { top: -3, right: -3, r: 90 }, { bottom: -3, right: -3, r: 180 }, { bottom: -3, left: -3, r: 270 }].map((s, i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', ...s, width: 15, height: 15, background: '#F1E6C8', border: `1px solid ${INK}`, clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: `rotate(${s.r}deg)` } as CSSProperties} />)}
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.6, color: MUTE }}>{rv.ally ? 'РОДИЧ · СОЮЗНИК' : 'СУПЕРНИК'}</span>
-            <span style={{ display: 'block', fontFamily: HAND, fontSize: 31, lineHeight: 1.02 }}>{rv.name}</span>
-            <span style={{ display: 'block', fontSize: 13, fontStyle: 'italic', marginTop: 2 }}>{rv.title}</span>
-            <span style={{ display: 'block', fontSize: 12.5, color: MUTE, marginTop: 3 }}>{f.age} р. · {f.from}</span>
+            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.6, color: rv.ally ? T.clean.ink : RED, fontWeight: 700 }}>{rv.ally ? 'РОДИЧ · СОЮЗНИК' : 'СУПЕРНИК'}</span>
+            <span style={{ display: 'block', fontFamily: HAND, fontSize: 30, lineHeight: 1.02 }}>{rv.name}</span>
+            <span style={{ display: 'block', fontSize: 13.5, fontStyle: 'italic', marginTop: 2 }}>{rv.title}</span>
+            <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+              <span style={{ padding: '2px 8px', fontSize: 14, fontWeight: 700, background: '#FFF8E0', border: `1.5px solid ${INK}` }}>{f.age} років</span>
+              <span style={{ padding: '2px 8px', fontSize: 13, fontWeight: 700, background: '#FFF8E0', border: `1.5px solid ${INK}`, lineHeight: 1.25 }}>{f.from[0].toUpperCase() + f.from.slice(1)}</span>
+            </span>
           </span>
         </div>
 
-        <Seg title="ПРО НЬОГО">
-          <div style={{ fontFamily: HAND, fontSize: 19, lineHeight: '28px' }}>{f.bio}</div>
-          <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.3 }}><b>Любить:</b> {f.likes}.</div>
-          <div style={{ marginTop: 4, fontSize: 13.5, lineHeight: 1.3, padding: '4px 8px', background: T.dirty.note, borderLeft: `4px solid ${T.dirty.pen}` }}><b>Слабке місце:</b> {f.weak}.</div>
-          <div style={{ marginTop: 6, fontFamily: HAND, fontSize: 18, color: T.risk.ink }}>{f.quote}</div>
-        </Seg>
-
         <Seg title="СТАН СПРАВ">
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 7 }}>
             <Fact label="ВПЛИВ"><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{Math.round(rv.power)}<span style={{ fontSize: 14 }}>/100</span></span></Fact>
-            {rv.ally ? <Fact label="СТАВЛЕННЯ" tone={T.clean}><span style={{ fontSize: 14.5, fontWeight: 700, display: 'block', lineHeight: 1.2 }}>Союзник: щороку знижує ваш ризик</span></Fact> : <Meter label="ПОЛЮЄ" n={lamps} tone={T.risk} icon="eye" />}
+            {rv.ally ? <Fact label="СТАВЛЕННЯ" tone={T.clean}><span style={{ fontSize: 14, fontWeight: 700, display: 'block', lineHeight: 1.2 }}>Союзник</span></Fact> : <Meter label="ПОЛЮЄ" n={lamps} tone={T.risk} icon="eye" />}
+            <Fact label="ЗАКЛАДІВ"><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{held.length}</span></Fact>
           </div>
           <div style={{ marginTop: 6, fontSize: 13, color: MUTE }}>{STYLE_N[rv.style]}.</div>
-          {rv.last && <div style={{ marginTop: 4, fontFamily: HAND, fontSize: 18 }}>Вночі: {rv.last}</div>}
+          {rv.last && <div style={{ marginTop: 3, fontFamily: HAND, fontSize: 19 }}>Вночі: {rv.last}</div>}
         </Seg>
 
-        <Seg title={`ЗАКЛАДИ ПІД ЙОГО РУКОЮ: ${held.length}`}>
-          {held.length === 0 ? <i style={{ fontSize: 13.5, color: MUTE }}>Поки нічого. Він ще придивляється.</i> : (
+        <Seg title={`ЗАКЛАДИ ПІД ${rv.f ? 'ЇЇ' : 'ЙОГО'} РУКОЮ: ${held.length}`}>
+          {held.length === 0 ? <i style={{ fontSize: 13.5, color: MUTE }}>Поки нічого. {rv.f ? 'Вона' : 'Він'} ще придивляється.</i> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {held.map((b) => (
                 <span key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '4px 8px 4px 5px', border: `1.5px solid ${rv.color}`, background: 'rgba(255,255,255,0.5)' }}>
@@ -347,9 +344,30 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
           )}
         </Seg>
 
-        <Seg title="ЩО МОЖНА ЗРОБИТИ · 1 ХІД НА РАНОК"><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{children}</div></Seg>
+        <Seg title={rv.f ? 'ПРО НЕЇ' : 'ПРО НЬОГО'}>
+          <div style={{ fontFamily: HAND, fontSize: 19, lineHeight: '28px' }}>{f.bio}</div>
+          <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.3 }}><b>Любить:</b> {f.likes}.</div>
+          <div style={{ marginTop: 4, fontSize: 13.5, lineHeight: 1.3, padding: '4px 8px', background: T.dirty.note, borderLeft: `4px solid ${T.dirty.pen}` }}><b>Слабке місце:</b> {f.weak}.</div>
+          <div style={{ marginTop: 6, fontFamily: HAND, fontSize: 18, color: T.risk.ink }}>{f.quote}</div>
+        </Seg>
       </div>
     </div>
+  );
+}
+
+/** one move against a magnate, as a compact tool in the fixed strip under the notebook */
+function ToolChip({ o, on, locked, onPick }: { o: ActOption; on: boolean; locked: boolean; onPick: () => void }) {
+  const can = o.can && !locked, tone = oddsTone(o.odds);
+  const edge = o.act === 'expose' ? T.risk.pen : o.act === 'marry' ? T.clean.pen : T.hide.pen;
+  return (
+    <button onClick={() => can && onPick()} disabled={!can} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '6px 7px 6px 9px', textAlign: 'left', cursor: can ? 'pointer' : 'default', opacity: can ? 1 : 0.55, fontFamily: SERIF, color: INK,
+      background: on ? '#FFF8E0' : 'rgba(246,238,218,0.93)', border: `1.5px solid ${on ? INK : 'rgba(31,26,20,0.35)'}`, borderTop: `5px solid ${edge}`, boxShadow: on ? '0 0 0 2px #B8913C, 0 5px 10px rgba(0,0,0,0.5)' : '0 3px 6px rgba(0,0,0,0.4)', transform: on ? 'translateY(-3px)' : 'none', transition: 'transform .15s' }}>
+      <b style={{ fontSize: 13, lineHeight: 1.1 }}>{o.t}</b>
+      {can ? <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ fontFamily: HAND, fontSize: 17, lineHeight: 1.05, padding: '0 5px', background: tone.note, color: tone.ink, border: `1px solid ${tone.pen}` }}>{Math.round(o.odds * 100)}%</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11.5, fontWeight: 700, color: T.risk.ink }}><Ic k="threat" size={12} color={T.risk.ink} />+{o.risk}</span>
+      </span> : <span style={{ fontSize: 10.5, color: MUTE, lineHeight: 1.15 }}>{o.why}</span>}
+    </button>
   );
 }
 
@@ -475,8 +493,19 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         <div style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '93%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
           <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 2px 4px' }}>
             {panel === 'riv' ? null : tabs}
-            {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR}>{actions}</PowerSheet> : <>{card}{actions}</>}
+            {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR}>{lead ? <div style={{ marginBottom: 10 }}><Result res={c.last!} /></div> : null}</PowerSheet> : <>{card}{actions}</>}
           </div>
+          {rivMode && !lead && rv && (
+            <div style={{ flexShrink: 0, paddingTop: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, letterSpacing: 1.6, fontWeight: 700, color: '#D9C79B', marginBottom: 6 }}>ЩО ЗРОБИТИ З {rv.name.toUpperCase().replace('ГРАФ ҐЖЕҐОЖЕВСЬКИЙ', 'ГРАФОМ').replace('ПАН ВАЙСМАН', 'ВАЙСМАНОМ').replace('ПАНІ БЕРГ', 'БЕРГ')} · 1 ХІД<span style={{ flex: 1, height: 1, background: 'rgba(217,199,155,0.35)' }} /></div>
+              {rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Дім скріплено шлюбом. {rv.f ? 'Вона' : 'Він'} більше не полює на вас.</div> : <>
+                <div style={{ display: 'flex', gap: 6 }}>{acts.map((o) => <ToolChip key={o.act} o={o} on={cur?.act === o.act} locked={c.acted} onPick={() => setPick(o.act)} />)}</div>
+                {cur && !c.acted && <div style={{ marginTop: 7, padding: '5px 9px', fontSize: 12, lineHeight: 1.3, color: '#E9E1C2', background: 'rgba(0,0,0,0.3)', borderLeft: '3px solid #B8913C' }}>
+                  <b style={{ color: cur.gainT ? '#9FD7B0' : '#F0D78C' }}>{cur.gainT || `до ${G.fmt(cur.gain)} кр.`}</b>{cur.cost ? <b style={{ color: '#F4A08C' }}> · платите {G.fmt(cur.cost)} кр.</b> : null} — {cur.sub}
+                </div>}
+              </>}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 10, flexShrink: 0, paddingTop: 8 }}>
             <DeskBtn style={{ flex: 1 }} onClick={() => setPanel(null)}>До карти</DeskBtn>
             {!c.acted && <DeskBtn kind="brass" style={{ flex: 2, flexDirection: 'column', gap: 0, lineHeight: 1.1 }} disabled={!cur} onClick={stamp}>

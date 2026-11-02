@@ -438,7 +438,7 @@ export function rivalActs(s: GameState, r: Rival): RivalOption[] {
   if (r.ally) return [];
   return [
     { act: 'bribe', t: 'Підкупити', sub: `Подарунок ${r.name}: гроші, що виглядають як шана. Злість спадає: з вами, виявляється, можна домовитись.`, can: s.cash >= bribe && r.heat >= 0.5, why: s.cash < bribe ? `Бракує брудних: потрібно ${fmt(bribe)} кр.` : 'Не сердиться і так', risk: 0, odds: 0.85, gain: 0, gainT: `злість −${K.bribeDrop}`, cost: bribe },
-    { act: 'expose', t: 'Здати його', sub: `Анонімно «повідомити» куди слід про ${r.name}. Якщо вдасться, вплив і два заклади під його рукою похитнуться. Якщо ні — дізнаються, хто писав.`, can: true, risk: 2, odds: exposeOdds(s, r), gain: 0, gainT: `вплив −${K.exposeDamage}` },
+    { act: 'expose', t: sx(r, 'Здати його', 'Здати її'), sub: `Анонімно «повідомити» куди слід про ${r.name}. Якщо вдасться, вплив і два заклади під ${sx(r, 'його', 'її')} рукою похитнуться. Якщо ні — дізнаються, хто писав.`, can: true, risk: 2, odds: exposeOdds(s, r), gain: 0, gainT: `вплив −${K.exposeDamage}` },
     { act: 'marry', t: 'Віддати дитину заміж', sub: `${kid ? `${kid.first} (${kid.age} р.)` : 'Дитина'} вийде за родича ${r.name}. Дім стане союзником назавжди, але ви втратите дитину в родині.`, can: !!kid && r.heat <= K.marryHeat && s.cash >= dowry, why: !kid ? 'Немає дитини від 16 років' : r.heat > K.marryHeat ? `${r.name} надто злий: спершу вгамуйте` : `Придане ${fmt(dowry)} кр. — бракує брудних`, risk: 0, odds: 1, gain: 0, gainT: 'союзник назавжди', cost: dowry }
   ];
 }
