@@ -119,15 +119,15 @@ export function Onboarding({ s, run }: Props) {
   const C = G.getEra(s.era);
   const last = BLANKS.length - 1;
   const b = BLANKS[step];
-  const canNext = step !== 0 || (s.first.trim() !== '' && s.surname.trim() !== '');
+  const canNext = step !== 1 || (s.first.trim() !== '' && s.surname.trim() !== '');
   const next = () => { if (!canNext) return; if (step === last) run(G.signForm); else setStep(step + 1); };
   const origin = C.origins[s.origin], dream = C.dreams[s.dream];
   const face = G.portraitFor(1, 1, s.gender, s.face);
 
   let body: ReactNode = null;
-  if (step === 0) body = (
+  if (step === 1) body = (
     <>
-      <Label>I. ІМ’Я ТА ПРІЗВИЩЕ ЗАЯВНИКА</Label>
+      <Label>II. ІМ’Я ТА ПРІЗВИЩЕ ЗАЯВНИКА</Label>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {([['first', 'Ім’я'], ['surname', 'Прізвище']] as const).map(([k, l]) => (
@@ -144,9 +144,9 @@ export function Onboarding({ s, run }: Props) {
         effect="Прізвище стане назвою вашої династії на всі сім епох. Імена спадкоємців гра придумає сама." />
     </>
   );
-  if (step === 1) body = (
+  if (step === 0) body = (
     <>
-      <Label>II. ЗАЯВНИК — ЦЕ</Label>
+      <Label>I. ЗАЯВНИК — ЦЕ</Label>
       <div style={{ display: 'flex', gap: 8 }}>
         {([['m', 'Пан'], ['f', 'Пані']] as const).map(([g, t]) => (
           <button key={g} className="b3d" onClick={() => run((x) => G.setHero(x, { gender: g }))} style={{ ...box(s.gender === g), justifyContent: 'center', minHeight: 64, fontSize: 20 }}>
@@ -154,7 +154,7 @@ export function Onboarding({ s, run }: Props) {
           </button>
         ))}
       </div>
-      <Note what="Стать засновника роду."
+      <Note what="Стать засновника роду. На наступному аркуші — ім’я, що пасує заявнику."
         effect="Епоха реагує на неї: газети, колеги й покровителі ставляться до жінки на посаді інакше, особливо на початку. Механіка схем і рішень однакова." />
     </>
   );
