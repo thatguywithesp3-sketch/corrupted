@@ -51,8 +51,6 @@ const scatter = (n: number, seed: number, x0: number, x1: number, y0: number, y1
   return Array.from({ length: n }, () => [x0 + r() * (x1 - x0), y0 + r() * (y1 - y0), r() * 6, 0.6 + r() * 0.9] as const);
 };
 const MOTES = scatter(26, 31, 0, 100, 10, 95), FLOCK = scatter(13, 41, 0, 90, 0, 40).map(([x, y, d, k]) => [x, y, d / 10, k * 1.3] as const);
-/** where the harbour water is, in % of the picture (the same frame for every era) */
-const WATER = ['radial-gradient(ellipse 24% 21% at 82% 44%, #000 55%, transparent 100%)'];
 const GLINTS = scatter(46, 7, 57, 99, 30, 64), STARS = scatter(40, 11, 0, 100, 1, 17), WINDOWS = scatter(34, 23, 2, 80, 30, 92);
 const Glint = ({ x, y, d, k }: { x: number; y: number; d: number; k: number }) => (
   <span aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 10 * k, height: 2.2 * k, marginLeft: -5 * k, borderRadius: 2, background: 'rgba(255,240,200,.95)', boxShadow: '0 0 6px rgba(255,230,170,.9)', mixBlendMode: 'screen', opacity: 0, animation: `pano-glint ${2.4 + k * 1.6}s ease-in-out ${d}s infinite` }} />
@@ -120,13 +118,6 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
         <img src={img(night ? 'evening' : 'morning')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT }} />
         {night && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT, opacity: 0, animation: `pano-night 6s ease-in-out 2.5s forwards` }} />}
 
-        {/* the water moves: the same picture, rippled, only where the harbour is */}
-        {WATER.map((clip, wi) => (
-          <span key={wi} aria-hidden="true" style={{ position: 'absolute', inset: 0, maskImage: clip, WebkitMaskImage: clip }}><span style={{ position: 'absolute', inset: 0, filter: 'url(#pano-ripple)' }}>
-            <img src={img(night ? 'evening' : 'morning')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT }} />
-            {night && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT, opacity: 0, animation: `pano-night 6s ease-in-out 2.5s forwards` }} />}
-          </span></span>
-        ))}
         {/* life over the picture */}
         {!night && <>
           <span aria-hidden="true" style={{ position: 'absolute', left: '91.5%', top: '18%', width: 220, height: 220, marginLeft: -110, marginTop: -110, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,236,190,.95), rgba(255,200,120,.35) 30%, transparent 68%)', mixBlendMode: 'screen', animation: 'pano-sun 5s ease-in-out infinite' }} />
@@ -177,14 +168,6 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
         </div>
       </div>
 
-      <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
-        <filter id="pano-ripple" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.07" numOctaves="2" seed="4" result="t">
-            <animate attributeName="baseFrequency" values="0.004 0.07;0.0048 0.082;0.0042 0.064;0.004 0.07" dur="9s" repeatCount="indefinite" />
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" in2="t" scale="5" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </svg>
       {/* close to the camera: dust in the morning light, bats across the moon, a flock of pigeons */}
       {!night && MOTES.map(([x, y, d, k], i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 4 * k, height: 4 * k, borderRadius: '50%', background: 'rgba(255,236,190,.9)', filter: `blur(${k > 1.2 ? 1.5 : 0.5}px)`, opacity: 0, mixBlendMode: 'screen', animation: `pano-mote ${9 + k * 6}s ease-in-out ${d}s infinite` }} />)}
       {!night && <span aria-hidden="true" style={{ position: 'absolute', top: '-20%', bottom: '-20%', width: 160, left: '-40%', background: 'linear-gradient(90deg, transparent, rgba(255,190,110,.22), rgba(255,230,170,.12), transparent)', transform: 'rotate(18deg)', mixBlendMode: 'screen', animation: 'pano-leak 13s ease-in-out 2s infinite' }} />}
