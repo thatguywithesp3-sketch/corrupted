@@ -15,8 +15,8 @@ import { BLUE, DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF, Tick } from './parts';
 type Run = (f: (x: GameState) => GameState) => void;
 
 // ---------- colour = meaning
-type Tone = 'dirty' | 'clean' | 'out' | 'hide' | 'laun' | 'risk' | 'neu';
-const T: Record<Tone, { ink: string; pen: string; note: string; name: string }> = {
+export type Tone = 'dirty' | 'clean' | 'out' | 'hide' | 'laun' | 'risk' | 'neu';
+export const T: Record<Tone, { ink: string; pen: string; note: string; name: string }> = {
   dirty: { ink: '#6E3E0E', pen: '#C98A3A', note: '#F5DFA6', name: 'брудні' },
   clean: { ink: '#1F5A36', pen: '#5FA374', note: '#D8EBC8', name: 'чисті' },
   out: { ink: '#7E2016', pen: '#D0604A', note: '#F6D2C4', name: 'віддати' },
@@ -39,7 +39,7 @@ const rot = (seed: number) => ((seed * 37) % 7 - 3) * 0.35;
 // ---------- page furniture
 
 /** a number shaded in coloured pencil, written over in ink */
-function Block({ v, tone, size = 19, sign = '', unit = 'кр.', seed = 1, dim }: { v: number | string; tone: Tone; size?: number; sign?: string; unit?: string; seed?: number; dim?: boolean }) {
+export function Block({ v, tone, size = 19, sign = '', unit = 'кр.', seed = 1, dim }: { v: number | string; tone: Tone; size?: number; sign?: string; unit?: string; seed?: number; dim?: boolean }) {
   const t = T[tone];
   return (
     <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3, padding: '2px 8px 1px', borderRadius: 2, whiteSpace: 'nowrap', flexShrink: 0, opacity: dim ? 0.4 : 1,
@@ -51,7 +51,7 @@ function Block({ v, tone, size = 19, sign = '', unit = 'кр.', seed = 1, dim }:
 }
 
 /** a key total on a paper sticker, taped to the page */
-function Sticker({ label, children, tone, sub, seed = 1 }: { label: string; children: ReactNode; tone: Tone; sub?: ReactNode; seed?: number }) {
+export function Sticker({ label, children, tone, sub, seed = 1 }: { label: string; children: ReactNode; tone: Tone; sub?: ReactNode; seed?: number }) {
   const t = T[tone];
   return (
     <div style={{ position: 'relative', flex: 1, minWidth: 0, padding: '9px 8px 6px', background: t.note, transform: `rotate(${rot(seed) * 1.6}deg)`,
@@ -63,10 +63,10 @@ function Sticker({ label, children, tone, sub, seed = 1 }: { label: string; chil
     </div>
   );
 }
-const Stickers = ({ children }: { children: ReactNode }) => <div style={{ display: 'flex', gap: 8, padding: '8px 2px 4px' }}>{children}</div>;
+export const Stickers = ({ children }: { children: ReactNode }) => <div style={{ display: 'flex', gap: 8, padding: '8px 2px 4px' }}>{children}</div>;
 
 /** pencilled section header */
-function Sec({ title, tone = 'neu', right, children }: { title: string; tone?: Tone; right?: ReactNode; children?: ReactNode }) {
+export function Sec({ title, tone = 'neu', right, children }: { title: string; tone?: Tone; right?: ReactNode; children?: ReactNode }) {
   const t = T[tone];
   return (
     <div style={{ marginTop: 8 }}>
