@@ -275,6 +275,110 @@ function Legend({ rivals, onClose }: { rivals: Rival[]; onClose: () => void }) {
   );
 }
 
+/** the rival's strip of the notebook: a sticky note in the margin of the schema */
+const STYLE_N: Record<string, string> = { expander: 'скуповує заклади, перебиває чужі дахи', smear: 'б’є пресою — по народу й по ризику', informer: 'пише доноси губернатору — б’є по покровителю' };
+
+/** «Розклад сил»: the character's own working notes: a hand-drawn schema of who stands where, a table of districts, a dossier per magnate */
+function PowerSheet({ c, selR, onSel, hostile, children }: { c: NonNullable<GameState['city']>; selR: string; onSel: (id: string) => void; hostile: number; children: React.ReactNode }) {
+  const rv = c.rivals.find((r) => r.id === selR) || c.rivals[0];
+  const ctl = G.control(c);
+  const W = 360, H = 236, cx = W / 2, cy = 124, n = c.rivals.length;
+  const pos = c.rivals.map((_, i) => { const a = (-90 + (360 / n) * i + (n === 3 ? 0 : 0)) * Math.PI / 180; return [cx + Math.cos(a) * 128 * (i === 0 ? 0.62 : 1), cy + Math.sin(a) * 76] as const; });
+  // first rival at top, the others spread to the lower left/right
+  const place = c.rivals.map((_, i) => (n === 3 ? [[cx, 34], [62, 178], [W - 62, 178]][i] : pos[i]));
+  const wob = (i: number) => (i === 0 ? 0 : i === 1 ? -6 : 6);
+  const risk = hostile >= 2 ? ['високий', T.risk] as const : hostile === 1 ? ['середній', T.dirty] as const : ['низький', T.clean] as const;
+  const dRows = (Object.keys(G.DISTRICTS) as G.District[]).map((d) => ({ d, x: ctl[d], tot: ctl[d].me + ctl[d].free + c.rivals.reduce((a, r) => a + (ctl[d].rivals[r.id] || 0), 0) })).filter((r) => r.tot > 0);
+  const hunt = c.rivals.filter((r) => !r.ally && r.heat >= 5);
+  return (
+    <div className="tx-paper" style={{ position: 'relative', background: 'linear-gradient(180deg,#F1E7C8,#E8DBB4)', padding: '22px 12px 12px', boxShadow: '0 10px 22px rgba(0,0,0,0.6), inset 0 0 26px rgba(140,110,50,0.28)', transform: 'rotate(-0.25deg)', color: INK }}>
+      <Clip side="top" />
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 10, letterSpacing: 2, color: MUTE }}>МОЇ НОТАТКИ · ПОРТ-АУРУМ</span>
+          <span style={{ display: 'block', fontFamily: HAND, fontSize: 30, lineHeight: 1 }}>Розклад сил</span>
+        </span>
+        <span style={{ padding: '3px 9px', background: risk[1].note, color: risk[1].ink, border: `1.5px solid ${risk[1].pen}`, fontSize: 12, fontWeight: 700, transform: 'rotate(2deg)' }}>небезпека: {risk[0]}</span>
+      </div>
+
+      {/* the schema, drawn by hand: us in the middle, the magnates around, thread between */}
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', marginTop: 4 }} aria-label="Схема впливу">
+        <defs><radialGradient id="ps-seal" cx=".35" cy=".3" r=".85"><stop offset="0" stopColor="#fff" stopOpacity=".55" /><stop offset=".4" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".4" /></radialGradient>
+          <filter id="ps-sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="1" dy="2" stdDeviation="1.4" floodOpacity=".45" /></filter></defs>
+        {c.rivals.map((r, i) => {
+          const [x, y] = place[i], mx = (x + cx) / 2 + wob(i), my = (y + cy) / 2 + (i === 0 ? 14 : -6);
+          const hot = !r.ally && r.heat >= 5, col = r.ally ? '#3F8A5A' : hot ? '#B3321F' : '#7A6A48';
+          return (
+            <g key={r.id}>
+              <path d={`M${cx} ${cy} Q${mx} ${my} ${x} ${y}`} fill="none" stroke={col} strokeWidth={r.ally ? 2.2 : 1.2 + r.heat / 4} strokeDasharray={r.ally ? '0' : hot ? '5 3' : '2 4'} strokeLinecap="round" opacity=".9" />
+              <g transform={`translate(${mx} ${my}) rotate(${i === 0 ? 0 : i === 1 ? -22 : 22})`}>
+                <rect x="-27" y="-8" width="54" height="15" fill="#F6EEDA" stroke={col} strokeWidth=".8" />
+                <text y="3" textAnchor="middle" fontFamily="'Ruslan Display', serif" fontSize="10" fill={col}>{r.ally ? 'союзник' : hot ? 'полює!' : 'стежить'}</text>
+              </g>
+            </g>
+          );
+        })}
+        {/* us */}
+        <g filter="url(#ps-sh)"><circle cx={cx} cy={cy} r="25" fill="#3F8A5A" stroke={INK} strokeWidth="1.5" /><circle cx={cx} cy={cy} r="25" fill="url(#ps-seal)" /><circle cx={cx} cy={cy} r="19" fill="none" stroke="#F6EEDA" strokeOpacity=".6" strokeWidth="1" strokeDasharray="2 2" /></g>
+        <text x={cx} y={cy + 6} textAnchor="middle" fontFamily="'Ruslan Display', serif" fontSize="17" fill="#F6EEDA">МИ</text>
+        {c.rivals.map((r, i) => {
+          const [x, y] = place[i], rad = 17 + r.power / 6, on = r.id === rv.id;
+          return (
+            <g key={r.id} onClick={() => onSel(r.id)} style={{ cursor: 'pointer' }}>
+              {on && <circle cx={x} cy={y} r={rad + 6} fill="none" stroke={INK} strokeWidth="1.6" strokeDasharray="4 3"><animateTransform attributeName="transform" type="rotate" from={`0 ${x} ${y}`} to={`360 ${x} ${y}`} dur="16s" repeatCount="indefinite" /></circle>}
+              <g filter="url(#ps-sh)"><circle cx={x} cy={y} r={rad} fill={r.color} stroke={INK} strokeWidth="1.5" /><circle cx={x} cy={y} r={rad} fill="url(#ps-seal)" /><circle cx={x} cy={y} r={rad - 6} fill="none" stroke="#F6EEDA" strokeOpacity=".45" strokeWidth="1" /></g>
+              <text x={x} y={y + 8} textAnchor="middle" fontFamily="'Ruslan Display', serif" fontSize="22" fill="#F6EEDA">{r.name.split(' ').slice(-1)[0][0]}</text>
+              <rect x={x - 46} y={y + rad + 2} width="92" height="14" fill="#F6EEDA" fillOpacity=".85" />
+              <text x={x} y={y + rad + 13} textAnchor="middle" fontFamily="Old Standard TT, serif" fontSize="11" fontWeight={on ? 700 : 400} fill={INK}>{r.name.replace('Граф Ґжеґожевський', 'Граф Ґжеґожевський')}</text>
+              <g transform={`translate(${x + rad * 0.7} ${y - rad * 0.7})`}><circle r="9" fill="#F6EEDA" stroke={INK} strokeWidth="1" /><text y="4" textAnchor="middle" fontFamily="serif" fontWeight="700" fontSize="11" fill={INK}>{Math.round(r.power)}</text></g>
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ fontSize: 10.5, color: MUTE, textAlign: 'center', marginTop: -2 }}>число на печатці — вплив у місті · товщина нитки — як сильно полює</div>
+
+      <Seg title="ХТО ДЕ ТРИМАЄ">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {dRows.length === 0 && <i style={{ fontSize: 13, color: MUTE }}>У місті ще нічого не поділено.</i>}
+          {dRows.map(({ d, x, tot }) => (
+            <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 92, flexShrink: 0, fontSize: 12.5 }}>{G.DISTRICTS[d].t}</span>
+              <span style={{ flex: 1, display: 'flex', height: 15, border: `1.5px solid ${INK}`, background: '#F6EEDA' }}>
+                {x.me > 0 && <span style={{ flex: x.me, background: '#3F8A5A' }} />}
+                {c.rivals.map((r) => (x.rivals[r.id] || 0) > 0 && <span key={r.id} style={{ flex: x.rivals[r.id], background: r.color }} />)}
+                {x.free > 0 && <span style={{ flex: x.free, background: 'repeating-linear-gradient(45deg,#E4D6B0 0 3px,#F6EEDA 3px 6px)' }} />}
+              </span>
+              <span style={{ width: 16, textAlign: 'right', fontFamily: HAND, fontSize: 17 }}>{tot}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 6, fontSize: 11.5, color: MUTE }}>
+          <span><i style={{ display: 'inline-block', width: 10, height: 10, background: '#3F8A5A', border: `1px solid ${INK}`, marginRight: 4 }} />наші «дахи»</span>
+          {c.rivals.map((r) => <span key={r.id}><i style={{ display: 'inline-block', width: 10, height: 10, background: r.color, border: `1px solid ${INK}`, marginRight: 4 }} />{r.name.split(' ')[r.name.startsWith('Граф') ? 1 : 1] ? r.name.replace('Пан ', '').replace('Пані ', '').replace('Граф Ґжеґожевський', 'Граф') : r.name}</span>)}
+          <span><i style={{ display: 'inline-block', width: 10, height: 10, background: 'repeating-linear-gradient(45deg,#E4D6B0 0 2px,#F6EEDA 2px 4px)', border: `1px solid ${INK}`, marginRight: 4 }} />ніхто</span>
+        </div>
+      </Seg>
+
+      {/* the dossier on the one picked: a note pinned to the page */}
+      <div style={{ position: 'relative', marginTop: 12, padding: '14px 11px 9px', background: '#FBF4D6', borderTop: `6px solid ${rv.color}`, boxShadow: '1px 4px 9px rgba(0,0,0,0.4)', transform: 'rotate(0.4deg)' }}>
+        <span aria-hidden="true" style={{ position: 'absolute', top: -9, left: '45%', width: 54, height: 16, background: 'rgba(225,212,170,0.75)', transform: 'rotate(-3deg)', boxShadow: '0 1px 2px rgba(0,0,0,0.25)' }} />
+        <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.6, color: MUTE }}>{rv.ally ? 'РОДИЧ · СОЮЗНИК' : 'СУПЕРНИК'} · {rv.title.toUpperCase()}</span>
+        <span style={{ display: 'block', fontFamily: HAND, fontSize: 29, lineHeight: 1.05 }}>{rv.name}</span>
+        <span style={{ display: 'block', fontFamily: HAND, fontSize: 19, lineHeight: 1.15, color: T.risk.ink, marginTop: 2 }}>{rv.ally ? 'Шлюб скріпив дім: тепер він нас прикриває.' : `Робить так: ${STYLE_N[rv.style]}.`}</span>
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <Fact label="ВПЛИВ"><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{Math.round(rv.power)}<span style={{ fontSize: 15 }}>/100</span></span></Fact>
+          {rv.ally ? <Fact label="СТАВЛЕННЯ" tone={T.clean}><span style={{ fontSize: 14, fontWeight: 700 }}>Союзник</span></Fact> : <Meter label="ПОЛЮЄ" n={Math.min(3, Math.round(rv.heat / 3.3))} tone={T.risk} icon="eye" />}
+          <Fact label="ТРИМАЄ"><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{G.holdings(c, rv.id).length}</span></Fact>
+        </div>
+        {G.holdings(c, rv.id).length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>{G.holdings(c, rv.id).map((b) => <span key={b.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px 2px 4px', fontSize: 12.5, border: `1.5px solid ${rv.color}`, background: 'rgba(255,255,255,0.5)' }}><BizIcon kind={b.kind} size={18} />{b.kind.split(' ')[0]}</span>)}</div>}
+        {rv.last && <div style={{ marginTop: 7, fontFamily: HAND, fontSize: 18, lineHeight: 1.15 }}>Вночі: {rv.last}</div>}
+      </div>
+      {hunt.length === 0 && !rv.ally && <div style={{ marginTop: 6, fontFamily: HAND, fontSize: 15, color: MUTE }}>Поки що ніхто не полює відкрито. Але вони стежать.</div>}
+      <Seg title="ЩО МОЖНА ЗРОБИТИ (1 ХІД НА РАНОК)"><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{children}</div></Seg>
+    </div>
+  );
+}
+
 export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; focus: string | null; onClose: () => void }) {
   const c = s.city!;
   const root = useRef<HTMLDivElement>(null);
@@ -320,40 +424,27 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
     if (rv) run((x) => G.actOnRival(x, rv.id, cur.act as RivalAct));
     else if (b) run((x) => G.actOnBiz(x, b.id, cur.act as BizAct));
   };
+  const rivMode = (panel as string) === 'riv';
   const lead = c.acted && c.last;
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
     const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
 
   const tabs = (
     <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginTop: 4 }}>
-      {([['biz', 'ЗАКЛАД'], ['riv', 'СУПЕРНИКИ']] as const).map(([k, l]) => (
+      {([['biz', 'ЗАКЛАД'], ['riv', 'РОЗКЛАД СИЛ']] as const).map(([k, l]) => (
         <button key={k} onClick={() => setPanel(k)} style={{ flex: 1, position: 'relative', padding: '10px 4px', minHeight: 44, fontFamily: SERIF, fontSize: 13, fontWeight: 700, letterSpacing: 1.8, cursor: 'pointer', color: panel === k ? INK : '#E6D9BC', background: panel === k ? 'linear-gradient(180deg,#F6EEDA,#E4D6B0)' : 'rgba(0,0,0,0.35)', border: `1.5px solid ${panel === k ? INK : '#6E531E'}` }}>
           {l}{k === 'riv' && hostile > 0 && <span style={{ position: 'absolute', top: -6, right: 6, minWidth: 16, padding: '0 4px', background: RED, color: '#F6EEDA', fontSize: 10, borderRadius: 8 }}>{hostile}</span>}
         </button>
       ))}
     </div>
   );
-  const rivalChips = (
-    <div style={{ display: 'flex', gap: 6 }}>
-      {c.rivals.map((r) => {
-        const on = selR === r.id, lamps = Math.min(3, Math.round(r.heat / 3.3));
-        return (
-          <button key={r.id} onClick={() => setSelR(r.id)} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '7px 4px 6px', fontFamily: SERIF, fontSize: 12.5, fontWeight: on ? 700 : 400, cursor: 'pointer', color: INK, background: on ? '#FFF8E0' : 'rgba(246,238,218,0.72)', border: `1.5px solid ${on ? INK : 'rgba(31,26,20,0.35)'}`, boxShadow: on ? `0 0 0 2px ${r.color}` : 'none' }}>
-            <span style={{ width: 26, height: 26, borderRadius: '50%', background: `radial-gradient(circle at 35% 30%, ${r.color}, #1F1A14 170%)`, border: `1.5px solid ${INK}`, color: '#F6EEDA', fontFamily: "'Ruslan Display', serif", fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r.name.split(' ').slice(-1)[0][0]}</span>
-            <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name.replace('Граф Ґжеґожевський', 'Граф Ґ.')}</span>
-            <span style={{ display: 'flex', gap: 3, height: 8 }}>{r.ally ? <span style={{ fontSize: 9.5, fontWeight: 700, color: T.clean.ink, lineHeight: '8px' }}>СОЮЗНИК</span> : [0, 1, 2].map((i) => <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', border: `1.5px solid ${T.risk.ink}`, background: i < lamps ? T.risk.pen : 'transparent' }} />)}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
   const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : b ? <Blank b={b} wide={false} rv={bRival} /> : <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
   const actions = lead
     ? <Result res={c.last!} />
-    : rv && rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2', padding: '4px 2px' }}>Дім скріплено шлюбом. Він більше не полює на вас.</div>
+    : rv && rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: (rivMode ? INK : '#E9E1C2'), padding: '4px 2px' }}>Дім скріплено шлюбом. Він більше не полює на вас.</div>
     : acts.length
       ? <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{acts.map((o) => <ActCard key={o.act} o={o} on={cur?.act === o.act} locked={c.acted} onPick={() => setPick(o.act)} />)}</div>
-      : panel === 'biz' && b ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2', padding: '4px 2px' }}>{b.status === 'roof' ? 'Платить щороку. Поки платить — не чіпаємо.' : 'Заклад закрито. Тут уже нічого не взяти.'}</div> : null;
+      : panel === 'biz' && b ? <div style={{ fontSize: 13, fontStyle: 'italic', color: (rivMode ? INK : '#E9E1C2'), padding: '4px 2px' }}>{b.status === 'roof' ? 'Платить щороку. Поки платить — не чіпаємо.' : 'Заклад закрито. Тут уже нічого не взяти.'}</div> : null;
 
   return (
     <div ref={root} className="tx-wood" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#1A120A', display: 'flex', flexDirection: 'column', fontFamily: SERIF, color: INK }}>
@@ -378,17 +469,15 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       {panel === null ? (
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px 10px' }}>
           <DeskBtn kind="ink" style={{ flex: 1.2, position: 'relative', minHeight: 48, fontSize: 13 }} onClick={() => setPanel('riv')}>
-            Суперники{hostile > 0 && <span style={{ position: 'absolute', top: -7, right: -4, minWidth: 18, padding: '0 5px', background: RED, color: '#F6EEDA', fontSize: 11, borderRadius: 9 }}>{hostile}</span>}
+            Розклад сил{hostile > 0 && <span style={{ position: 'absolute', top: -7, right: -4, minWidth: 18, padding: '0 5px', background: RED, color: '#F6EEDA', fontSize: 11, borderRadius: 9 }}>{hostile}</span>}
           </DeskBtn>
           <span style={{ flex: 2, fontSize: 12, fontStyle: 'italic', color: '#E6D9BC', lineHeight: 1.25 }}>{c.acted ? 'Хід зроблено. Наступний — завтра зранку.' : 'Торкніться закладу на плані: з’явиться його картка.'}</span>
         </div>
       ) : (
-        <div style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '74%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
+        <div style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '93%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
           <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 2px 4px' }}>
             {tabs}
-            {panel === 'riv' && rivalChips}
-            {card}
-            {actions}
+            {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR} hostile={hostile}>{actions}</PowerSheet> : <>{card}{actions}</>}
           </div>
           <div style={{ display: 'flex', gap: 10, flexShrink: 0, paddingTop: 8 }}>
             <DeskBtn style={{ flex: 1 }} onClick={() => setPanel(null)}>До карти</DeskBtn>
