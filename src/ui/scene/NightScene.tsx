@@ -8,15 +8,32 @@ import { BLUE, DeskBtn, GREEN, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
 
 type Run = (f: (x: GameState) => GameState) => void;
 
+const FILE: Record<Phase, string> = { night: 'night', dawn: 'morning', dusk: 'evening', day: 'morning' };
+/** Generated view of Port-Aurum for the era and time of day (public/art/city/eN-night|morning|evening.jpg).
+ *  Night and morning are both mounted so dawn cross-fades in the window; a missing file falls back to the drawn city. */
+function CityView({ era, phase, lightsOut }: { era: number; phase: Phase; lightsOut?: boolean }) {
+  const [bad, setBad] = useState<Record<string, boolean>>({});
+  const want = FILE[phase], src = (n: string) => `art/city/e${era}-${n}.jpg`;
+  if (bad[want]) return <City phase={phase} width="100%" height="100%" lightsOut={lightsOut} />;
+  return (
+    <>
+      {Array.from(new Set(['night', 'morning', want])).map((n) => (
+        <img key={n} src={src(n)} alt="" onError={() => setBad((b) => ({ ...b, [n]: true }))}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: '60% 55%', opacity: n === want ? 1 : 0, transition: 'opacity 1.4s ease', filter: 'sepia(0.1) contrast(1.03)' }} />
+      ))}
+    </>
+  );
+}
+
 /** the office window: dark wood frame, four panes, velvet curtains, dust on the glass */
-export function OfficeWindow({ phase, height, lightsOut, children }: { phase: Phase; height: number; lightsOut?: boolean; children?: ReactNode }) {
+export function OfficeWindow({ era = 1, phase, height, lightsOut, children }: { era?: number; phase: Phase; height: number; lightsOut?: boolean; children?: ReactNode }) {
   const wood = 'linear-gradient(180deg, #4A2C18, #2E1A0D)';
   return (
     <div style={{ position: 'relative', height, flexShrink: 0, margin: '0 6px' }}>
       {/* deep reveal in the wall */}
       <div style={{ position: 'absolute', inset: 0, background: '#1A0F08', boxShadow: 'inset 0 0 0 8px #24150B, inset 0 6px 18px rgba(0,0,0,0.8)' }} />
       <div style={{ position: 'absolute', left: 12, right: 12, top: 10, bottom: 14, overflow: 'hidden', boxShadow: 'inset 0 0 18px rgba(0,0,0,0.7)' }}>
-        <div style={{ position: 'absolute', inset: 0, transition: 'opacity 1.2s' }}><City phase={phase} width="100%" height="100%" lightsOut={lightsOut} /></div>
+        <div style={{ position: 'absolute', inset: 0, transition: 'opacity 1.2s' }}><CityView era={era} phase={phase} lightsOut={lightsOut} /></div>
         {/* glass: reflection streak, dust, the lamp reflected */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.07) 38%, transparent 46%), radial-gradient(circle at 20% 85%, rgba(255,200,120,0.12), transparent 30%)', pointerEvents: 'none' }} />
         <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.35, mixBlendMode: 'screen' }} aria-hidden="true">
@@ -80,7 +97,7 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
 
   return (
     <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 0, paddingTop: 8, fontFamily: SERIF, color: INK }}>
-      <OfficeWindow phase={dawn ? 'dawn' : 'night'} height={186} lightsOut={dawn}>
+      <OfficeWindow era={s.era} phase={dawn ? 'dawn' : 'night'} height={186} lightsOut={dawn}>
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', fontFamily: "'Ruslan Display', serif", fontSize: 13, letterSpacing: 3, color: 'rgba(242,223,168,0.75)', textShadow: '0 1px 3px #000', transition: 'opacity 1s', opacity: dawn ? 0 : 1 }}>ПОРТ-АУРУМ СПИТЬ</div>
       </OfficeWindow>
 
