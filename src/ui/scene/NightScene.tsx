@@ -98,7 +98,7 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
   return (
     <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 0, paddingTop: 8, fontFamily: SERIF, color: INK }}>
       <OfficeWindow era={s.era} phase={dawn ? 'dawn' : 'night'} height={186} lightsOut={dawn}>
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', fontFamily: "'Ruslan Display', serif", fontSize: 13, letterSpacing: 3, color: 'rgba(242,223,168,0.75)', textShadow: '0 1px 3px #000', transition: 'opacity 1s', opacity: dawn ? 0 : 1 }}>ПОРТ-АУРУМ СПИТЬ</div>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '18px 0 7px', background: 'linear-gradient(180deg, transparent, rgba(8,10,20,0.75))', textAlign: 'center', fontFamily: "'Ruslan Display', serif", fontSize: 13, letterSpacing: 3, color: 'rgba(242,223,168,0.75)', textShadow: '0 1px 3px #000', transition: 'opacity 1s', opacity: dawn ? 0 : 1 }}>ПОРТ-АУРУМ СПИТЬ</div>
       </OfficeWindow>
 
       {/* the report sheet on the desk in front of the window */}
