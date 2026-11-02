@@ -1,7 +1,7 @@
 // The city plan, unfolded on the desk. The map takes most of the screen and can be dragged;
 // the owner's blank is clipped to its edge; the moves we can make are listed next to it.
 // Tap a pin → the blank shows the owner; pick a move → stamp it. One move per morning.
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import * as G from '../../engine';
 import type { ActOption, Biz, BizAct, GameState, Rival, RivalAct } from '../../engine';
 import { T } from './Ledger';
@@ -207,30 +207,38 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const c = s.city!;
   const root = useRef<HTMLDivElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
-  const [wide, setWide] = useState(false);
-  const [sel, setSel] = useState<string | null>((focus && !focus.startsWith('r:') ? focus : '') || c.biz.find((b) => b.status !== 'closed')?.id || null);
   const rivalFocus = focus && focus.startsWith('r:') ? focus.slice(2) : null;
-  const [tab, setTab] = useState<'biz' | 'riv'>(rivalFocus ? 'riv' : 'biz');
+  const bizFocus = focus && !focus.startsWith('r:') ? focus : null;
+  // the plan lies open across the whole screen; the card slides up only once something is touched
+  const [panel, setPanel] = useState<null | 'biz' | 'riv'>(rivalFocus ? 'riv' : bizFocus ? 'biz' : null);
+  const [sel, setSel] = useState<string | null>(bizFocus || null);
   const [selR, setSelR] = useState<string>(rivalFocus || c.rivals.slice().sort((a, z) => z.heat - a.heat)[0]?.id || '');
   const [pick, setPick] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(0.62);
+  const [zoom, setZoom] = useState(1.05);
+  const fitted = useRef(false);
   const b = c.biz.find((x) => x.id === sel) || null;
-  const rv = tab === 'riv' ? c.rivals.find((r) => r.id === selR) || null : null;
+  const rv = panel === 'riv' ? c.rivals.find((r) => r.id === selR) || null : null;
   const bRival = b ? c.rivals.find((r) => r.id === b.rival) || null : null;
-  const acts: ActOption[] = rv ? G.rivalActs(s, rv) : b && b.status === 'open' ? G.bizActs(s, b) : [];
+  const acts: ActOption[] = rv ? G.rivalActs(s, rv) : panel === 'biz' && b && b.status === 'open' ? G.bizActs(s, b) : [];
   const cur = acts.find((o) => o.act === pick && o.can) || acts.find((o) => o.can) || null;
 
+  // first open: the whole height of the screen is the map
   useLayoutEffect(() => {
-    const el = root.current; if (!el) return;
-    const f = () => setWide(el.clientWidth >= 640);
-    f(); const ro = new ResizeObserver(f); ro.observe(el); return () => ro.disconnect();
+    const el = root.current; if (!el || fitted.current) return;
+    fitted.current = true;
+    setZoom(Math.max(0.8, Math.min(1.2, +(el.clientHeight / 760).toFixed(2))));
   }, []);
-  // the sheet is bigger than the screen: slide the selected pin to the middle
+  // keep the touched shop in the visible part of the map (the card takes the lower part)
   useEffect(() => {
-    const sc = sheet.current; if (!sc || !b || tab !== 'biz') return;
-    sc.scrollTo({ left: ((b.x + 4) / 208) * sc.scrollWidth - sc.clientWidth / 2, top: ((b.y + 4) / 148) * sc.scrollHeight - sc.clientHeight / 2, behavior: 'smooth' });
-  }, [sel, wide, zoom, tab]);
-  useEffect(() => setPick(null), [sel, selR, tab]);
+    const sc = sheet.current; if (!sc) return;
+    const tm = setTimeout(() => {
+      const w = sc.scrollWidth, h = sc.scrollHeight;
+      const px = b && panel === 'biz' ? b.x : 100, py = b && panel === 'biz' ? b.y : 62;
+      sc.scrollTo({ left: ((px + 4) / 208) * w - sc.clientWidth / 2, top: ((py + 4) / 148) * h - sc.clientHeight / 2, behavior: 'smooth' });
+    }, 60);
+    return () => clearTimeout(tm);
+  }, [sel, panel, zoom]);
+  useEffect(() => setPick(null), [sel, selR, panel]);
 
   const stamp = () => {
     if (!cur) return;
@@ -238,102 +246,90 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
     else if (b) run((x) => G.actOnBiz(x, b.id, cur.act as BizAct));
   };
   const lead = c.acted && c.last;
-  const legend: [string, string][] = [['#F2E9D0', 'не чіпали'], ['#D49A3A', 'під тиском'], ['#3F8A5A', '«дах»'], ['#C93A26', 'образа'], ['#8C8478', 'закрито'], ['#2E5E8E', 'чужий дах']];
-
-  const mapSheet = (
-    <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-      <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: '1px solid #5A4A30', boxShadow: '0 16px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.5)', scrollbarWidth: 'none' }}>
-        <Plan biz={c.biz} sel={tab === 'biz' ? sel : null} onPick={(id) => { setTab('biz'); setSel(id); }} zoom={zoom} rivals={c.rivals} />
-      </div>
-      {/* the sheet is rolled up at its edges: a paper cylinder, layers showing, throwing a shadow on the map */}
-      {(['left', 'right', 'top', 'bottom'] as const).map((side) => {
-        const h = side === 'left' || side === 'right';
-        const dir = { left: '90deg', right: '270deg', top: '180deg', bottom: '0deg' }[side];
-        const sz = h ? 26 : 16;
-        return (
-          <div key={side} aria-hidden="true" style={{ position: 'absolute', pointerEvents: 'none', [side]: 0, ...(h ? { top: 0, bottom: 0, width: sz } : { left: 0, right: 0, height: sz }),
-            background: `repeating-linear-gradient(${dir}, rgba(50,32,8,0.55) 0 1px, rgba(0,0,0,0) 1px 3px) 0 0 / ${h ? '9px 100%' : '100% 9px'} no-repeat, linear-gradient(${dir}, #7A6438 0, #C9B685 14%, #F6EBCB 34%, #D9C79B 58%, rgba(214,196,150,0.55) 80%, rgba(214,196,150,0) 100%)`,
-            boxShadow: { left: '7px 0 12px rgba(40,25,5,0.5)', right: '-7px 0 12px rgba(40,25,5,0.5)', top: '0 7px 12px rgba(40,25,5,0.5)', bottom: '0 -7px 12px rgba(40,25,5,0.5)' }[side] }} />
-        );
-      })}
-      {/* edge shading and a curled corner, so it lies on the table rather than hangs */}
-      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 36px rgba(90,60,20,0.45)' }} />
-      <div aria-hidden="true" style={{ position: 'absolute', right: 26, bottom: 16, width: 30, height: 30, background: 'linear-gradient(135deg, rgba(0,0,0,0) 48%, #CDBE98 50%, #F1E6C8 100%)', boxShadow: '-3px -3px 6px rgba(0,0,0,0.3)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', right: 36, top: '42%', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {([['+', 0.25], ['−', -0.25]] as const).map(([l, d]) => <button key={l} onClick={() => setZoom((z) => Math.min(1.5, Math.max(0.5, +(z + d).toFixed(2))))} style={{ width: 36, height: 36, fontSize: 22, fontWeight: 700, fontFamily: SERIF, color: INK, background: 'linear-gradient(180deg,#E2C374,#B8913C 60%,#9A7630)', border: '1.5px solid #4A3812', borderRadius: 4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}>{l}</button>)}
-      </div>
-      <div style={{ position: 'absolute', left: 30, bottom: 22, display: 'flex', gap: 8, flexWrap: 'wrap', padding: '2px 7px', background: 'rgba(242,233,208,0.9)', border: '1px solid #5A4A30', fontSize: 9.5, color: MUTE, pointerEvents: 'none' }}>
-        {legend.map(([col, t]) => <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: col, border: `1px solid ${INK}` }} />{t}</span>)}
-      </div>
-    </div>
-  );
-
-  const actions = lead
-    ? <Result res={c.last!} />
-    : rv && rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2', padding: '4px 2px' }}>Дім скріплено шлюбом. Він більше не полює на вас.</div>
-    : rv || (b && b.status === 'open')
-      ? <div style={{ display: 'flex', flexDirection: wide ? 'row' : 'column', gap: wide ? 12 : 6 }}>
-          {acts.map((o) => <div key={o.act} style={{ flex: 1, minWidth: 0 }}><ActCard o={o} on={cur?.act === o.act} locked={c.acted} onPick={() => setPick(o.act)} /></div>)}
-        </div>
-      : b ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2', padding: '4px 2px' }}>{b.status === 'roof' ? 'Платить щороку. Поки платить — не чіпаємо.' : 'Заклад закрито. Тут уже нічого не взяти.'}</div> : null;
-
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
+  const legend: [string, string][] = [['#F2E9D0', 'не чіпали'], ['#D49A3A', 'під тиском'], ['#3F8A5A', '«дах»'], ['#C93A26', 'образа'], ['#8C8478', 'закрито'], ['#2E5E8E', 'чужий дах']];
+  const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
+
   const tabs = (
-    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-      {([['biz', 'ЗАКЛАДИ'], ['riv', 'СУПЕРНИКИ']] as const).map(([k, l]) => (
-        <button key={k} onClick={() => setTab(k)} style={{ flex: 1, position: 'relative', padding: '6px 4px', fontFamily: SERIF, fontSize: 12, fontWeight: 700, letterSpacing: 1.6, cursor: 'pointer', color: tab === k ? INK : '#E6D9BC', background: tab === k ? 'linear-gradient(180deg,#F6EEDA,#E4D6B0)' : 'rgba(0,0,0,0.35)', border: `1.5px solid ${tab === k ? INK : '#6E531E'}`, borderBottomWidth: tab === k ? 0 : 1.5 }}>
+    <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginTop: 4 }}>
+      {([['biz', 'ЗАКЛАД'], ['riv', 'СУПЕРНИКИ']] as const).map(([k, l]) => (
+        <button key={k} onClick={() => setPanel(k)} style={{ flex: 1, position: 'relative', padding: '6px 4px', fontFamily: SERIF, fontSize: 12, fontWeight: 700, letterSpacing: 1.6, cursor: 'pointer', color: panel === k ? INK : '#E6D9BC', background: panel === k ? 'linear-gradient(180deg,#F6EEDA,#E4D6B0)' : 'rgba(0,0,0,0.35)', border: `1.5px solid ${panel === k ? INK : '#6E531E'}` }}>
           {l}{k === 'riv' && hostile > 0 && <span style={{ position: 'absolute', top: -6, right: 6, minWidth: 16, padding: '0 4px', background: RED, color: '#F6EEDA', fontSize: 10, borderRadius: 8 }}>{hostile}</span>}
         </button>
       ))}
     </div>
   );
-  const panel = tab === 'riv'
-    ? <>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {c.rivals.map((r) => <button key={r.id} onClick={() => setSelR(r.id)} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', fontFamily: SERIF, fontSize: 11.5, fontWeight: selR === r.id ? 700 : 400, cursor: 'pointer', color: INK, background: selR === r.id ? '#FFF8E0' : 'rgba(246,238,218,0.7)', border: `1.5px solid ${selR === r.id ? INK : 'rgba(31,26,20,0.35)'}`, boxShadow: selR === r.id ? `0 0 0 2px ${r.color}` : 'none' }}>
-            <span style={{ width: 11, height: 11, borderRadius: '50%', background: r.color, flexShrink: 0, border: `1px solid ${INK}` }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name.replace('Граф Ґжеґожевський', 'Граф Ґ.')}</span>
-          </button>)}
-        </div>
-        {rv && <RivalCard r={rv} c={c} wide={wide} />}
-      </>
-    : b ? <Blank b={b} wide={wide} rv={bRival} /> : null;
-
-  const bottom = (
-    <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-      <DeskBtn style={{ flex: 1 }} onClick={onClose}>{c.acted ? 'Згорнути план' : 'Згорнути'}</DeskBtn>
-      {!c.acted && <DeskBtn kind="brass" style={{ flex: 2, flexDirection: 'column', gap: 0, lineHeight: 1.1 }} disabled={!cur} onClick={stamp}>
-        {cur ? <><span style={{ fontSize: 10, letterSpacing: 1.6, opacity: 0.75 }}>ПРОШТАМПУВАТИ</span><span>{cur.t}</span></> : rv ? 'Оберіть дію' : 'Оберіть заклад і дію'}
-      </DeskBtn>}
+  const rivalChips = (
+    <div style={{ display: 'flex', gap: 6 }}>
+      {c.rivals.map((r) => <button key={r.id} onClick={() => setSelR(r.id)} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', fontFamily: SERIF, fontSize: 11.5, fontWeight: selR === r.id ? 700 : 400, cursor: 'pointer', color: INK, background: selR === r.id ? '#FFF8E0' : 'rgba(246,238,218,0.7)', border: `1.5px solid ${selR === r.id ? INK : 'rgba(31,26,20,0.35)'}`, boxShadow: selR === r.id ? `0 0 0 2px ${r.color}` : 'none' }}>
+        <span style={{ width: 11, height: 11, borderRadius: '50%', background: r.color, flexShrink: 0, border: `1px solid ${INK}` }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name.replace('Граф Ґжеґожевський', 'Граф Ґ.')}</span>
+      </button>)}
     </div>
   );
+  const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : b ? <Blank b={b} wide={false} rv={bRival} /> : <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
+  const actions = lead
+    ? <Result res={c.last!} />
+    : rv && rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2', padding: '4px 2px' }}>Дім скріплено шлюбом. Він більше не полює на вас.</div>
+    : acts.length
+      ? <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{acts.map((o) => <ActCard key={o.act} o={o} on={cur?.act === o.act} locked={c.acted} onPick={() => setPick(o.act)} />)}</div>
+      : panel === 'biz' && b ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2', padding: '4px 2px' }}>{b.status === 'roof' ? 'Платить щороку. Поки платить — не чіпаємо.' : 'Заклад закрито. Тут уже нічого не взяти.'}</div> : null;
 
   return (
-    <div ref={root} className="tx-wood" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#1A120A', display: 'flex', flexDirection: 'column', padding: '8px 10px 10px', gap: 8, fontFamily: SERIF, color: INK }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexShrink: 0, color: '#F1E6C8' }}>
-        <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 18 }}>План Порт-Аурума</span>
-        <span style={{ fontSize: 10.5, letterSpacing: 1.4, fontWeight: 700, padding: '2px 8px', background: c.acted ? T.risk.note : T.clean.note, color: c.acted ? T.risk.ink : T.clean.ink }}>{c.acted ? 'ХІД ЗРОБЛЕНО' : 'ОДИН ХІД НА РАНОК'}</span>
+    <div ref={root} className="tx-wood" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#1A120A', display: 'flex', flexDirection: 'column', fontFamily: SERIF, color: INK }}>
+      {/* the whole plan; it shrinks only while a card is open */}
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: '6px 6px 0', display: 'flex', flexDirection: 'column' }}>
+        <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: '1px solid #5A4A30', boxShadow: '0 16px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.5)', scrollbarWidth: 'none' }}>
+          <Plan biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} />
+        </div>
+        {(['left', 'right', 'top', 'bottom'] as const).map((side) => {
+          const h = side === 'left' || side === 'right';
+          const dir = { left: '90deg', right: '270deg', top: '180deg', bottom: '0deg' }[side];
+          const sz = h ? 22 : 14;
+          return (
+            <div key={side} aria-hidden="true" style={{ position: 'absolute', pointerEvents: 'none', [side]: 0, ...(h ? { top: 0, bottom: 0, width: sz } : { left: 0, right: 0, height: sz }),
+              background: `repeating-linear-gradient(${dir}, rgba(50,32,8,0.55) 0 1px, rgba(0,0,0,0) 1px 3px) 0 0 / ${h ? '8px 100%' : '100% 8px'} no-repeat, linear-gradient(${dir}, #7A6438 0, #C9B685 14%, #F6EBCB 34%, #D9C79B 58%, rgba(214,196,150,0.5) 80%, rgba(214,196,150,0) 100%)`,
+              boxShadow: { left: '7px 0 12px rgba(40,25,5,0.5)', right: '-7px 0 12px rgba(40,25,5,0.5)', top: '0 7px 12px rgba(40,25,5,0.5)', bottom: '0 -7px 12px rgba(40,25,5,0.5)' }[side] }} />
+          );
+        })}
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 36px rgba(90,60,20,0.45)' }} />
+
+        {/* floating furniture: title plaque, close, zoom, legend */}
+        <div style={{ position: 'absolute', left: 30, top: 20, right: 76, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '5px 10px', pointerEvents: 'none' }}>
+          <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 17, flex: 1, whiteSpace: 'nowrap' }}>План Порт-Аурума</span>
+          <span style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: 700, padding: '2px 7px', background: c.acted ? T.risk.note : T.clean.note, color: c.acted ? T.risk.ink : T.clean.ink, whiteSpace: 'nowrap' }}>{c.acted ? 'ХІД ЗРОБЛЕНО' : '1 ХІД'}</span>
+        </div>
+        <button onClick={onClose} aria-label="Згорнути план" style={{ position: 'absolute', right: 30, top: 20, width: 40, height: 40, ...plaque, fontSize: 20, fontWeight: 700, cursor: 'pointer', borderRadius: 4 }}>✕</button>
+        <div style={{ position: 'absolute', right: 30, top: 72, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {([['+', 0.2], ['−', -0.2]] as const).map(([l, d]) => <button key={l} onClick={() => setZoom((z) => Math.min(2, Math.max(0.36, +(z + d).toFixed(2))))} style={{ width: 40, height: 40, fontSize: 24, fontWeight: 700, fontFamily: SERIF, color: INK, background: 'linear-gradient(180deg,#E2C374,#B8913C 60%,#9A7630)', border: '1.5px solid #4A3812', borderRadius: 4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}>{l}</button>)}
+        </div>
+        {!panel && <div style={{ position: 'absolute', left: 30, bottom: 22, display: 'flex', gap: 8, flexWrap: 'wrap', padding: '3px 8px', background: 'rgba(242,233,208,0.92)', border: '1px solid #5A4A30', fontSize: 9.5, color: MUTE, pointerEvents: 'none', maxWidth: 'calc(100% - 100px)' }}>
+          {legend.map(([col, tx]) => <span key={tx} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: col, border: `1px solid ${INK}` }} />{tx}</span>)}
+        </div>}
       </div>
 
-      {wide ? (
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16 }}>
-          {mapSheet}
-          <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', paddingLeft: 12, paddingTop: 6 }}>
-            {tabs}
-            {panel}
-            {actions}
-          </div>
+      {panel === null ? (
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px 10px' }}>
+          <DeskBtn kind="ink" style={{ flex: 1.2, position: 'relative', minHeight: 48, fontSize: 13 }} onClick={() => setPanel('riv')}>
+            Суперники{hostile > 0 && <span style={{ position: 'absolute', top: -7, right: -4, minWidth: 18, padding: '0 5px', background: RED, color: '#F6EEDA', fontSize: 11, borderRadius: 9 }}>{hostile}</span>}
+          </DeskBtn>
+          <span style={{ flex: 2, fontSize: 12, fontStyle: 'italic', color: '#E6D9BC', lineHeight: 1.25 }}>{c.acted ? 'Хід зроблено. Наступний — завтра зранку.' : 'Торкніться закладу на плані: з’явиться його картка.'}</span>
         </div>
       ) : (
-        <>
-          {mapSheet}
-          <div style={{ flexShrink: 0, maxHeight: '46%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, marginTop: -26, padding: '14px 6px 2px', position: 'relative' }}>
+        <div style={{ flexShrink: 0, maxHeight: '60%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
+          <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 2px 4px' }}>
             {tabs}
-            {panel}
+            {panel === 'riv' && rivalChips}
+            {card}
             {actions}
           </div>
-        </>
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0, paddingTop: 8 }}>
+            <DeskBtn style={{ flex: 1 }} onClick={() => setPanel(null)}>До карти</DeskBtn>
+            {!c.acted && <DeskBtn kind="brass" style={{ flex: 2, flexDirection: 'column', gap: 0, lineHeight: 1.1 }} disabled={!cur} onClick={stamp}>
+              {cur ? <><span style={{ fontSize: 10, letterSpacing: 1.6, opacity: 0.75 }}>ПРОШТАМПУВАТИ</span><span>{cur.t}</span></> : 'Оберіть дію'}
+            </DeskBtn>}
+          </div>
+        </div>
       )}
-      {bottom}
     </div>
   );
 }
