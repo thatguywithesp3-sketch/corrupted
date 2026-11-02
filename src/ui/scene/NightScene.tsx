@@ -125,7 +125,8 @@ const GROUP: Record<string, { t: string; tone: Tone }> = {
 /** one meter as a pencilled scale: red danger zones at the ends, last year's mark, this year's value, the change */
 function Scale({ m, v, was, dz, label }: { m: Meter; v: number; was: number | null; dz: number; label: string }) {
   const isT = m === 'threat', dv = was === null ? 0 : v - was;
-  const better = isT ? dv < 0 : Math.abs(v - 50) < Math.abs(v - dv - 50);
+  const was0 = v - dv, edge = (x: number) => x <= dz || x >= 100 - dz;
+  const better = isT ? dv < 0 : edge(v) || edge(was0) ? Math.abs(v - 50) < Math.abs(was0 - 50) : dv > 0;
   const danger = isT ? v >= 60 : v <= dz || v >= 100 - dz;
   const hatch = (c: string) => `repeating-linear-gradient(-62deg, ${c} 0 1.3px, transparent 1.3px 3px)`;
   const tone: Tone = danger ? 'risk' : 'neu';

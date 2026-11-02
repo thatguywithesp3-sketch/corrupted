@@ -37,8 +37,15 @@ function pill(kind: string, text: string, tone: 'good' | 'bad' | 'neu' | 'paper'
   if (tone === 'paper' && (kind === 'clean' || kind === 'dirty')) ic.stroke = '#5A4630';
   return { ic, text, bg: T[0], bd: T[1], fg: T[2] };
 }
-const tone = (key: string, cur: number, nxt: number) =>
-  key === 'threat' ? (nxt > cur ? 'bad' : 'good') : Math.abs(nxt - 50) > Math.abs(cur - 50) ? 'bad' : 'good';
+/** good = green, bad = red. Risk: lower is better. Other meters: higher is better, except that pushing
+ *  into (or deeper into) a danger zone at either end is bad, and climbing out of one is good. */
+const tone = (key: string, cur: number, nxt: number) => {
+  if (key === 'threat') return nxt > cur ? 'bad' : 'good';
+  const dz = G.RULES.dangerZone, danger = (v: number) => v <= dz || v >= 100 - dz;
+  const far = Math.abs(nxt - 50) > Math.abs(cur - 50);
+  if (danger(nxt) || danger(cur)) return far ? 'bad' : 'good';
+  return nxt > cur ? 'good' : 'bad';
+};
 
 function fxPills(d: Delta, s: GameState) {
   const out: any[] = [];
