@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra
+  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -11,7 +11,9 @@ export function botRng(seed: number) {
   return () => { let t = (a = (a + 0x6d2b79f5) >>> 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-export interface BotStyle { greed: number; offerRate: number; skipAllowance: number; darkRate: number; smart?: boolean }
+/** how the bot treats the city: ignore it; squeeze shops greedily; or squeeze shops while keeping the rivals in check */
+export type CityPolicy = 'none' | 'greedy' | 'wise';
+export interface BotStyle { greed: number; offerRate: number; skipAllowance: number; darkRate: number; smart?: boolean; city?: CityPolicy }
 export const STYLES: Record<string, BotStyle> = {
   careful: { greed: 0.2, offerRate: 0.3, skipAllowance: 0.05, darkRate: 0.05 },
   average: { greed: 0.5, offerRate: 0.35, skipAllowance: 0.15, darkRate: 0.2 },
@@ -30,10 +32,37 @@ function score(s: GameState, d: Delta): number {
   return edge * 3 + t * 1.5 + t * t / 40 - money / 120;
 }
 
-function smartStep(s: GameState): GameState {
+/** One city move for the morning, or null when the bot makes none. */
+export function cityMove(s: GameState, policy: CityPolicy = 'none'): GameState | null {
+  if (policy === 'none') return null;
+  const c = s.city;
+  if (!c || c.acted) return null;
+  if (policy === 'wise') {
+    const angry = [...c.rivals].filter((r) => !r.ally && r.heat >= 4.5).sort((a, b) => b.heat - a.heat);
+    for (const r of angry) {
+      const acts = rivalActs(s, r), by = (k: string) => acts.find((o) => o.act === k && o.can);
+      const m = by('marry') || by('bribe') || (by('expose') && by('expose')!.odds > 0.5 ? by('expose') : null);
+      if (m) return actOnRival(s, r.id, m.act as 'bribe' | 'expose' | 'marry');
+    }
+    if (s.threat >= 65) return null; // lie low
+  }
+  let best: { id: string; act: string; v: number } | null = null;
+  for (const b of c.biz) {
+    if (b.status !== 'open') continue;
+    for (const o of bizActs(s, b)) {
+      if (!('can' in o) || !o.can) continue;
+      const gain = o.perYear ? o.gain * 3 : o.gain;
+      const v = o.odds * gain - o.risk * (s.threat > 45 ? 70 : 35) - (o.cost || 0);
+      if (v > 0 && (!best || v > best.v)) best = { id: b.id, act: o.act, v };
+    }
+  }
+  return best ? actOnBiz(s, best.id, best.act as 'inspect') : null;
+}
+
+function smartStep(s: GameState, st: BotStyle): GameState {
   switch (s.screen) {
     case 'form': return signForm(setHero(s, { origin: 0, dream: 0 }));
-    case 'morning': return toOffice(s);
+    case 'morning': return cityMove(s, st.city) || toOffice(s);
     case 'office': {
       const d = currentDoc(s);
       if (d.kind === 'scheme') {
@@ -71,10 +100,10 @@ function smartStep(s: GameState): GameState {
 
 /** One step of a simple player. Returns the next state. */
 export function botStep(s: GameState, r: () => number, st: BotStyle): GameState {
-  if (st.smart) return smartStep(s);
+  if (st.smart) return smartStep(s, st);
   switch (s.screen) {
     case 'form': return signForm(setHero(s, { origin: Math.floor(r() * 3), dream: Math.floor(r() * 4), gender: r() < 0.5 ? 'm' : 'f' }));
-    case 'morning': return toOffice(s);
+    case 'morning': return cityMove(s, st.city) || toOffice(s);
     case 'office': {
       const d = currentDoc(s);
       if (d.kind === 'scheme') {

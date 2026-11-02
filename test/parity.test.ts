@@ -2,7 +2,7 @@
 // Both get the same random stream and the same decisions; we compare state after every step.
 import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { currentDoc, newGame } from '../src/engine';
+import { CITY_RULES, currentDoc, newGame } from '../src/engine';
 import type { GameState } from '../src/engine';
 import { botRng, botStep, STYLES } from '../src/sim/bot';
 
@@ -30,6 +30,7 @@ describe('parity with HTML prototype (Era I)', () => {
   it('identical first lives for 150 seeds × 3 bot styles', () => {
     const Proto = loadPrototype();
     const realRandom = Math.random;
+    CITY_RULES.rivalsOn = false; // the prototype has no rival magnates
     let compared = 0, skipped = 0;
     try {
       for (const style of [STYLES.average, STYLES.greedy, STYLES.smart]) {
@@ -71,7 +72,8 @@ describe('parity with HTML prototype (Era I)', () => {
           }
         }
       }
-    } finally { Math.random = realRandom; }
+    } finally {
+      CITY_RULES.rivalsOn = true; Math.random = realRandom; }
     console.log(`parity: ${compared} steps compared, ${skipped} lives stopped at negative money`);
     expect(compared).toBeGreaterThan(5000);
     expect(skipped).toBeLessThan(60);

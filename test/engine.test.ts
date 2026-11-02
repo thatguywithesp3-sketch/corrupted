@@ -136,3 +136,50 @@ describe('city', () => {
     expect(G.actOnBiz(s0, b.id, 'inspect').rng).toBe(s0.rng);
   });
 });
+
+describe('city plan and rivals', () => {
+  const morning = () => G.signForm(newGame(11));
+  it('the generated plan is deterministic and has lots in every district', () => {
+    const p = G.getPlan();
+    expect(G.getPlan()).toBe(p);
+    expect(p.bldgs.length).toBeGreaterThan(600);
+    (Object.keys(G.DISTRICTS) as G.District[]).forEach((d) => expect(p.byDistrict[d].length).toBeGreaterThanOrEqual(6));
+  });
+  it('businesses stand on distinct lots', () => {
+    let s = morning();
+    for (let i = 0; i < 6; i++) { s = { ...s, screen: 'night' }; s = G.sleep(s); }
+    const open = s.city!.biz.filter((b) => b.status !== 'closed');
+    expect(new Set(open.map((b) => b.lot)).size).toBe(open.length);
+  });
+  it('rivals expand and attack over the years', () => {
+    let s = morning();
+    const news: string[] = [];
+    for (let i = 0; i < 8; i++) { s = { ...s, screen: 'night' }; s = G.sleep(s); s.city!.news.forEach((n) => news.push(n.kind)); }
+    expect(news).toContain('rival');
+    expect(news.some((k) => k === 'attack' || k === 'rival')).toBe(true);
+  });
+  it('outbidding takes a shop from a rival', () => {
+    let s0 = morning();
+    const c = s0.city!, b = c.biz.find((x) => x.status === 'open')!;
+    b.rival = c.rivals[0].id; s0 = { ...s0, cash: 5000, patron: 90 };
+    const n = G.actOnBiz(s0, b.id, 'outbid');
+    expect(n.city!.acted).toBe(true);
+    expect(n.cash).toBeLessThan(5000);
+    expect(n.city!.rivals[0].heat).toBeGreaterThan(c.rivals[0].heat);
+  });
+  it('marriage binds a rival house and costs us the child', () => {
+    let s0 = morning();
+    s0 = { ...s0, cash: 5000, kids: [{ id: 'k1', first: 'Софія', g: 'f', age: 18, trait: null, l: 70, k: 0, prep: 10, assets: 0, gone: false, why: '' }] };
+    s0.city!.rivals[0].heat = 1;
+    const n = G.actOnRival(s0, s0.city!.rivals[0].id, 'marry');
+    expect(n.city!.rivals[0].ally).toBe(true);
+    expect(n.kids[0].gone).toBe(true);
+  });
+  it('rivals can be switched off', () => {
+    G.CITY_RULES.rivalsOn = false;
+    let s = morning();
+    for (let i = 0; i < 4; i++) { s = { ...s, screen: 'night' }; s = G.sleep(s); }
+    G.CITY_RULES.rivalsOn = true;
+    expect(s.city!.biz.every((b) => !b.rival)).toBe(true);
+  });
+});

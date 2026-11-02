@@ -9,6 +9,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "sim": "tsx scripts/sim.ts",
+    "sim:city": "tsx scripts/sim-city.ts",
     "extract": "node scripts/extract-content.mjs && node scripts/extract-views.mjs"
   },
   "devDependencies": {

@@ -8,12 +8,44 @@ import { DISTRICTS, getPlan, type District } from './cityplan';
 export { DISTRICTS, type District } from './cityplan';
 
 /** bump when the map or the shape of the city changes: older saves get a fresh city */
-export const CITY_V = 2;
+export const CITY_V = 3;
+
+/** Numbers that decide how hard the rivals are. Tuned with the simulator (npm run sim:city). */
+export const CITY_RULES = {
+  rivalsOn: true,
+  heldInspect: 0.25, // inspecting a shop under somebody else's roof works this much worse
+  grace: 2, // years in office before the magnates start hunting (they only expand)
+  expandW: 3, huntBase: 1.1, huntPerHeat: 0.7, poachFrom: 3, restW: 0.8,
+  smear: { threat: 3, people: 2 }, inform: { patron: 4, threat: 3 }, poachChance: 0.5, boycott: 150,
+  allyShield: 1, // risk an allied house takes off us every year
+  bribeBase: 150, bribePerPower: 6, bribeDrop: 3, exposeDamage: 14, marryHeat: 4
+};
+
+const initRivals = (): Rival[] => [
+  { id: 'r1', name: 'Пан Вайсман', title: 'купець першої гільдії', style: 'expander', color: '#2E5E8E', power: 38, heat: 1, ally: false, focus: 'port', last: '' },
+  { id: 'r2', name: 'Пані Берг', title: 'власниця «Голосу Порту»', style: 'smear', color: '#7A3F8E', f: true, power: 30, heat: 2, ally: false, focus: 'old', last: '' },
+  { id: 'r3', name: 'Граф Ґжеґожевський', title: 'старий рід із Замкового пагорба', style: 'informer', color: '#9A5A22', power: 34, heat: 1, ally: false, focus: 'hill', last: '' }
+];
+const sx = (r: Rival, m: string, f: string) => (r.f ? f : m);
+export const rivalOf = (c: CityState, id?: string | null) => c.rivals.find((r) => r.id === id) || null;
+
 
 // ---------------------------------------------------------------- types
 
 export type BizStatus = 'open' | 'roof' | 'closed';
-export type BizAct = 'inspect' | 'seal' | 'roof';
+export type BizAct = 'inspect' | 'seal' | 'roof' | 'outbid';
+export type RivalAct = 'bribe' | 'expose' | 'marry';
+export type RivalStyle = 'expander' | 'smear' | 'informer';
+
+/** A local magnate: wants the same shops and roofs we do, and hunts us when he is angry. */
+export interface Rival {
+  id: string; name: string; title: string; style: RivalStyle; color: string; f?: boolean; // f: a woman
+  power: number; // 0..100 clout in the city
+  heat: number; // 0..10 how much he wants us gone
+  ally: boolean; // bound to us by marriage
+  focus: District; // where he likes to expand
+  last: string; // what he did last night
+}
 
 export interface Biz {
   id: string;
@@ -30,13 +62,14 @@ export interface Biz {
   status: BizStatus;
   opened: number; // year
   tribute: number; // yearly payment while under our "roof"
+  rival?: string | null; // id of the magnate who holds the roof instead of us
 }
 
 export interface Econ { treasury: number; grain: number; trade: number; crown: number }
 
-export interface CityNews { kind: 'open' | 'rumor' | 'flavor' | 'complaint' | 'closed' | 'roof'; head: string; text: string; biz?: string }
+export interface CityNews { kind: 'open' | 'rumor' | 'flavor' | 'complaint' | 'closed' | 'roof' | 'rival' | 'attack'; head: string; text: string; biz?: string; rival?: string }
 
-export interface ActResult { biz: string; act: BizAct; ok: boolean; title: string; text: string; cash: number; d: { p?: number; n?: number; s?: number; i?: number } }
+export interface ActResult { biz: string; rival?: string; act: BizAct; ok: boolean; title: string; text: string; cash: number; d: { p?: number; n?: number; s?: number; i?: number } }
 
 export interface CityState {
   v?: number;
@@ -44,6 +77,7 @@ export interface CityState {
   econ: Econ;
   prev: Econ;
   biz: Biz[];
+  rivals: Rival[];
   seq: number;
   news: CityNews[];
   /** a move was already made this morning */
@@ -130,7 +164,7 @@ function newBiz(c: CityState, year: number): Biz {
 
 export function initCity(s: GameState): CityState {
   const econ = { treasury: 24000, grain: 3, trade: 100, crown: 100 };
-  const c: CityState = { v: CITY_V, rng: (s.rng ^ 0x9e3779b9) >>> 0, econ, prev: { ...econ }, biz: [], seq: 0, news: [], acted: false, last: null, tribute: 0 };
+  const c: CityState = { v: CITY_V, rng: (s.rng ^ 0x9e3779b9) >>> 0, econ, prev: { ...econ }, biz: [], rivals: initRivals(), seq: 0, news: [], acted: false, last: null, tribute: 0 };
   for (let i = 0; i < 4; i++) c.biz.push(newBiz(c, s.year - 1 - cint(c, 6)));
   cityMorning(s, c);
   if (!c.news.some((x) => x.kind === 'open')) { const b = newBiz(c, s.year); c.biz.push(b); c.news.unshift({ kind: 'open', biz: b.id, head: `Відкриття на ${street(c, b)}: ${b.kind} «${b.name}»`, text: `${b.owner} відкриває ${b.kind} «${b.name}». Сусіди кажуть, справи підуть добре.` }); }
@@ -158,6 +192,7 @@ export function cityMorning(s: GameState, c: CityState) {
       c.news.push({ kind: 'complaint', biz: b.id, head: `${b.owner}: «Чиновники нас душать»`, text: `Власник ${b.kind === 'аптека' ? 'аптеки' : 'закладу'} «${b.name}» розповів редакції про часті перевірки й натяки на «подяку». Редакція шукає інших свідків.` });
     }
   });
+  rivalNight(s, c);
   // our "roofs": quiet money, but every roof is one more person who knows
   const roofs = c.biz.filter((b) => b.status === 'roof');
   if (roofs.length) s.threat += roofs.length;
@@ -190,18 +225,31 @@ export function cityEvening(s: GameState, c: CityState) {
 
 // ---------------------------------------------------------------- the morning move
 
-export interface ActOption { act: BizAct; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
+export interface ActOption { act: BizAct | RivalAct; /** money it costs (dirty) */ cost?: number; /** text instead of the cash gain */ gainT?: string; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
 
 /** Chance that a move works (the same numbers actOnBiz rolls against; pressure counts after the move). */
-export function bizOdds(b: Biz, act: BizAct): number {
+export function bizOdds(b: Biz, act: BizAct, s?: GameState): number {
+  if (act === 'outbid') {
+    const rv = s?.city ? rivalOf(s.city, b.rival) : null;
+    return Math.max(0.1, Math.min(0.9, 0.55 + ((s?.patron ?? 50) - 50) / 150 - (rv ? rv.power / 220 : 0) + 0.05 * b.pressure));
+  }
   const tieMalus = b.tie ? 0.15 : 0;
-  const q = act === 'inspect' ? 0.45 + 0.15 * (b.pressure + 1) - tieMalus - 0.1 * b.grudge
+  const q = act === 'inspect' ? 0.45 + 0.15 * (b.pressure + 1) - tieMalus - 0.1 * b.grudge - (b.rival ? CITY_RULES.heldInspect : 0)
     : act === 'seal' ? 0.5 + 0.1 * Math.min(3, b.pressure + 1) - tieMalus
     : 0.35 + 0.2 * b.pressure - tieMalus - 0.1 * b.grudge;
   return Math.max(0, Math.min(1, q));
 }
 
-export function bizActs(_s: GameState, b: Biz): ActOption[] {
+export function bizActs(s: GameState, b: Biz): ActOption[] {
+  const rv = s.city && b.rival ? rivalOf(s.city, b.rival) : null;
+  if (rv) {
+    const cost = r10(b.wealth * 0.35);
+    return [
+      { act: 'inspect', t: 'Податкова перевірка', sub: `Заклад під рукою ${rv.name}: ${'перевірка'} вдається гірше, а він це запам’ятає.`, can: b.status === 'open' && b.pressure < 3, why: b.pressure >= 3 ? 'Тиснути сильніше вже нікуди' : undefined, risk: 2, odds: bizOdds(b, 'inspect'), gain: r10(b.wealth * (0.3 + 0.2 * b.pressure)) },
+      { act: 'outbid', t: 'Перебити дах', sub: `Дати власнику більше, ніж платить ${rv.name}. ${rv.name} цього не пробачить.`, can: b.status === 'open' && s.cash >= cost, why: s.cash < cost ? `Бракує брудних: потрібно ${fmt(cost)} кр.` : undefined, risk: 2, odds: bizOdds(b, 'outbid', s), gain: r10(b.wealth * 0.25), perYear: true, cost },
+      { act: 'seal', t: 'Опечатати заклад', sub: '', can: false, why: `Під рукою ${rv.name}: чіпати відкрито не можна`, risk: 0, odds: 0, gain: 0 }
+    ];
+  }
   const tie = b.tie === 'press' ? ' Власник дружить із газетою.' : b.tie === 'patron' ? ' Власник ходить до губернатора.' : '';
   return [
     { act: 'inspect', t: 'Податкова перевірка', sub: `Натякнути, що порушення знайдуться завжди. Може «віддячити» ~${fmt(r10(b.wealth * (0.3 + 0.2 * b.pressure)))} кр.${tie}`, can: b.status === 'open' && b.pressure < 3, why: b.pressure >= 3 ? 'Тиснути сильніше вже нікуди' : undefined, risk: 1 + (b.tie ? 2 : 0), odds: bizOdds(b, 'inspect'), gain: r10(b.wealth * (0.3 + 0.2 * b.pressure)) },
@@ -222,11 +270,13 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
   if (!opt || !opt.can) return n;
   c.acted = true;
   const res: ActResult = { biz: b.id, act, ok: false, title: '', text: '', cash: 0, d: {} };
-  const tieMalus = b.tie ? 0.15 : 0;
+  const q = bizOdds(b, act, n);
+  const holder = rivalOf(c, b.rival);
   if (act === 'inspect') {
     b.pressure += 1;
     res.d.i = opt.risk;
-    if (crand(c) < 0.45 + 0.15 * b.pressure - tieMalus - 0.1 * b.grudge) {
+    if (holder) holder.heat = Math.min(10, holder.heat + 1);
+    if (crand(c) < q) {
       res.ok = true; res.cash = r10(b.wealth * (0.3 + 0.2 * (b.pressure - 1)));
       res.title = `${b.owner} «віддячив»`; res.text = `Інспектор повернувся з конвертом: ${fmt(res.cash)} кр. Перевірка нічого не знайшла.`;
     } else {
@@ -238,7 +288,7 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
   } else if (act === 'seal') {
     b.pressure = Math.min(3, b.pressure + 1);
     res.d.i = opt.risk;
-    if (crand(c) < 0.5 + 0.1 * b.pressure - tieMalus) {
+    if (crand(c) < q) {
       res.ok = true; res.cash = r10(b.wealth * 1.2);
       res.title = `Пломбу зняли за ${fmt(res.cash)} кр.`; res.text = `${b.owner} приніс гроші того ж дня. Заклад працює, але власник вас ненавидить.`;
       b.grudge += 1;
@@ -248,8 +298,17 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
       res.d.n = -3;
       c.news.unshift({ kind: 'closed', biz: b.id, head: `Зачинено: ${b.kind} «${b.name}»`, text: `Після «перевірки» ${b.owner} не відкрив двері. Сусіди кажуть, справа не в порушеннях.` });
     }
+  } else if (act === 'outbid' && holder) {
+    n.cash -= opt.cost || 0; res.d.i = opt.risk;
+    holder.heat = Math.min(10, holder.heat + 2);
+    if (crand(c) < q) {
+      res.ok = true; b.rival = null; b.status = 'roof'; b.tribute = r10(b.wealth * 0.25); b.grudge = 0; holder.power = Math.max(5, holder.power - 4);
+      res.title = `«${b.name}» перейшов під ваш дах`; res.text = `Ви заплатили ${fmt(opt.cost || 0)} кр. і перебили ${holder.name}. Цього не забудуть.`; res.d.s = 1;
+    } else {
+      res.title = `${holder.name} ${sx(holder, 'утримав', 'утримала')} «${b.name}»`; res.text = `Гроші пішли, власник злякався й відмовився. ${holder.name} уже знає, хто стукав у двері.`;
+    }
   } else {
-    if (crand(c) < 0.35 + 0.2 * b.pressure - tieMalus - 0.1 * b.grudge) {
+    if (crand(c) < q) {
       res.ok = true; b.status = 'roof'; b.tribute = r10(b.wealth * 0.25); b.grudge = 0;
       res.title = `${b.owner} під вашим «дахом»`; res.text = `Щовечора в шухляду лягатиме данина ~${fmt(b.tribute)} кр. на рік. Поки платить — інші чиновники його не чіпають.`;
       res.d.i = 2; res.d.s = 2;
@@ -274,3 +333,126 @@ export function ensureCity(s: GameState): GameState {
   const n = structuredClone(s); n.city = initCity(n); return n;
 }
 
+
+// ---------------------------------------------------------------- the rivals' night
+
+const clampN = (v: number, a: number, z: number) => Math.max(a, Math.min(z, v));
+const SMEAR = ['«Голос Порту» вийшов із карикатурою на міського голову: той у кареті, а позаду — порожній міський гаманець.', 'У «Голосі Порту» — стаття «Куди діваються гроші з чавунного скарбця?». Автора не названо.', 'Вранці на розі продавали листівку з вашим профілем і написом «Дорого стоїть чесність».'];
+const INFORM = ['Граф написав губернатору «про непорядки в управі». Губернатор попросив пояснень.', 'До канцелярії губернатора дійшов анонімний лист про ваші «подарунки». Почерк впізнаваний.', 'За обідом у губернатора граф сказав: «Дехто в місті давно забув, чий він слуга».'];
+
+/** held shops per rival */
+export const holdings = (c: CityState, id: string) => c.biz.filter((b) => b.rival === id && b.status !== 'closed');
+
+/** Who has what, per district: shops under us, under each rival, and free. */
+export function control(c: CityState) {
+  const out = {} as Record<District, { me: number; free: number; rivals: Record<string, number> }>;
+  (Object.keys(DISTRICTS) as District[]).forEach((d) => {
+    const bs = c.biz.filter((b) => b.district === d && b.status !== 'closed');
+    out[d] = { me: bs.filter((b) => b.status === 'roof').length, free: bs.filter((b) => b.status === 'open' && !b.rival).length, rivals: {} };
+    c.rivals.forEach((r) => { out[d].rivals[r.id] = bs.filter((b) => b.rival === r.id).length; });
+  });
+  return out;
+}
+
+/** Between our evening and the next morning the magnates make their moves. Mutates s and c; reported in the paper. */
+export function rivalNight(s: GameState, c: CityState) {
+  const K = CITY_RULES;
+  if (!K.rivalsOn) return;
+  for (const r of c.rivals) {
+    const held = holdings(c, r.id).length, mine = c.biz.filter((b) => b.status === 'roof');
+    if (r.ally) {
+      s.threat = Math.max(0, s.threat - K.allyShield);
+      r.power = clampN(r.power + 1, 5, 95); r.last = 'союзник';
+      if (crand(c) < 0.3) c.news.push({ kind: 'rival', rival: r.id, head: `${r.name} публічно ${sx(r, 'підтримав', 'підтримала')} вас`, text: `Родичі не кидають своїх: ${r.name} ${sx(r, 'сказав', 'сказала')} на прийомі, що «мер — людина порядна». Ризик трохи знизився.` });
+      continue;
+    }
+    // jealousy: he cools off when we leave him alone and burns when we hold more than he does
+    r.heat = clampN(r.heat + (mine.length > held ? 0.5 : -0.5) + (crand(c) - 0.5) * 0.6, 0, 10);
+    r.power = clampN(r.power + held * 0.8 - 1.2 + (crand(c) - 0.5), 5, 95);
+    const free = c.biz.filter((b) => b.status === 'open' && !b.rival);
+    const hunting = s.served >= K.grace;
+    const w = [free.length ? K.expandW : 0, hunting ? K.huntBase + K.huntPerHeat * r.heat : 0, hunting && mine.length && r.heat >= K.poachFrom ? 0.45 * (r.heat - K.poachFrom + 1) : 0, K.restW];
+    let x = crand(c) * w.reduce((a, b) => a + b, 0), pick = 0;
+    for (; pick < w.length - 1; pick++) { if (x < w[pick]) break; x -= w[pick]; }
+    const sev = 1 + (r.power > 55 ? 1 : 0) + (r.heat >= 6 ? 1 : 0);
+    if (pick === 0) {
+      const near = free.filter((b) => b.district === r.focus), b = cpick(c, near.length ? near : free);
+      b.rival = r.id; r.power = clampN(r.power + 2, 5, 95); r.last = `${sx(r, 'узяв', 'узяла')} під руку «${b.name}»`;
+      c.news.push({ kind: 'rival', rival: r.id, biz: b.id, head: `${r.name} ${sx(r, 'узяв', 'узяла')} «${b.name}» під свою руку`, text: `${b.owner} тепер платить ${r.name}. Інспекторам радять туди не заходити, якщо не хочуть клопоту.` });
+    } else if (pick === 1) {
+      if (r.style === 'smear') {
+        s.threat += K.smear.threat * sev; s.people = clampN(s.people - K.smear.people * sev, 0, 100); r.last = sx(r, 'облив', 'облила') + ' брудом у пресі';
+        c.news.push({ kind: 'attack', rival: r.id, head: `Брудна преса: ${r.name}`, text: SMEAR[cint(c, SMEAR.length)] });
+      } else if (r.style === 'informer') {
+        s.patron = clampN(s.patron - K.inform.patron * sev, 0, 100); s.threat += K.inform.threat * sev; r.last = sx(r, 'поскаржився', 'поскаржилась') + ' губернатору';
+        c.news.push({ kind: 'attack', rival: r.id, head: `Донос: ${r.name}`, text: INFORM[cint(c, INFORM.length)] });
+      } else {
+        const lost = Math.min(s.cash, K.boycott * sev); s.cash -= lost; s.threat += 1; r.last = sx(r, 'переманив', 'переманила') + ' ваших людей';
+        c.news.push({ kind: 'attack', rival: r.id, head: `${r.name} ${sx(r, 'переманив', 'переманила')} людей`, text: `Двоє ваших посильних перейшли до ${r.name}${lost ? ` і прихопили ${fmt(lost)} кр. з каси` : ''}. Тепер вони знають забагато.` });
+      }
+    } else if (pick === 2) {
+      const b = cpick(c, mine);
+      if (crand(c) < K.poachChance) {
+        b.status = 'open'; b.rival = r.id; b.tribute = 0; b.grudge = 0; r.power = clampN(r.power + 3, 5, 95); r.last = `${sx(r, 'перебив', 'перебила')} дах «${b.name}»`;
+        c.news.push({ kind: 'rival', rival: r.id, biz: b.id, head: `${r.name} ${sx(r, 'перебив', 'перебила')} ваш дах над «${b.name}»`, text: `${b.owner} більше не платить вам. Хтось пообіцяв йому надійніший захист.` });
+      } else {
+        r.last = sx(r, 'спробував', 'спробувала') + ' перебити дах'; c.news.push({ kind: 'rival', rival: r.id, biz: b.id, head: `${r.name} ${sx(r, 'пробував', 'пробувала')} забрати «${b.name}»`, text: `${b.owner} відмовив. Цього разу.` });
+      }
+    } else r.last = 'вичікує';
+  }
+}
+
+// ---------------------------------------------------------------- moves against a rival
+
+export interface RivalOption extends ActOption { act: RivalAct }
+
+const eligibleKid = (s: GameState) => [...s.kids].filter((k) => !k.gone && k.age >= 16).sort((a, b) => b.age - a.age)[0] || null;
+export const marriageCost = (r: Rival) => r10(300 + r.power * 8);
+export const exposeOdds = (s: GameState, r: Rival) => clampN(0.5 + (s.patron - 50) / 150 - r.power / 250, 0.15, 0.85);
+
+export function rivalActs(s: GameState, r: Rival): RivalOption[] {
+  const K = CITY_RULES, kid = eligibleKid(s), bribe = r10(K.bribeBase + r.power * K.bribePerPower), dowry = marriageCost(r);
+  if (r.ally) return [];
+  return [
+    { act: 'bribe', t: 'Підкупити', sub: `Подарунок ${r.name}: гроші, що виглядають як шана. Злість спадає: з вами, виявляється, можна домовитись.`, can: s.cash >= bribe && r.heat >= 0.5, why: s.cash < bribe ? `Бракує брудних: потрібно ${fmt(bribe)} кр.` : 'Не сердиться і так', risk: 0, odds: 0.85, gain: 0, gainT: `злість −${K.bribeDrop}`, cost: bribe },
+    { act: 'expose', t: 'Здати його', sub: `Анонімно «повідомити» куди слід про ${r.name}. Якщо вдасться, вплив і два заклади під його рукою похитнуться. Якщо ні — дізнаються, хто писав.`, can: true, risk: 2, odds: exposeOdds(s, r), gain: 0, gainT: `вплив −${K.exposeDamage}` },
+    { act: 'marry', t: 'Віддати дитину заміж', sub: `${kid ? `${kid.first} (${kid.age} р.)` : 'Дитина'} вийде за родича ${r.name}. Дім стане союзником назавжди, але ви втратите дитину в родині.`, can: !!kid && r.heat <= K.marryHeat && s.cash >= dowry, why: !kid ? 'Немає дитини від 16 років' : r.heat > K.marryHeat ? `${r.name} надто злий: спершу вгамуйте` : `Придане ${fmt(dowry)} кр. — бракує брудних`, risk: 0, odds: 1, gain: 0, gainT: 'союзник назавжди', cost: dowry }
+  ];
+}
+
+export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
+  if (s.screen !== 'morning') throw new Error('Moves are made in the morning');
+  const n = structuredClone(s);
+  const c = n.city || (n.city = initCity(n));
+  if (c.acted) return n;
+  const r = rivalOf(c, id);
+  if (!r) return n;
+  const opt = rivalActs(n, r).find((o) => o.act === act);
+  if (!opt || !opt.can) return n;
+  c.acted = true;
+  const K = CITY_RULES, res: ActResult = { biz: '', rival: r.id, act: act as never, ok: false, title: '', text: '', cash: 0, d: {} };
+  n.cash -= opt.cost || 0;
+  if (act === 'bribe') {
+    if (crand(c) < opt.odds) { r.heat = Math.max(0, r.heat - K.bribeDrop); res.ok = true; res.title = `${r.name} ${sx(r, 'прийняв', 'прийняла')} дарунок`; res.text = 'Подяка тривала довше, ніж слід було б. Зате полювання вщухло.'; }
+    else { res.title = `${r.name} ${sx(r, 'взяв', 'взяла')} гроші й нічого не ${sx(r, 'обіцяв', 'обіцяла')}`; res.text = 'Дарунок прийнято, а злість лишилась. Таке трапляється.'; res.d.i = 1; }
+  } else if (act === 'expose') {
+    res.d.i = opt.risk;
+    if (crand(c) < opt.odds) {
+      r.power = Math.max(5, r.power - K.exposeDamage); r.heat = Math.min(10, r.heat + 2); res.ok = true;
+      const lost = holdings(c, r.id).slice(0, 2); lost.forEach((b) => { b.rival = null; });
+      res.title = `${r.name} ${sx(r, 'втратив', 'втратила')} вплив`; res.text = `Перевірка до нього дійшла. ${lost.length ? `Заклади ${lost.map((b) => `«${b.name}»`).join(' і ')} лишилися без захисту.` : 'Щоправда, захищати йому вже нікого.'} Тепер шукатимуть, хто це влаштував.`;
+    } else {
+      r.heat = Math.min(10, r.heat + 3); res.d.i = opt.risk + 1; res.title = `${r.name} ${sx(r, 'дізнався', 'дізналася')}, хто писав`; res.text = 'Донос не спрацював, а почерк виявився впізнаваним. Тепер на вас полюватимуть серйозніше.';
+    }
+  } else {
+    const kid = eligibleKid(n)!;
+    kid.gone = true;
+    kid.why = `${kid.g === 'f' ? 'вийшла заміж' : 'одружився'} — тепер у родині ${r.name}`;
+    r.ally = true; r.heat = 0; r.power = clampN(r.power + 6, 5, 95); res.ok = true; res.d.s = 2;
+    res.title = `Союз із ${r.name}`; res.text = `${kid.first} ${kid.g === 'f' ? 'увійшла' : 'увійшов'} до їхнього дому. Весілля вийшло гучним, а ворожнеча — тихою. Тепер ${r.name} щороку знижує ваш ризик.`;
+  }
+  c.last = res;
+  if (res.d.i) n.threat += res.d.i;
+  if (res.d.s) n.system = clamp100(n.system + res.d.s);
+  return n;
+}

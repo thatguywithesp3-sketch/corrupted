@@ -94,12 +94,19 @@ export function Newspaper({ s, run, v }: { s: GameState; run: Run; v: any }) {
               <ColHead t="МІСЬКА ХРОНІКА" />
               {leads.length === 0 && <div style={{ fontSize: 11.5, fontStyle: 'italic', color: MUTE }}>У місті тихо. Нових закладів не відкривали.</div>}
               {leads.map((n, i) => {
-                const b = bizOf(n.biz), live = b && b.status === 'open';
+                const b = bizOf(n.biz), live = b && b.status === 'open', rv = c?.rivals?.find((r) => r.id === n.rival);
                 return (
                   <div key={i} style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.15, color: n.kind === 'complaint' || n.kind === 'closed' ? RED : INK }}>{n.head}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.15, color: n.kind === 'complaint' || n.kind === 'closed' || n.kind === 'attack' ? RED : INK }}>
+                      {rv && <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: rv.color, marginRight: 5, border: `1px solid ${INK}` }} />}{n.head}
+                    </div>
                     <div style={{ fontSize: 11, lineHeight: 1.3, textAlign: 'justify' }}>{n.text}</div>
-                    {live && (
+                    {rv && (n.kind === 'attack' || !live) && (
+                      <button onClick={() => setMap('r:' + rv.id)} style={{ marginTop: 3, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 7px', background: 'transparent', border: `1.5px solid ${RED}`, borderRadius: 12, cursor: 'pointer', fontFamily: HAND, fontSize: 15, color: RED, transform: 'rotate(1deg)' }}>
+                        ✎ що робити з ним
+                      </button>
+                    )}
+                    {live && n.kind !== 'attack' && (
                       <button onClick={() => setMap(b!.id)} style={{ marginTop: 3, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 7px', background: 'transparent', border: `1.5px solid ${RED}`, borderRadius: 12, cursor: 'pointer', fontFamily: HAND, fontSize: 15, color: RED, transform: 'rotate(-1.5deg)' }}>
                         ✎ обвести · на плані
                       </button>
