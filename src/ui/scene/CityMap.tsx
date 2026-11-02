@@ -17,7 +17,7 @@ const oddsTone = (p: number) => (p >= 0.65 ? T.clean : p >= 0.4 ? T.dirty : T.ri
 const short = (b: Biz) => b.kind.split(' ')[0];
 
 /** the plan: the generated engraving underneath, the pins on top */
-function Plan({ biz, sel, onPick, zoom, rivals }: { biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[] }) {
+function Plan({ biz, sel, onPick, zoom, rivals, last }: { biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[]; last: { biz: string; ok: boolean } | null }) {
   const colOf = (id?: string | null) => rivals.find((r) => r.id === id)?.color;
   const ctl = G.control({ biz, rivals } as never);
   const order = [...biz].sort((a, z) => (a.id === sel ? 1 : 0) - (z.id === sel ? 1 : 0) || a.y - z.y);
@@ -59,6 +59,7 @@ function Plan({ biz, sel, onPick, zoom, rivals }: { biz: Biz[]; sel: string | nu
               <rect x={-lw / 2} y="-1.9" width={lw} height="2.9" rx=".4" fill={on ? '#FFF7DC' : '#F2E9D0'} fillOpacity={on ? 1 : 0.9} stroke={on ? RED : '#5A4A30'} strokeWidth={on ? 0.35 : 0.15} />
               <text textAnchor="middle" y=".3" fontFamily="Old Standard TT, serif" fontSize="2.2" fontWeight={on ? 700 : 400} fill={closed ? '#7A7468' : INK}>{short(b)}</text>
             </g>
+            {last && last.biz === b.id && <g transform="translate(-3.4 3.2) rotate(-14)"><circle r="2.1" fill="#F6EEDA" stroke={last.ok ? '#2F6E46' : '#8E1F12'} strokeWidth=".45" /><path d={last.ok ? 'M-1 0 L-.2 .9 L1.1 -.9' : 'M-.9 -.9 L.9 .9 M.9 -.9 L-.9 .9'} stroke={last.ok ? '#2F6E46' : '#8E1F12'} strokeWidth=".55" fill="none" strokeLinecap="round" /></g>}
             <circle r="6" fill="transparent" />
           </g>
         );
@@ -212,24 +213,49 @@ function RivalCard({ r, c, wide }: { r: Rival; c: NonNullable<GameState['city']>
   );
 }
 
-function Result({ res }: { res: NonNullable<GameState['city']>['last'] }) {
-  if (!res) return null;
+type Last = NonNullable<NonNullable<GameState['city']>['last']>;
+const deltas = (res: Last) => {
+  const ch: [string, (typeof T)[keyof typeof T]][] = [];
+  if (res.cash > 0) ch.push([`+${G.fmt(res.cash)} брудними`, T.dirty]);
+  if (res.d.i) ch.push([`ризик +${res.d.i}`, T.risk]);
+  if (res.d.n) ch.push([`народ ${res.d.n}`, T.risk]);
+  if (res.d.p) ch.push([`покровитель ${res.d.p}`, T.risk]);
+  if (res.d.s) ch.push([`система +${res.d.s}`, T.clean]);
+  return ch;
+};
+
+/** a rubber stamp left on the card of whoever we touched today; nowhere else */
+function TodayMark({ res }: { res: Last }) {
+  const tone = res.ok ? T.clean : T.risk;
   return (
-    <div style={{ position: 'relative', padding: '10px 12px', background: res.ok ? T.clean.note : T.risk.note, borderLeft: `7px solid ${res.ok ? T.clean.pen : T.risk.pen}`, transform: 'rotate(-0.5deg)', boxShadow: '2px 5px 9px rgba(0,0,0,0.45)' }}>
-      <span aria-hidden="true" style={{ position: 'absolute', top: -7, left: '42%', width: 50, height: 15, background: 'rgba(235,225,190,0.7)', transform: 'rotate(-3deg)', boxShadow: '0 1px 2px rgba(0,0,0,0.25)' }} />
-      <div style={{ fontSize: 10, letterSpacing: 1.6, fontWeight: 700, color: res.ok ? T.clean.ink : T.risk.ink }}>{res.ok ? 'ВДАЛОСЯ' : 'НЕ ВДАЛОСЯ'}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.15, color: res.ok ? T.clean.ink : T.risk.ink }}>{res.title}</div>
-      <div style={{ fontSize: 12.5, lineHeight: 1.3, marginTop: 2 }}>{res.text}</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, fontSize: 12, fontWeight: 700 }}>
-        {res.cash > 0 && <span style={{ padding: '1px 7px', background: T.dirty.note, color: T.dirty.ink, border: `1px solid ${T.dirty.pen}` }}>+{G.fmt(res.cash)} брудними</span>}
-        {res.d.i ? <span style={{ padding: '1px 7px', background: T.risk.note, color: T.risk.ink, border: `1px solid ${T.risk.pen}` }}>ризик +{res.d.i}</span> : null}
-        {res.d.n ? <span style={{ padding: '1px 7px', background: T.risk.note, color: T.risk.ink, border: `1px solid ${T.risk.pen}` }}>народ {res.d.n}</span> : null}
-        {res.d.p ? <span style={{ padding: '1px 7px', background: T.risk.note, color: T.risk.ink, border: `1px solid ${T.risk.pen}` }}>покровитель {res.d.p}</span> : null}
-        {res.d.s ? <span style={{ padding: '1px 7px', background: T.clean.note, color: T.clean.ink, border: `1px solid ${T.clean.pen}` }}>система +{res.d.s}</span> : null}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 9, padding: '6px 8px', border: `1.5px dashed ${tone.pen}`, background: 'rgba(255,255,255,0.35)' }}>
+      <span style={{ flexShrink: 0, width: 58, height: 58, borderRadius: '50%', border: `3px double ${tone.ink}`, color: tone.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap', fontFamily: "'Ruslan Display', serif", fontSize: 9.5, lineHeight: 1.05, transform: 'rotate(-12deg)', mixBlendMode: 'multiply', opacity: 0.85 }}>{res.ok ? 'ВДА-\nЛОСЯ' : 'ПРО-\nВАЛ'}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 9.5, letterSpacing: 1.5, fontWeight: 700, color: MUTE }}>СЬОГОДНІ · ВАШ ХІД</span>
+        <span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.15, color: tone.ink }}>{res.title}</span>
+        <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>{deltas(res).map(([l, tn]) => <span key={l} style={{ padding: '0 6px', fontSize: 11.5, fontWeight: 700, background: tn.note, color: tn.ink, border: `1px solid ${tn.pen}` }}>{l}</span>)}</span>
+      </span>
+    </div>
+  );
+}
+
+/** the moment of stamping: the stamp slams onto the desk, says what happened, and lifts away */
+function StampFlash({ res, onDone }: { res: Last; onDone: () => void }) {
+  useEffect(() => { const t = setTimeout(onDone, 2600); return () => clearTimeout(t); }, [onDone]);
+  const tone = res.ok ? T.clean : T.risk;
+  return (
+    <div onClick={onDone} style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,6,2,0.45)', animation: 'sf-bg 2.6s ease forwards', cursor: 'pointer' }}>
+      <style>{`@keyframes sf-bg{0%{opacity:0}8%{opacity:1}82%{opacity:1}100%{opacity:0}}@keyframes sf-slam{0%{transform:rotate(-4deg) scale(2.6);opacity:0}14%{transform:rotate(-9deg) scale(.94);opacity:1}20%{transform:rotate(-8deg) scale(1)}100%{transform:rotate(-8deg) scale(1)}}`}</style>
+      <div className="tx-paper" style={{ width: 300, padding: '18px 18px 14px', background: '#F5EDD7', boxShadow: '0 16px 30px rgba(0,0,0,0.7)', textAlign: 'center', transform: 'rotate(1deg)' }}>
+        <div style={{ display: 'inline-block', padding: '6px 16px', border: `4px double ${tone.ink}`, color: tone.ink, fontFamily: "'Ruslan Display', serif", fontSize: 34, letterSpacing: 3, mixBlendMode: 'multiply', animation: 'sf-slam .9s cubic-bezier(.5,0,.75,0) both' }}>{res.ok ? 'ВДАЛОСЯ' : 'ПРОВАЛ'}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, marginTop: 10, lineHeight: 1.15 }}>{res.title}</div>
+        <div style={{ fontSize: 13, lineHeight: 1.3, marginTop: 4, color: MUTE }}>{res.text}</div>
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>{deltas(res).map(([l, tn]) => <span key={l} style={{ padding: '1px 7px', fontSize: 12, fontWeight: 700, background: tn.note, color: tn.ink, border: `1px solid ${tn.pen}` }}>{l}</span>)}</div>
       </div>
     </div>
   );
 }
+
 
 const MiniPin = ({ col, ring, badge, roof }: { col: string; ring?: string; badge?: { n: string; c: string; at: 'tr' | 'tl' }; roof?: boolean }) => (
   <svg viewBox="-7 -7 14 14" width="38" height="38" aria-hidden="true">
@@ -328,6 +354,7 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
           </div>
           <div style={{ marginTop: 6, fontSize: 13, color: MUTE }}>{STYLE_N[rv.style]}.</div>
           {rv.last && <div style={{ marginTop: 3, fontFamily: HAND, fontSize: 19 }}>Вночі: {rv.last}</div>}
+          {c.acted && c.last && c.last.rival === rv.id && <TodayMark res={c.last} />}
         </Seg>
 
         <Seg title={`ЗАКЛАДИ ПІД ${rv.f ? 'ЇЇ' : 'ЙОГО'} РУКОЮ: ${held.length}`}>
@@ -437,13 +464,17 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   }, [sel, panel, zoom]);
   useEffect(() => setPick(null), [sel, selR, panel]);
 
+  const [flash, setFlash] = useState(false);
   const stamp = () => {
     if (!cur) return;
+    setFlash(true);
     if (rv) run((x) => G.actOnRival(x, rv.id, cur.act as RivalAct));
     else if (b) run((x) => G.actOnBiz(x, b.id, cur.act as BizAct));
   };
   const rivMode = (panel as string) === 'riv';
   const lead = c.acted && c.last;
+  const last = c.last;
+  const doneNote = c.acted ? <div style={{ fontSize: 13, fontStyle: 'italic', color: rivMode ? INK : '#E9E1C2', padding: '4px 2px' }}>Хід на сьогодні зроблено. Наступний — завтра зранку.</div> : null;
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
     const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
 
@@ -456,9 +487,9 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       ))}
     </div>
   );
-  const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : b ? <Blank b={b} wide={false} rv={bRival} /> : <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
-  const actions = lead
-    ? <Result res={c.last!} />
+  const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : b ? <>{<Blank b={b} wide={false} rv={bRival} />}{last && lead && !last.rival && last.biz === b.id && <div style={{ background: '#F5EDD7', padding: '0 10px 10px', marginTop: -8 }}><TodayMark res={last} /></div>}</> : <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
+  const actions = c.acted
+    ? doneNote
     : rv && rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: (rivMode ? INK : '#E9E1C2'), padding: '4px 2px' }}>Дім скріплено шлюбом. Він більше не полює на вас.</div>
     : acts.length
       ? <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{acts.map((o) => <ActCard key={o.act} o={o} on={cur?.act === o.act} locked={c.acted} onPick={() => setPick(o.act)} />)}</div>
@@ -466,10 +497,11 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
 
   return (
     <div ref={root} className="tx-wood" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#1A120A', display: 'flex', flexDirection: 'column', fontFamily: SERIF, color: INK }}>
+      {flash && last && <StampFlash res={last} onDone={() => setFlash(false)} />}
       {/* the whole plan; it shrinks only while a card is open */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
         <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
-          <Plan biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} />
+          <Plan last={lead && last && !last.rival ? last : null} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} />
         </div>
         {/* floating furniture: title plaque, close, zoom, legend */}
         <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '5px 10px', pointerEvents: 'none' }}>
@@ -493,9 +525,9 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         <div style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '93%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
           <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 2px 4px' }}>
             {panel === 'riv' ? null : tabs}
-            {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR}>{lead ? <div style={{ marginBottom: 10 }}><Result res={c.last!} /></div> : null}</PowerSheet> : <>{card}{actions}</>}
+            {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR}>{null}</PowerSheet> : <>{card}{actions}</>}
           </div>
-          {rivMode && !lead && rv && (
+          {rivMode && rv && (c.acted ? <div style={{ flexShrink: 0, paddingTop: 8, fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Хід на сьогодні зроблено. Наступний — завтра зранку.</div> : (
             <div style={{ flexShrink: 0, paddingTop: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, letterSpacing: 1.6, fontWeight: 700, color: '#D9C79B', marginBottom: 6 }}>ЩО ЗРОБИТИ З {rv.name.toUpperCase().replace('ГРАФ ҐЖЕҐОЖЕВСЬКИЙ', 'ГРАФОМ').replace('ПАН ВАЙСМАН', 'ВАЙСМАНОМ').replace('ПАНІ БЕРГ', 'БЕРГ')} · 1 ХІД<span style={{ flex: 1, height: 1, background: 'rgba(217,199,155,0.35)' }} /></div>
               {rv.ally ? <div style={{ fontSize: 13, fontStyle: 'italic', color: '#E9E1C2' }}>Дім скріплено шлюбом. {rv.f ? 'Вона' : 'Він'} більше не полює на вас.</div> : <>
@@ -505,7 +537,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
                 </div>}
               </>}
             </div>
-          )}
+          ))}
           <div style={{ display: 'flex', gap: 10, flexShrink: 0, paddingTop: 8 }}>
             <DeskBtn style={{ flex: 1 }} onClick={() => setPanel(null)}>До карти</DeskBtn>
             {!c.acted && <DeskBtn kind="brass" style={{ flex: 2, flexDirection: 'column', gap: 0, lineHeight: 1.1 }} disabled={!cur} onClick={stamp}>
