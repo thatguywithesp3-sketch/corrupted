@@ -1,7 +1,7 @@
 import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
-import { cityEvening, cityMorning, initCity } from './city';
+import { CITY_V, cityEvening, cityMorning, initCity } from './city';
 import { clamp100, fmt, fk } from './text';
 import type {
   BankDeal,
@@ -620,7 +620,7 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
 export function sleep(s: GameState): GameState {
   const n = clone(s);
   Object.assign(n, { screen: 'morning', doc: 0, ap: 1, last: {} });
-  if (n.city) cityMorning(n, n.city); else n.city = initCity(n);
+  if (n.city && n.city.v === CITY_V) cityMorning(n, n.city); else n.city = initCity(n);
   return n;
 }
 

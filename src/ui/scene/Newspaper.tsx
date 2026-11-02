@@ -32,7 +32,7 @@ function Engraving({ era, seed, caption }: { era: number; seed: number; caption:
 }
 
 export function Newspaper({ s, run, v }: { s: GameState; run: Run; v: any }) {
-  useEffect(() => { if (!s.city) run(G.ensureCity); }, [s.city, run]);
+  useEffect(() => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); }, [s.city, run]);
   const [map, setMap] = useState<string | null | false>(false);
   const c = s.city;
   const tv = Math.min(100, Math.max(0, s.threat)), stage = tv < 35 ? 1 : tv < 70 ? 2 : 3;

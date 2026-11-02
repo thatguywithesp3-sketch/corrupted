@@ -4,10 +4,14 @@
 // so the core game stays bit-identical to the prototype when the city is not touched.
 import { clamp100, fmt } from './text';
 import type { GameState } from './types';
+import { DISTRICTS, getPlan, type District } from './cityplan';
+export { DISTRICTS, type District } from './cityplan';
+
+/** bump when the map or the shape of the city changes: older saves get a fresh city */
+export const CITY_V = 2;
 
 // ---------------------------------------------------------------- types
 
-export type District = 'hill' | 'old' | 'market' | 'podil' | 'port';
 export type BizStatus = 'open' | 'roof' | 'closed';
 export type BizAct = 'inspect' | 'seal' | 'roof';
 
@@ -17,7 +21,8 @@ export interface Biz {
   name: string;
   owner: string;
   district: District;
-  x: number; y: number; // map position, 0..100 × 0..70
+  x: number; y: number; // map position, 0..200 × 0..140 (the centre of its lot)
+  lot: number; // id of the lot (house) on the plan it stands on
   wealth: number; // yearly takings that matter to us, kr.
   pressure: number; // 0..3 how hard we have leaned on it
   grudge: number; // 0..3 how much the owner hates us
@@ -34,6 +39,7 @@ export interface CityNews { kind: 'open' | 'rumor' | 'flavor' | 'complaint' | 'c
 export interface ActResult { biz: string; act: BizAct; ok: boolean; title: string; text: string; cash: number; d: { p?: number; n?: number; s?: number; i?: number } }
 
 export interface CityState {
+  v?: number;
   rng: number;
   econ: Econ;
   prev: Econ;
@@ -76,13 +82,6 @@ const STREETS: Record<District, string[]> = {
   podil: ['Кожум’яцькій', 'Гончарній', 'Ковальській'],
   port: ['Набережній', 'Митній', 'Корабельній']
 };
-export const DISTRICTS: Record<District, { t: string; box: [number, number, number, number] }> = {
-  hill: { t: 'Замковий пагорб', box: [6, 8, 24, 26] },
-  old: { t: 'Старе місто', box: [30, 14, 54, 34] },
-  market: { t: 'Ринок', box: [36, 40, 56, 56] },
-  podil: { t: 'Поділ', box: [8, 40, 30, 62] },
-  port: { t: 'Порт', box: [60, 18, 74, 58] }
-};
 const FLAVOR: [string, string][] = [
   ['Пароплав «Королева Марія» привіз англійське вугілля', 'Портові вантажники працюють і вночі. Ціни на вугілля можуть знизитися до зими.'],
   ['Опера оголосила сезон', 'Першою виставою стане «Чарівна флейта». Ложі на прем’єру розпродано за день.'],
@@ -115,21 +114,23 @@ const r10 = (v: number) => Math.round(v / 10) * 10;
 // ---------------------------------------------------------------- setup & daily life
 
 function newBiz(c: CityState, year: number): Biz {
-  const K = cpick(c, KINDS), district = cpick(c, K.d), b = DISTRICTS[district].box;
+  const K = cpick(c, KINDS), district = cpick(c, K.d);
+  const lots = getPlan().byDistrict[district], free = lots.filter((l) => !c.biz.some((x) => x.lot === l.id));
+  const lot = cpick(c, free.length ? free : lots);
   const used = new Set(c.biz.map((x) => x.name));
   let name = cpick(c, NAMES); for (let i = 0; i < 6 && used.has(name); i++) name = cpick(c, NAMES);
   const tie = K.tie || (crand(c) < 0.15 ? (crand(c) < 0.5 ? 'press' : 'patron') : null);
   c.seq += 1;
   return {
     id: 'b' + c.seq, kind: K.k, name, owner: cpick(c, OWNERS), district,
-    x: Math.round(b[0] + crand(c) * (b[2] - b[0])), y: Math.round(b[1] + crand(c) * (b[3] - b[1])),
+    x: lot.x, y: lot.y, lot: lot.id,
     wealth: r10(K.w[0] + crand(c) * (K.w[1] - K.w[0])), pressure: 0, grudge: 0, tie, status: 'open', opened: year, tribute: 0
   };
 }
 
 export function initCity(s: GameState): CityState {
   const econ = { treasury: 24000, grain: 3, trade: 100, crown: 100 };
-  const c: CityState = { rng: (s.rng ^ 0x9e3779b9) >>> 0, econ, prev: { ...econ }, biz: [], seq: 0, news: [], acted: false, last: null, tribute: 0 };
+  const c: CityState = { v: CITY_V, rng: (s.rng ^ 0x9e3779b9) >>> 0, econ, prev: { ...econ }, biz: [], seq: 0, news: [], acted: false, last: null, tribute: 0 };
   for (let i = 0; i < 4; i++) c.biz.push(newBiz(c, s.year - 1 - cint(c, 6)));
   cityMorning(s, c);
   if (!c.news.some((x) => x.kind === 'open')) { const b = newBiz(c, s.year); c.biz.push(b); c.news.unshift({ kind: 'open', biz: b.id, head: `Відкриття на ${street(c, b)}: ${b.kind} «${b.name}»`, text: `${b.owner} відкриває ${b.kind} «${b.name}». Сусіди кажуть, справи підуть добре.` }); }
@@ -269,7 +270,7 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
 
 /** for saves made before the city existed */
 export function ensureCity(s: GameState): GameState {
-  if (s.city) return s;
+  if (s.city && s.city.v === CITY_V) return s;
   const n = structuredClone(s); n.city = initCity(n); return n;
 }
 

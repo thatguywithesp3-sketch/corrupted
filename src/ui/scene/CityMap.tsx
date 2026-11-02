@@ -6,6 +6,7 @@ import * as G from '../../engine';
 import type { ActOption, Biz, BizAct, GameState } from '../../engine';
 import { T } from './Ledger';
 import { BizGlyph, BizIcon } from './BizIcon';
+import { PlanArt } from './PlanArt';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
 
 type Run = (f: (x: GameState) => GameState) => void;
@@ -15,54 +16,21 @@ const pinColor = (b: Biz) => (b.status === 'closed' ? '#8C8478' : b.status === '
 const oddsTone = (p: number) => (p >= 0.65 ? T.clean : p >= 0.4 ? T.dirty : T.risk);
 const short = (b: Biz) => b.kind.split(' ')[0];
 
-/** the plan itself, drawn as an old engraved city map */
-function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (id: string) => void }) {
+/** the plan: the generated engraving underneath, the pins on top */
+function Plan({ biz, sel, onPick, zoom }: { biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number }) {
   const order = [...biz].sort((a, z) => (a.id === sel ? 1 : 0) - (z.id === sel ? 1 : 0) || a.y - z.y);
   return (
-    <svg viewBox="-3 -2 106 74" style={{ display: 'block', height: '100%', width: 'auto', aspectRatio: '106 / 74', minWidth: '100%', flexShrink: 0 }} aria-label="План Порт-Аурума">
+    <svg viewBox="-4 -4 208 148" style={{ display: 'block', width: 1040 * zoom, height: 740 * zoom, flexShrink: 0 }} aria-label="План Порт-Аурума">
       <defs>
-        <pattern id="mp-water" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)"><path d="M0 1 H2" stroke="#6E8AA0" strokeWidth=".25" /></pattern>
-        <pattern id="mp-block" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 .8 H1.6" stroke="#8C7E58" strokeWidth=".25" /></pattern>
-        <filter id="mp-rough"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" /><feDisplacementMap in="SourceGraphic" scale="0.6" /></filter>
         <filter id="mp-sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx=".5" dy=".9" stdDeviation=".5" floodColor="#000" floodOpacity=".55" /></filter>
         <radialGradient id="mp-head" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#fff" stopOpacity=".85" /><stop offset=".35" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".35" /></radialGradient>
-        <radialGradient id="mp-stain" cx=".5" cy=".5" r=".5"><stop offset=".78" stopColor="#8A6A30" stopOpacity="0" /><stop offset=".9" stopColor="#8A6A30" stopOpacity=".28" /><stop offset="1" stopColor="#8A6A30" stopOpacity="0" /></radialGradient>
       </defs>
-      <rect x="-3" y="-2" width="106" height="74" fill={PAPER} />
-      <rect x="62" y="-2" width="41" height="74" fill="url(#mp-water)" />
-      <path d="M62 -2 V0 M62 70 V72" stroke="#4A6478" strokeWidth=".5" /><path d="M-3 66 H0" stroke="#4A6478" strokeWidth="2.2" opacity=".35" />
-      {/* sea and river mouth */}
-      <path d="M62 0 C60 14 66 22 63 34 C60 46 66 58 62 70 L100 70 L100 0 Z" fill="url(#mp-water)" />
-      <path d="M62 0 C60 14 66 22 63 34 C60 46 66 58 62 70" stroke="#4A6478" strokeWidth=".5" fill="none" />
-      <path d="M0 66 C20 63 40 68 63 64" stroke="#4A6478" strokeWidth="2.2" fill="none" opacity=".35" />
-      {/* piers */}
-      {[22, 32, 44].map((y) => <rect key={y} x="62" y={y} width="9" height="1.4" fill="#8C7E58" stroke={INK} strokeWidth=".2" />)}
-      {/* hill contours */}
-      {[0, 1, 2, 3].map((i) => <ellipse key={i} cx="15" cy="17" rx={12 - i * 2.6} ry={9 - i * 2} fill="none" stroke="#7A6A48" strokeWidth=".25" />)}
-      {/* city blocks */}
-      {Object.entries(G.DISTRICTS).map(([k, d]) => (
-        <g key={k}>
-          <rect x={d.box[0] - 2} y={d.box[1] - 2} width={d.box[2] - d.box[0] + 4} height={d.box[3] - d.box[1] + 4} fill="url(#mp-block)" stroke="#5A4A30" strokeWidth=".3" rx="1" filter="url(#mp-rough)" />
-          <text x={(d.box[0] + d.box[2]) / 2} y={d.box[1] - 3} textAnchor="middle" fontFamily="Old Standard TT, serif" fontSize="2.6" letterSpacing=".4" fill="#4A3A22">{d.t.toUpperCase()}</text>
-        </g>
-      ))}
-      {/* main streets */}
-      <path d="M26 30 L36 38 L58 40 M30 24 L56 26 M20 48 L36 48 M54 30 L62 28 M50 50 L62 46" stroke="#5A4A30" strokeWidth=".5" fill="none" strokeDasharray="1.4 .6" />
-      {/* landmarks */}
-      <g fill={INK}><path d="M14 12 l1 -3 l1 3 z" /><circle cx="15" cy="13" r="1.4" fill="#B8913C" stroke={INK} strokeWidth=".2" /><rect x="40" y="18" width="1.6" height="5" /><path d="M39.6 18 l1.2 -2.4 l1.2 2.4 z" /></g>
-      <text x="96" y="66" textAnchor="end" fontFamily="Old Standard TT, serif" fontSize="2.4" fontStyle="italic" fill="#3A5468">гавань</text>
-      {/* compass */}
-      <g transform="translate(92 8)"><circle r="3.4" fill="none" stroke={INK} strokeWidth=".25" /><path d="M0 -3.2 L.8 0 L0 3.2 L-.8 0 Z" fill={INK} /><text y="-4.2" textAnchor="middle" fontSize="2" fontFamily="serif">Пн</text></g>
-      {/* an old coffee ring and the folds the sheet came in */}
-      <circle cx="30" cy="57" r="5" fill="url(#mp-stain)" />
-      {[33.3, 66.6].map((x) => <g key={x}><path d={`M${x} -2 V72`} stroke="#3A2A10" strokeOpacity=".22" strokeWidth=".18" /><path d={`M${x + 0.35} -2 V72`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".3" /></g>)}
-      <path d="M-3 35 H103" stroke="#3A2A10" strokeOpacity=".22" strokeWidth=".18" /><path d="M-3 35.35 H103" stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".3" />
-
+      <PlanArt />
       {/* businesses: pushpins with a little label each */}
       {order.map((b) => {
         const on = b.id === sel, closed = b.status === 'closed', roof = b.status === 'roof';
         const col = pinColor(b);
-        const lw = short(b).length * 1.1 + 1.4;
+        const lw = short(b).length * 1.45 + 1.8;
         return (
           <g key={b.id} transform={`translate(${b.x} ${b.y})`} onClick={() => onPick(b.id)} style={{ cursor: 'pointer' }}>
             <g style={{ transform: on ? 'translateY(-1.2px) scale(1.25)' : 'none', transition: 'transform .2s' }}>
@@ -78,9 +46,9 @@ function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (i
               {!closed && !roof && b.pressure > 0 && <g transform="translate(2.2 -2.2)"><circle r="1.55" fill="#D49A3A" stroke={INK} strokeWidth=".3" /><text y=".6" textAnchor="middle" fontSize="2" fontWeight="700" fontFamily="serif" fill={INK}>{b.pressure}</text></g>}
               {!closed && b.grudge > 0 && <g transform="translate(-2.2 -2.2)"><circle r="1.55" fill="#C93A26" stroke={INK} strokeWidth=".3" /><text y=".6" textAnchor="middle" fontSize="2" fontWeight="700" fontFamily="serif" fill="#fff">{b.grudge}</text></g>}
             </g>
-            <g transform="translate(0 5.5)">
-              <rect x={-lw / 2} y="-1.7" width={lw} height="2.6" rx=".4" fill={on ? '#FFF7DC' : '#F2E9D0'} fillOpacity={on ? 1 : 0.88} stroke={on ? RED : '#5A4A30'} strokeWidth={on ? 0.35 : 0.15} />
-              <text textAnchor="middle" y=".25" fontFamily="Old Standard TT, serif" fontSize="1.9" fontWeight={on ? 700 : 400} fill={closed ? '#7A7468' : INK}>{short(b)}</text>
+            <g transform="translate(0 5.6)">
+              <rect x={-lw / 2} y="-1.9" width={lw} height="2.9" rx=".4" fill={on ? '#FFF7DC' : '#F2E9D0'} fillOpacity={on ? 1 : 0.9} stroke={on ? RED : '#5A4A30'} strokeWidth={on ? 0.35 : 0.15} />
+              <text textAnchor="middle" y=".3" fontFamily="Old Standard TT, serif" fontSize="2.2" fontWeight={on ? 700 : 400} fill={closed ? '#7A7468' : INK}>{short(b)}</text>
             </g>
             <circle r="6" fill="transparent" />
           </g>
@@ -194,6 +162,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const [wide, setWide] = useState(false);
   const [sel, setSel] = useState<string | null>(focus || c.biz.find((b) => b.status !== 'closed')?.id || null);
   const [pick, setPick] = useState<BizAct | null>(null);
+  const [zoom, setZoom] = useState(0.8);
   const b = c.biz.find((x) => x.id === sel) || null;
   const acts = b && b.status === 'open' ? G.bizActs(s, b) : [];
   const cur = acts.find((o) => o.act === pick && o.can) || acts.find((o) => o.can) || null;
@@ -203,12 +172,11 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
     const f = () => setWide(el.clientWidth >= 640);
     f(); const ro = new ResizeObserver(f); ro.observe(el); return () => ro.disconnect();
   }, []);
-  // the sheet is wider than the screen: slide the selected pin to the middle
+  // the sheet is bigger than the screen: slide the selected pin to the middle
   useEffect(() => {
     const sc = sheet.current; if (!sc || !b) return;
-    const w = sc.scrollWidth;
-    sc.scrollTo({ left: ((b.x + 3) / 106) * w - sc.clientWidth / 2, behavior: 'smooth' });
-  }, [sel, wide]);
+    sc.scrollTo({ left: ((b.x + 4) / 208) * sc.scrollWidth - sc.clientWidth / 2, top: ((b.y + 4) / 148) * sc.scrollHeight - sc.clientHeight / 2, behavior: 'smooth' });
+  }, [sel, wide, zoom]);
   useEffect(() => setPick(null), [sel]);
 
   const stamp = () => cur && b && run((x) => G.actOnBiz(x, b.id, cur.act));
@@ -217,8 +185,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
 
   const mapSheet = (
     <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-      <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'hidden', background: PAPER, border: '1px solid #5A4A30', boxShadow: '0 16px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.5)', scrollbarWidth: 'none', display: 'flex' }}>
-        <Plan biz={c.biz} sel={sel} onPick={setSel} />
+      <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: '1px solid #5A4A30', boxShadow: '0 16px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.5)', scrollbarWidth: 'none' }}>
+        <Plan biz={c.biz} sel={sel} onPick={setSel} zoom={zoom} />
       </div>
       {/* the sheet is rolled up at its edges: a paper cylinder, layers showing, throwing a shadow on the map */}
       {(['left', 'right', 'top', 'bottom'] as const).map((side) => {
@@ -234,6 +202,9 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       {/* edge shading and a curled corner, so it lies on the table rather than hangs */}
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 36px rgba(90,60,20,0.45)' }} />
       <div aria-hidden="true" style={{ position: 'absolute', right: 26, bottom: 16, width: 30, height: 30, background: 'linear-gradient(135deg, rgba(0,0,0,0) 48%, #CDBE98 50%, #F1E6C8 100%)', boxShadow: '-3px -3px 6px rgba(0,0,0,0.3)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', right: 36, top: '42%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {([['+', 0.25], ['−', -0.25]] as const).map(([l, d]) => <button key={l} onClick={() => setZoom((z) => Math.min(1.5, Math.max(0.5, +(z + d).toFixed(2))))} style={{ width: 36, height: 36, fontSize: 22, fontWeight: 700, fontFamily: SERIF, color: INK, background: 'linear-gradient(180deg,#E2C374,#B8913C 60%,#9A7630)', border: '1.5px solid #4A3812', borderRadius: 4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}>{l}</button>)}
+      </div>
       <div style={{ position: 'absolute', left: 30, bottom: 22, display: 'flex', gap: 8, flexWrap: 'wrap', padding: '2px 7px', background: 'rgba(242,233,208,0.9)', border: '1px solid #5A4A30', fontSize: 9.5, color: MUTE, pointerEvents: 'none' }}>
         {legend.map(([col, t]) => <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: col, border: `1px solid ${INK}` }} />{t}</span>)}
       </div>
