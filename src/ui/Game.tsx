@@ -11,6 +11,7 @@ import { Ledger } from './scene/Ledger';
 import { NightScene } from './scene/NightScene';
 import { Newspaper } from './scene/Newspaper';
 import { FamilyStrip } from './scene/FamilyStrip';
+import { FamilyAlbum, MeterInfo, MeterLegend } from './scene/Family';
 import { WindowLight, phaseOf } from './scene/WindowLight';
 import { Panorama, type PanoKind } from './scene/Panorama';
 injectTextures();
@@ -38,7 +39,13 @@ function withSlots(root: DcNode): DcNode {
     if (n.v === '{{isMorning}}') n.ch = [slot('morning')];
     if (n.v === '{{isNight}}' && n.ch.some(isFlexMain)) n.ch = [slot('night')];
     if (n.v === '{{hudOn}}' && n.ch.length >= 2) n.ch.splice(1, 0, slot('family'));
+    if (n.v === '{{albumOn}}') n.ch = [slot('album')];
+    if (n.v === '{{infoOn}}') n.ch = [slot('info')];
   });
+  // the meter legend in the HUD: a React block instead of the template rows
+  const legend = (n: DcNode): boolean => n.t === 'e' && n.ch.some((c) => c.t === 'e' && c.ch.some((x) => x.t === 'x' && /ЩО ОЗНАЧАЄ КОЖНА ШКАЛА/.test(x.v)));
+  const swap = (n: DcNode) => { if (n.t === 'x') return; n.ch = n.ch.map((c) => (legend(c) ? slot('legend') : c)); n.ch.forEach(swap); };
+  swap(r);
   // the old "Family N" pill squeezed into the name plate
   const drop = (n: DcNode) => { if (n.t !== 'x') n.ch = n.ch.filter((c) => !(c.t === 'e' && c.a['aria-label'] === 'Родинний альбом')); if (n.t !== 'x') n.ch.forEach(drop); };
   drop(r);
@@ -119,7 +126,10 @@ export function Game() {
       morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} /> : null,
       evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} /> : null,
       night: s.screen === 'night' ? <NightScene key={s.year} s={s} run={run} before={eve.current} /> : null,
-      family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} />
+      family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} />,
+      album: ui.album ? <FamilyAlbum s={s} onClose={() => setUi({ album: false })} /> : null,
+      info: ui.info ? <MeterInfo s={s} m={ui.info} onClose={() => setUi({ info: null })} /> : null,
+      legend: <MeterLegend s={s} open={(m) => setUi({ info: m })} />
     };
     return v;
   }, [s, ui, run, setUi, scenes]);
