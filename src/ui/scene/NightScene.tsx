@@ -184,11 +184,10 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
   const sg = (v: number) => (v > 0 ? '+' : v < 0 ? '−' : '') + G.fk(Math.abs(v));
 
   return (
-    <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: 6, fontFamily: SERIF, color: INK }}>
-      <CurtainView era={s.era} phase={dawn ? 'dawn' : 'night'} height={168} lightsOut={dawn} />
+    <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: 18, fontFamily: SERIF, color: INK, opacity: dawn ? 0 : 1, transition: 'opacity 1.3s ease' }}>
 
       {/* the report sheet on the desk */}
-      <div className="tx-paper" style={{ position: 'relative', flex: 1, minHeight: 0, margin: '-10px 4px 10px', padding: '11px 14px 8px', background: '#F1E8CF', transform: 'rotate(0.5deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', zIndex: 2 }}>
+      <div className="tx-paper" style={{ position: 'relative', flex: 1, minHeight: 0, margin: '0 4px 10px', padding: '11px 14px 8px', background: '#F1E8CF', transform: 'rotate(0.5deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', zIndex: 2 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, letterSpacing: 2, color: MUTE }}><span>КОПІЮВАЛЬНА КНИГА</span><span>ЗВІТ ЗА РІК</span></div>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
           <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 28, lineHeight: 1 }}>РІК {closedYear}</span>

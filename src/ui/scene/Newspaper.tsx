@@ -6,7 +6,6 @@ import { createPortal } from 'react-dom';
 import * as G from '../../engine';
 import type { GameState } from '../../engine';
 import { CityMap } from './CityMap';
-import { CurtainView } from './NightScene';
 import { T } from './Ledger';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
 
@@ -44,13 +43,8 @@ export function Newspaper({ s, run, v }: { s: GameState; run: Run; v: any }) {
 
   return (
     <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 4px 0', fontFamily: SERIF, color: INK }}>
-      {/* the morning city outside, between the drawn-back curtains */}
-      <CurtainView era={s.era} phase="dawn" height={124}>
-        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 72% 0%, rgba(255,226,160,0.55), rgba(255,226,160,0) 60%), linear-gradient(180deg, rgba(255,214,150,0.18), rgba(255,214,150,0) 70%)', mixBlendMode: 'screen', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 10px 3px', textAlign: 'center', fontSize: 10, letterSpacing: 2.2, fontWeight: 700, color: '#F6E7C4', textShadow: '0 1px 3px #000', background: 'linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.6))' }}>ПОРТ-АУРУМ ПРОКИДАЄТЬСЯ · {s.year}</div>
-      </CurtainView>
       {/* how loud the press is about you */}
-      <div style={{ position: 'absolute', left: 18, top: 138, zIndex: 2, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', background: '#1F1A14', color: '#E6D9BC', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+      <div style={{ alignSelf: 'flex-start', marginLeft: 10, marginBottom: -12, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', background: '#1F1A14', color: '#E6D9BC', fontSize: 9.5, fontWeight: 700, letterSpacing: 1.4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
         ВИ В ГАЗЕТІ
         <span style={{ display: 'flex', gap: 2 }}>{[1, 2, 3].map((k) => <span key={k} style={{ width: 14, height: 7, background: k <= stage ? '#E8603F' : '#3D3328' }} />)}</span>
         <span style={{ fontWeight: 400, letterSpacing: 0.4, color: stage === 3 ? '#E8603F' : '#E6D9BC' }}>{['дрібна замітка', 'про вас пишуть', 'ВИ НА ПЕРШІЙ ШПАЛЬТІ'][stage - 1]}</span>

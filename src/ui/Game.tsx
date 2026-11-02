@@ -12,6 +12,7 @@ import { NightScene } from './scene/NightScene';
 import { Newspaper } from './scene/Newspaper';
 import { FamilyStrip } from './scene/FamilyStrip';
 import { WindowLight, phaseOf } from './scene/WindowLight';
+import { Panorama, type PanoKind } from './scene/Panorama';
 injectTextures();
 import v1 from '../data/views/era1.json';
 import v2 from '../data/views/era2.json';
@@ -102,6 +103,16 @@ export function Game() {
   const eve = useRef<GameState | null>(null);
   if (s.screen === 'evening') eve.current = s;
   const scenes = SCENE_ERAS.has(s.era);
+  // the city between parts of the day: a panorama before the paper and before the dark ledger
+  const [pano, setPano] = useState<PanoKind | null>(null);
+  const prevScreen = useRef<string | null>(null);
+  useEffect(() => {
+    if (mode !== 'play') { prevScreen.current = null; return; }
+    const was = prevScreen.current; prevScreen.current = s.screen;
+    if (was === s.screen) return;
+    if (s.screen === 'morning') setPano('morning');
+    else if (s.screen === 'evening') setPano('evening');
+  }, [s.screen, mode]);
   const view = useMemo(() => {
     const v = buildView({ s, ui, run, setUi });
     if (scenes) v.slots = {
@@ -126,6 +137,7 @@ export function Game() {
           </>
         )}
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
+        {mode === 'play' && pano && <Panorama key={pano + s.year} s={s} kind={pano} onDone={() => setPano(null)} />}
         <div id="overlay-root" style={{ position: 'absolute', inset: 0, zIndex: 85, pointerEvents: 'none' }} />
         <div className="room-light" />
       </div>
