@@ -156,7 +156,7 @@ function PlanArtInner() {
       <circle cx="40" cy="104" r="6" fill="url(#pa-stain)" /><circle cx="150" cy="190" r="5" fill="url(#pa-stain)" />
       {[66.6, 133.3].map((x) => <g key={x}><path d={`M${x} -4 V224`} stroke="#3A2A10" strokeOpacity=".2" strokeWidth=".18" /><path d={`M${x + 0.4} -4 V224`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".35" /></g>)}
       {[110, 164].map((y) => <g key={y}><path d={`M-4 ${y} H204`} stroke="#3A2A10" strokeOpacity=".2" strokeWidth=".18" /><path d={`M-4 ${y + 0.4} H204`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".35" /></g>)}
-      <rect x="-4" y="-4" width="208" height="228" fill="url(#pa-vig)" pointerEvents="none" />
+      
     </>
   );
 }

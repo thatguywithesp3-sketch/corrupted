@@ -358,29 +358,17 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   return (
     <div ref={root} className="tx-wood" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#1A120A', display: 'flex', flexDirection: 'column', fontFamily: SERIF, color: INK }}>
       {/* the whole plan; it shrinks only while a card is open */}
-      <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: '6px 6px 0', display: 'flex', flexDirection: 'column' }}>
-        <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: '1px solid #5A4A30', boxShadow: '0 16px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.5)', scrollbarWidth: 'none' }}>
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
+        <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
           <Plan biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} />
         </div>
-        {(['left', 'right', 'top', 'bottom'] as const).map((side) => {
-          const h = side === 'left' || side === 'right';
-          const dir = { left: '90deg', right: '270deg', top: '180deg', bottom: '0deg' }[side];
-          const sz = h ? 22 : 14;
-          return (
-            <div key={side} aria-hidden="true" style={{ position: 'absolute', pointerEvents: 'none', [side]: 0, ...(h ? { top: 0, bottom: 0, width: sz } : { left: 0, right: 0, height: sz }),
-              background: `repeating-linear-gradient(${dir}, rgba(50,32,8,0.55) 0 1px, rgba(0,0,0,0) 1px 3px) 0 0 / ${h ? '8px 100%' : '100% 8px'} no-repeat, linear-gradient(${dir}, #7A6438 0, #C9B685 14%, #F6EBCB 34%, #D9C79B 58%, rgba(214,196,150,0.5) 80%, rgba(214,196,150,0) 100%)`,
-              boxShadow: { left: '7px 0 12px rgba(40,25,5,0.5)', right: '-7px 0 12px rgba(40,25,5,0.5)', top: '0 7px 12px rgba(40,25,5,0.5)', bottom: '0 -7px 12px rgba(40,25,5,0.5)' }[side] }} />
-          );
-        })}
-        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 36px rgba(90,60,20,0.45)' }} />
-
         {/* floating furniture: title plaque, close, zoom, legend */}
-        <div style={{ position: 'absolute', left: 30, top: 20, right: 76, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '5px 10px', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '5px 10px', pointerEvents: 'none' }}>
           <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 17, flex: 1, whiteSpace: 'nowrap' }}>План Порт-Аурума</span>
           <span style={{ fontSize: 10, letterSpacing: 1.2, fontWeight: 700, padding: '2px 7px', background: c.acted ? T.risk.note : T.clean.note, color: c.acted ? T.risk.ink : T.clean.ink, whiteSpace: 'nowrap' }}>{c.acted ? 'ХІД ЗРОБЛЕНО' : '1 ХІД'}</span>
         </div>
-        <button onClick={onClose} aria-label="Згорнути план" style={{ position: 'absolute', right: 30, top: 20, width: 40, height: 40, ...plaque, fontSize: 20, fontWeight: 700, cursor: 'pointer', borderRadius: 4 }}>✕</button>
-        <div style={{ position: 'absolute', right: 30, top: 72, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button onClick={onClose} aria-label="Згорнути план" style={{ position: 'absolute', right: 10, top: 10, width: 40, height: 40, ...plaque, fontSize: 20, fontWeight: 700, cursor: 'pointer', borderRadius: 4 }}>✕</button>
+        <div style={{ position: 'absolute', right: 10, top: 62, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {([['+', 0.2], ['−', -0.2]] as const).map(([l, d]) => <button key={l} onClick={() => setZoom((z) => Math.min(2, Math.max(minZ(), +(z + d).toFixed(2))))} style={{ width: 40, height: 40, fontSize: 24, fontWeight: 700, fontFamily: SERIF, color: INK, background: 'linear-gradient(180deg,#E2C374,#B8913C 60%,#9A7630)', border: '1.5px solid #4A3812', borderRadius: 4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}>{l}</button>)}
           <button onClick={() => setKey((v) => !v)} aria-label="Умовні знаки" style={{ width: 40, height: 40, fontSize: 20, fontWeight: 700, fontFamily: SERIF, color: '#F1E6C8', background: 'linear-gradient(180deg, rgba(60,42,22,0.96), rgba(30,20,10,0.96))', border: '1.5px solid #B8913C', borderRadius: 4, boxShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}>?</button>
         </div>
