@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as G from '../../engine';
 import type { ActOption, Biz, BizAct, GameState } from '../../engine';
 import { T } from './Ledger';
+import { BizGlyph, BizIcon } from './BizIcon';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
 
 type Run = (f: (x: GameState) => GameState) => void;
@@ -18,7 +19,7 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (id: string) => void }) {
   const order = [...biz].sort((a, z) => (a.id === sel ? 1 : 0) - (z.id === sel ? 1 : 0) || a.y - z.y);
   return (
-    <svg viewBox="0 0 100 70" style={{ display: 'block', height: '100%', width: 'auto', aspectRatio: '100 / 70', minWidth: '100%', flexShrink: 0 }} aria-label="План Порт-Аурума">
+    <svg viewBox="-3 -2 106 74" style={{ display: 'block', height: '100%', width: 'auto', aspectRatio: '106 / 74', minWidth: '100%', flexShrink: 0 }} aria-label="План Порт-Аурума">
       <defs>
         <pattern id="mp-water" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)"><path d="M0 1 H2" stroke="#6E8AA0" strokeWidth=".25" /></pattern>
         <pattern id="mp-block" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 .8 H1.6" stroke="#8C7E58" strokeWidth=".25" /></pattern>
@@ -27,7 +28,9 @@ function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (i
         <radialGradient id="mp-head" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#fff" stopOpacity=".85" /><stop offset=".35" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".35" /></radialGradient>
         <radialGradient id="mp-stain" cx=".5" cy=".5" r=".5"><stop offset=".78" stopColor="#8A6A30" stopOpacity="0" /><stop offset=".9" stopColor="#8A6A30" stopOpacity=".28" /><stop offset="1" stopColor="#8A6A30" stopOpacity="0" /></radialGradient>
       </defs>
-      <rect width="100" height="70" fill={PAPER} />
+      <rect x="-3" y="-2" width="106" height="74" fill={PAPER} />
+      <rect x="62" y="-2" width="41" height="74" fill="url(#mp-water)" />
+      <path d="M62 -2 V0 M62 70 V72" stroke="#4A6478" strokeWidth=".5" /><path d="M-3 66 H0" stroke="#4A6478" strokeWidth="2.2" opacity=".35" />
       {/* sea and river mouth */}
       <path d="M62 0 C60 14 66 22 63 34 C60 46 66 58 62 70 L100 70 L100 0 Z" fill="url(#mp-water)" />
       <path d="M62 0 C60 14 66 22 63 34 C60 46 66 58 62 70" stroke="#4A6478" strokeWidth=".5" fill="none" />
@@ -52,8 +55,8 @@ function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (i
       <g transform="translate(92 8)"><circle r="3.4" fill="none" stroke={INK} strokeWidth=".25" /><path d="M0 -3.2 L.8 0 L0 3.2 L-.8 0 Z" fill={INK} /><text y="-4.2" textAnchor="middle" fontSize="2" fontFamily="serif">Пн</text></g>
       {/* an old coffee ring and the folds the sheet came in */}
       <circle cx="30" cy="57" r="5" fill="url(#mp-stain)" />
-      {[33.3, 66.6].map((x) => <g key={x}><path d={`M${x} 0 V70`} stroke="#3A2A10" strokeOpacity=".22" strokeWidth=".18" /><path d={`M${x + 0.35} 0 V70`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".3" /></g>)}
-      <path d="M0 35 H100" stroke="#3A2A10" strokeOpacity=".22" strokeWidth=".18" /><path d="M0 35.35 H100" stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".3" />
+      {[33.3, 66.6].map((x) => <g key={x}><path d={`M${x} -2 V72`} stroke="#3A2A10" strokeOpacity=".22" strokeWidth=".18" /><path d={`M${x + 0.35} -2 V72`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".3" /></g>)}
+      <path d="M-3 35 H103" stroke="#3A2A10" strokeOpacity=".22" strokeWidth=".18" /><path d="M-3 35.35 H103" stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".3" />
 
       {/* businesses: pushpins with a little label each */}
       {order.map((b) => {
@@ -65,14 +68,17 @@ function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (i
             <g style={{ transform: on ? 'translateY(-1.2px) scale(1.25)' : 'none', transition: 'transform .2s' }}>
               {on && <circle r="5.2" fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="14s" repeatCount="indefinite" /></circle>}
               <g filter="url(#mp-sh)">
-                <circle r="2.6" fill={col} stroke={INK} strokeWidth=".4" />
-                <circle r="2.6" fill="url(#mp-head)" />
+                <circle r="3" fill={col} stroke={INK} strokeWidth=".4" />
+                <circle r="3" fill="url(#mp-head)" />
               </g>
-              {closed && <path d="M-1.7 -1.7 L1.7 1.7 M1.7 -1.7 L-1.7 1.7" stroke={INK} strokeWidth=".6" />}
-              {roof && <path d="M-1.8 .5 L0 -1.5 L1.8 .5 M-1.2 .3 V1.7 H1.2 V.3" stroke="#fff" strokeWidth=".5" fill="none" />}
-              {!closed && !roof && b.pressure > 0 && <text y="1" textAnchor="middle" fontSize="3" fontWeight="700" fontFamily="serif" fill={INK}>{b.pressure}</text>}
+              <circle r="2.35" fill="#FBF4DC" fillOpacity=".92" />
+              <BizGlyph kind={b.kind} x={-1.8} y={-1.8} size={3.6} color={closed ? '#7A7468' : INK} sw={1.9} />
+              {closed && <path d="M-2 -2 L2 2 M2 -2 L-2 2" stroke="#8E1F12" strokeWidth=".6" />}
+              {roof && <g transform="translate(2.1 2.1)"><circle r="1.45" fill="#3F8A5A" stroke={INK} strokeWidth=".25" /><path d="M-.8 .15 L0 -.7 L.8 .15 M-.55 0 V.8 H.55 V0" stroke="#fff" strokeWidth=".3" fill="none" /></g>}
+              {!closed && !roof && b.pressure > 0 && <g transform="translate(2.2 -2.2)"><circle r="1.55" fill="#D49A3A" stroke={INK} strokeWidth=".3" /><text y=".6" textAnchor="middle" fontSize="2" fontWeight="700" fontFamily="serif" fill={INK}>{b.pressure}</text></g>}
+              {!closed && b.grudge > 0 && <g transform="translate(-2.2 -2.2)"><circle r="1.55" fill="#C93A26" stroke={INK} strokeWidth=".3" /><text y=".6" textAnchor="middle" fontSize="2" fontWeight="700" fontFamily="serif" fill="#fff">{b.grudge}</text></g>}
             </g>
-            <g transform="translate(0 4.9)">
+            <g transform="translate(0 5.5)">
               <rect x={-lw / 2} y="-1.7" width={lw} height="2.6" rx=".4" fill={on ? '#FFF7DC' : '#F2E9D0'} fillOpacity={on ? 1 : 0.88} stroke={on ? RED : '#5A4A30'} strokeWidth={on ? 0.35 : 0.15} />
               <text textAnchor="middle" y=".25" fontFamily="Old Standard TT, serif" fontSize="1.9" fontWeight={on ? 700 : 400} fill={closed ? '#7A7468' : INK}>{short(b)}</text>
             </g>
@@ -84,8 +90,20 @@ function Plan({ biz, sel, onPick }: { biz: Biz[]; sel: string | null; onPick: (i
   );
 }
 
-const Dots = ({ n, max = 3, c }: { n: number; max?: number; c: string }) => (
-  <span style={{ display: 'inline-flex', gap: 3 }}>{Array.from({ length: max }, (_, i) => <span key={i} style={{ width: 9, height: 9, borderRadius: '50%', border: `1.5px solid ${c}`, background: i < n ? c : 'transparent' }} />)}</span>
+/** a big meter: label, three chunky lamps, n/3 */
+const Meter = ({ label, n, tone, icon }: { label: string; n: number; tone: (typeof T)[keyof typeof T]; icon: 'eye' | 'fist' }) => (
+  <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', background: n ? tone.note : 'rgba(31,26,20,0.06)', border: `1.5px solid ${n ? tone.pen : 'rgba(31,26,20,0.3)'}` }}>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={n ? tone.ink : MUTE} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {icon === 'eye' ? <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z M12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 100-5z" /> : <path d="M12 3v10 M7 9l5 5 5-5 M5 20h14" />}
+    </svg>
+    <span style={{ flex: 1, minWidth: 0 }}>
+      <span style={{ display: 'block', fontSize: 9.5, letterSpacing: 1.3, fontWeight: 700, color: n ? tone.ink : MUTE }}>{label}</span>
+      <span style={{ display: 'flex', gap: 4, marginTop: 2 }}>
+        {[0, 1, 2].map((i) => <span key={i} style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${n ? tone.ink : MUTE}`, background: i < n ? `radial-gradient(circle at 35% 30%, ${tone.pen}, ${tone.ink})` : 'transparent', boxShadow: i < n ? '0 1px 2px rgba(0,0,0,0.5)' : 'inset 0 1px 2px rgba(0,0,0,0.25)' }} />)}
+      </span>
+    </span>
+    <span style={{ fontFamily: HAND, fontSize: 24, lineHeight: 1, color: n ? tone.ink : MUTE }}>{n}<span style={{ fontSize: 14 }}>/3</span></span>
+  </span>
 );
 
 /** the blank pinned to the map's edge */
@@ -99,9 +117,10 @@ function Blank({ b, wide }: { b: Biz; wide: boolean }) {
   const statusT = b.status === 'closed' ? 'закрито' : b.status === 'roof' ? `під «дахом» · ${G.fk(b.tribute)}/рік` : b.pressure ? `під тиском ${b.pressure}/3` : 'ще не чіпали';
   const stCol = b.status === 'roof' ? T.clean : b.status === 'closed' ? T.neu : b.grudge >= 2 ? T.risk : b.pressure ? T.dirty : T.neu;
   return (
-    <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '13px 11px 8px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: `rotate(${wide ? 0.5 : -0.4}deg)`, zIndex: 2 }}>
+    <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 11px 8px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: `rotate(${wide ? 0.5 : -0.4}deg)`, zIndex: 2 }}>
       <Clip side={wide ? 'left' : 'top'} />
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+        <span style={{ width: 46, height: 46, flexShrink: 0, borderRadius: '50%', border: `2px solid ${INK}`, outline: `1px solid ${INK}`, outlineOffset: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(212,154,58,0.18)', transform: 'rotate(-6deg)', marginTop: 2 }}><BizIcon kind={b.kind} size={30} sw={1.6} /></span>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.4, color: MUTE }}>{G.DISTRICTS[b.district].t.toUpperCase()} · З {b.opened} Р.</span>
           <span style={{ display: 'block', fontSize: 17, fontWeight: 700, lineHeight: 1.1 }}>{G.bizTitle(b)}</span>
@@ -113,11 +132,11 @@ function Blank({ b, wide }: { b: Biz; wide: boolean }) {
         </span>
       </div>
       {b.tie && <div style={{ marginTop: 3, fontSize: 11, fontWeight: 700, color: T.risk.ink, background: T.risk.note, padding: '2px 6px', display: 'inline-block' }}>⚠ {b.tie === 'press' ? 'Дружить із газетою' : 'Вхожий до губернатора'} — ризик більший</div>}
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center', fontSize: 11, marginTop: 5, color: MUTE, flexWrap: 'wrap' }}>
-        <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}>тиск <Dots n={b.pressure} c={T.dirty.ink} /></span>
-        <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}>образа <Dots n={b.grudge} c={T.risk.ink} /></span>
-        <span style={{ marginLeft: 'auto', padding: '1px 7px', fontWeight: 700, background: stCol.note, color: stCol.ink, border: `1px solid ${stCol.pen}` }}>{statusT}</span>
+      <div style={{ display: 'flex', gap: 8, marginTop: 7 }}>
+        <Meter label="ТИСК" n={b.pressure} tone={T.dirty} icon="fist" />
+        <Meter label="ОБРАЗА" n={b.grudge} tone={T.risk} icon="eye" />
       </div>
+      <div style={{ marginTop: 6, textAlign: 'right' }}><span style={{ padding: '1px 8px', fontSize: 11.5, fontWeight: 700, background: stCol.note, color: stCol.ink, border: `1px solid ${stCol.pen}` }}>{statusT}</span></div>
     </div>
   );
 }
@@ -188,7 +207,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   useEffect(() => {
     const sc = sheet.current; if (!sc || !b) return;
     const w = sc.scrollWidth;
-    sc.scrollTo({ left: (b.x / 100) * w - sc.clientWidth / 2, behavior: 'smooth' });
+    sc.scrollTo({ left: ((b.x + 3) / 106) * w - sc.clientWidth / 2, behavior: 'smooth' });
   }, [sel, wide]);
   useEffect(() => setPick(null), [sel]);
 
@@ -201,10 +220,21 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'hidden', background: PAPER, border: '1px solid #5A4A30', boxShadow: '0 16px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.5)', scrollbarWidth: 'none', display: 'flex' }}>
         <Plan biz={c.biz} sel={sel} onPick={setSel} />
       </div>
+      {/* the sheet is rolled up at its edges: a paper cylinder, layers showing, throwing a shadow on the map */}
+      {(['left', 'right', 'top', 'bottom'] as const).map((side) => {
+        const h = side === 'left' || side === 'right';
+        const dir = { left: '90deg', right: '270deg', top: '180deg', bottom: '0deg' }[side];
+        const sz = h ? 26 : 16;
+        return (
+          <div key={side} aria-hidden="true" style={{ position: 'absolute', pointerEvents: 'none', [side]: 0, ...(h ? { top: 0, bottom: 0, width: sz } : { left: 0, right: 0, height: sz }),
+            background: `repeating-linear-gradient(${dir}, rgba(50,32,8,0.55) 0 1px, rgba(0,0,0,0) 1px 3px) 0 0 / ${h ? '9px 100%' : '100% 9px'} no-repeat, linear-gradient(${dir}, #7A6438 0, #C9B685 14%, #F6EBCB 34%, #D9C79B 58%, rgba(214,196,150,0.55) 80%, rgba(214,196,150,0) 100%)`,
+            boxShadow: { left: '7px 0 12px rgba(40,25,5,0.5)', right: '-7px 0 12px rgba(40,25,5,0.5)', top: '0 7px 12px rgba(40,25,5,0.5)', bottom: '0 -7px 12px rgba(40,25,5,0.5)' }[side] }} />
+        );
+      })}
       {/* edge shading and a curled corner, so it lies on the table rather than hangs */}
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 36px rgba(90,60,20,0.45)' }} />
-      <div aria-hidden="true" style={{ position: 'absolute', right: 0, bottom: 0, width: 34, height: 34, background: 'linear-gradient(135deg, rgba(0,0,0,0) 48%, #CDBE98 50%, #F1E6C8 100%)', boxShadow: '-3px -3px 6px rgba(0,0,0,0.3)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', left: 8, bottom: 6, display: 'flex', gap: 8, flexWrap: 'wrap', padding: '2px 7px', background: 'rgba(242,233,208,0.9)', border: '1px solid #5A4A30', fontSize: 9.5, color: MUTE, pointerEvents: 'none' }}>
+      <div aria-hidden="true" style={{ position: 'absolute', right: 26, bottom: 16, width: 30, height: 30, background: 'linear-gradient(135deg, rgba(0,0,0,0) 48%, #CDBE98 50%, #F1E6C8 100%)', boxShadow: '-3px -3px 6px rgba(0,0,0,0.3)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', left: 30, bottom: 22, display: 'flex', gap: 8, flexWrap: 'wrap', padding: '2px 7px', background: 'rgba(242,233,208,0.9)', border: '1px solid #5A4A30', fontSize: 9.5, color: MUTE, pointerEvents: 'none' }}>
         {legend.map(([col, t]) => <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: col, border: `1px solid ${INK}` }} />{t}</span>)}
       </div>
     </div>
