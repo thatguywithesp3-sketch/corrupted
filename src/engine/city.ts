@@ -189,14 +189,23 @@ export function cityEvening(s: GameState, c: CityState) {
 
 // ---------------------------------------------------------------- the morning move
 
-export interface ActOption { act: BizAct; t: string; sub: string; can: boolean; why?: string; risk: number }
+export interface ActOption { act: BizAct; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
+
+/** Chance that a move works (the same numbers actOnBiz rolls against; pressure counts after the move). */
+export function bizOdds(b: Biz, act: BizAct): number {
+  const tieMalus = b.tie ? 0.15 : 0;
+  const q = act === 'inspect' ? 0.45 + 0.15 * (b.pressure + 1) - tieMalus - 0.1 * b.grudge
+    : act === 'seal' ? 0.5 + 0.1 * Math.min(3, b.pressure + 1) - tieMalus
+    : 0.35 + 0.2 * b.pressure - tieMalus - 0.1 * b.grudge;
+  return Math.max(0, Math.min(1, q));
+}
 
 export function bizActs(_s: GameState, b: Biz): ActOption[] {
   const tie = b.tie === 'press' ? ' Власник дружить із газетою.' : b.tie === 'patron' ? ' Власник ходить до губернатора.' : '';
   return [
-    { act: 'inspect', t: 'Податкова перевірка', sub: `Натякнути, що порушення знайдуться завжди. Може «віддячити» ~${fmt(r10(b.wealth * (0.3 + 0.2 * b.pressure)))} кр.${tie}`, can: b.status === 'open' && b.pressure < 3, why: b.pressure >= 3 ? 'Тиснути сильніше вже нікуди' : undefined, risk: 1 + (b.tie ? 2 : 0) },
-    { act: 'seal', t: 'Опечатати заклад', sub: `Знайти «порушення» і повісити пломбу. Або платить ~${fmt(r10(b.wealth * 1.2))} кр., або закриється.`, can: b.status === 'open' && b.pressure >= 1, why: b.pressure < 1 ? 'Спершу перевірка: власник має відчути тиск' : undefined, risk: 3 + (b.tie ? 3 : 0) },
-    { act: 'roof', t: 'Запропонувати «дах»', sub: `Захист від інших чиновників за ~${fmt(r10(b.wealth * 0.25))} кр. щороку. Ризик +1 на рік, поки платить.`, can: b.status === 'open' && b.pressure >= 1, why: b.pressure < 1 ? 'Без тиску власник не зрозуміє, навіщо йому захист' : undefined, risk: 2 }
+    { act: 'inspect', t: 'Податкова перевірка', sub: `Натякнути, що порушення знайдуться завжди. Може «віддячити» ~${fmt(r10(b.wealth * (0.3 + 0.2 * b.pressure)))} кр.${tie}`, can: b.status === 'open' && b.pressure < 3, why: b.pressure >= 3 ? 'Тиснути сильніше вже нікуди' : undefined, risk: 1 + (b.tie ? 2 : 0), odds: bizOdds(b, 'inspect'), gain: r10(b.wealth * (0.3 + 0.2 * b.pressure)) },
+    { act: 'seal', t: 'Опечатати заклад', sub: `Знайти «порушення» і повісити пломбу. Або платить ~${fmt(r10(b.wealth * 1.2))} кр., або закриється.`, can: b.status === 'open' && b.pressure >= 1, why: b.pressure < 1 ? 'Спершу перевірка: власник має відчути тиск' : undefined, risk: 3 + (b.tie ? 3 : 0), odds: bizOdds(b, 'seal'), gain: r10(b.wealth * 1.2) },
+    { act: 'roof', t: 'Запропонувати «дах»', sub: `Захист від інших чиновників за ~${fmt(r10(b.wealth * 0.25))} кр. щороку. Ризик +1 на рік, поки платить.`, can: b.status === 'open' && b.pressure >= 1, why: b.pressure < 1 ? 'Без тиску власник не зрозуміє, навіщо йому захист' : undefined, risk: 2, odds: bizOdds(b, 'roof'), gain: r10(b.wealth * 0.25), perYear: true }
   ];
 }
 
