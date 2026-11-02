@@ -8,7 +8,7 @@ import { DISTRICTS, getPlan, type District } from './cityplan';
 export { DISTRICTS, type District } from './cityplan';
 
 /** bump when the map or the shape of the city changes: older saves get a fresh city */
-export const CITY_V = 3;
+export const CITY_V = 4;
 
 /** Numbers that decide how hard the rivals are. Tuned with the simulator (npm run sim:city). */
 export const CITY_RULES = {
@@ -90,23 +90,32 @@ export interface CityState {
 // ---------------------------------------------------------------- content (Era I)
 
 const KINDS: { k: string; w: [number, number]; tie?: 'press' | 'patron'; d: District[] }[] = [
-  { k: 'бакалійна лавка', w: [250, 450], d: ['podil', 'market'] },
-  { k: 'аптека', w: [400, 700], d: ['old', 'market'] },
-  { k: 'шинок', w: [300, 600], d: ['podil', 'port'] },
-  { k: 'кравецька майстерня', w: [250, 500], d: ['old', 'podil'] },
-  { k: 'пекарня', w: [200, 400], d: ['podil', 'market'] },
+  { k: 'бакалійна лавка', w: [250, 450], d: ['podil', 'market', 'zar'] },
+  { k: 'аптека', w: [400, 700], d: ['old', 'market', 'univ'] },
+  { k: 'шинок', w: [300, 600], d: ['podil', 'port', 'zar', 'sloboda'] },
+  { k: 'кравецька майстерня', w: [250, 500], d: ['old', 'podil', 'zar'] },
+  { k: 'пекарня', w: [200, 400], d: ['podil', 'market', 'zar'] },
   { k: 'ювелірна крамниця', w: [700, 1200], d: ['old'], tie: 'patron' },
-  { k: 'друкарня', w: [400, 700], d: ['old', 'podil'], tie: 'press' },
-  { k: 'винний склад', w: [600, 1000], d: ['port'] },
+  { k: 'друкарня', w: [400, 700], d: ['old', 'podil', 'univ'], tie: 'press' },
+  { k: 'винний склад', w: [600, 1000], d: ['port', 'sloboda'] },
   { k: 'цукерня', w: [300, 550], d: ['old', 'market'] },
   { k: 'годинникова майстерня', w: [300, 600], d: ['old'] },
-  { k: 'ломбард', w: [600, 1100], d: ['podil', 'market'] },
-  { k: 'кав’ярня', w: [350, 650], d: ['old', 'hill'] },
-  { k: 'готель', w: [800, 1300], d: ['old', 'port'], tie: 'patron' },
-  { k: 'тютюнова крамниця', w: [300, 550], d: ['market', 'port'] },
-  { k: 'зерновий склад', w: [700, 1200], d: ['port'] },
-  { k: 'лазня', w: [300, 500], d: ['podil', 'hill'] }
+  { k: 'ломбард', w: [600, 1100], d: ['podil', 'market', 'zar', 'station'] },
+  { k: 'кав’ярня', w: [350, 650], d: ['old', 'hill', 'univ', 'station'] },
+  { k: 'готель', w: [800, 1300], d: ['old', 'port', 'station'], tie: 'patron' },
+  { k: 'тютюнова крамниця', w: [300, 550], d: ['market', 'port', 'station'] },
+  { k: 'зерновий склад', w: [700, 1200], d: ['port', 'sloboda', 'station'] },
+  { k: 'лазня', w: [300, 500], d: ['podil', 'hill', 'zar'] },
+  // the newer half of the city: these open as the capital grows
+  { k: 'книгарня', w: [250, 450], d: ['univ', 'old'] },
+  { k: 'залізничний буфет', w: [300, 550], d: ['station'] },
+  { k: 'вугільний склад', w: [500, 900], d: ['sloboda', 'station'] },
+  { k: 'ливарня', w: [700, 1250], d: ['sloboda', 'zar'] },
+  { k: 'візницька біржа', w: [350, 600], d: ['station', 'market'] },
+  { k: 'фотоательє', w: [300, 500], d: ['univ', 'old'] }
 ];
+/** the south bank is built up as the capital grows: it opens after the first few businesses */
+const NEW_DIST: District[] = ['zar', 'station', 'univ', 'sloboda'];
 const NAMES = ['Золотий лев', 'Під Ангелом', 'Дунай', 'Три корони', 'Гранд', 'Фортуна', 'Під Вежею', 'Чорна кава', 'Венеція', 'Нептун', 'Срібний якір', 'Ріг достатку', 'Біла акація', 'Сонячний двір', 'Під Каштаном', 'Варшавська', 'Атлас', 'Новий світ'];
 const OWNERS = ['Пан Козловський', 'Пані Новак', 'Пан Шульц', 'Пан Ковальчук', 'Пані Мельник', 'Пан Горват', 'Пан Дворжак', 'Пані Левицька', 'Пан Бергер', 'Пан Петренко', 'Пані Вишневська', 'Пан Земан', 'Пан Ткач', 'Пані Остапчук', 'Пан Лукаш', 'Пані Гаврилюк', 'Пан Сабо', 'Пан Радзивілович'];
 const STREETS: Record<District, string[]> = {
@@ -114,7 +123,11 @@ const STREETS: Record<District, string[]> = {
   old: ['Ратушній', 'Оперній', 'Лицарській', 'Срібній'],
   market: ['Ринковій', 'Соляній', 'Хлібній'],
   podil: ['Кожум’яцькій', 'Гончарній', 'Ковальській'],
-  port: ['Набережній', 'Митній', 'Корабельній']
+  port: ['Набережній', 'Митній', 'Корабельній'],
+  zar: ['Заріцькій', 'Мостовій', 'Слобідській'],
+  station: ['Вокзальній', 'Паровозній', 'Депо'],
+  univ: ['Університетській', 'Академічній', 'Ботанічній'],
+  sloboda: ['Заводській', 'Ливарній', 'Пристанській']
 };
 const FLAVOR: [string, string][] = [
   ['Пароплав «Королева Марія» привіз англійське вугілля', 'Портові вантажники працюють і вночі. Ціни на вугілля можуть знизитися до зими.'],
@@ -148,7 +161,9 @@ const r10 = (v: number) => Math.round(v / 10) * 10;
 // ---------------------------------------------------------------- setup & daily life
 
 function newBiz(c: CityState, year: number): Biz {
-  const K = cpick(c, KINDS), district = cpick(c, K.d);
+  const south = c.seq >= 5; // the new districts open once the city has grown a little
+  const pool = KINDS.filter((k) => k.d.some((d) => south || !NEW_DIST.includes(d)));
+  const K = cpick(c, pool), ds = K.d.filter((d) => south || !NEW_DIST.includes(d)), district = cpick(c, ds);
   const lots = getPlan().byDistrict[district], free = lots.filter((l) => !c.biz.some((x) => x.lot === l.id));
   const lot = cpick(c, free.length ? free : lots);
   const used = new Set(c.biz.map((x) => x.name));
@@ -200,7 +215,7 @@ export function cityMorning(s: GameState, c: CityState) {
 
   // a new business opens (not too many on the map)
   const open = c.biz.filter((b) => b.status !== 'closed').length;
-  if (open < 10 && crand(c) < (open < 5 ? 0.85 : 0.5)) {
+  if (open < 18 && crand(c) < (open < 5 ? 0.85 : open < 10 ? 0.55 : 0.4)) {
     const b = newBiz(c, s.year);
     c.biz.push(b);
     c.news.unshift({ kind: 'open', biz: b.id, head: `Відкриття на ${street(c, b)}: ${b.kind} «${b.name}»`, text: `${b.owner} відкриває ${b.kind} «${b.name}». Кажуть, справи підуть добре: торгівля в порту ${e.trade >= 100 ? 'на підйомі' : 'хоч і повільна, та стабільна'}.` });
