@@ -9,6 +9,7 @@ import { Onboarding } from './Onboarding';
 import { injectTextures } from './textures';
 import { Ledger } from './scene/Ledger';
 import { NightScene } from './scene/NightScene';
+import { Newspaper } from './scene/Newspaper';
 import { FamilyStrip } from './scene/FamilyStrip';
 import { WindowLight, phaseOf } from './scene/WindowLight';
 injectTextures();
@@ -33,6 +34,7 @@ function withSlots(root: DcNode): DcNode {
   r.ch.forEach((n) => {
     if (n.t !== 'if') return;
     if (n.v === '{{isEvening}}') n.ch = [slot('evening')];
+    if (n.v === '{{isMorning}}') n.ch = [slot('morning')];
     if (n.v === '{{isNight}}' && n.ch.some(isFlexMain)) n.ch = [slot('night')];
     if (n.v === '{{hudOn}}' && n.ch.length >= 2) n.ch.splice(1, 0, slot('family'));
   });
@@ -103,6 +105,7 @@ export function Game() {
   const view = useMemo(() => {
     const v = buildView({ s, ui, run, setUi });
     if (scenes) v.slots = {
+      morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} /> : null,
       evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} /> : null,
       night: s.screen === 'night' ? <NightScene key={s.year} s={s} run={run} before={eve.current} /> : null,
       family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} />
@@ -123,6 +126,7 @@ export function Game() {
           </>
         )}
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
+        <div id="overlay-root" style={{ position: 'absolute', inset: 0, zIndex: 85, pointerEvents: 'none' }} />
         <div className="room-light" />
       </div>
     </div>

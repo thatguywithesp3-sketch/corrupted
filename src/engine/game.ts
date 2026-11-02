@@ -1,6 +1,7 @@
 import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
+import { cityEvening, cityMorning, initCity } from './city';
 import { clamp100, fmt, fk } from './text';
 import type {
   BankDeal,
@@ -302,7 +303,7 @@ function advance(n: GameState): GameState {
   const dead = deathOf(n);
   if (dead) return finish(n, 'collapse', dead[0], dead[1]);
   n.doc += 1; n.ap = 1;
-  if (n.doc >= docsFor(n).length) { n.doc = 0; n.screen = 'evening'; n.alloc = emptyAlloc(); }
+  if (n.doc >= docsFor(n).length) { n.doc = 0; n.screen = 'evening'; n.alloc = emptyAlloc(); if (n.city) cityEvening(n, n.city); }
   return n;
 }
 
@@ -346,6 +347,7 @@ export function signForm(s: GameState): GameState {
   n.headline = S(n, 'form.headline.' + n.gender, { title });
   n.body = S(n, 'form.body.' + n.gender, { title });
   startFamily(n);
+  n.city = initCity(n);
   n.screen = 'morning';
   return n;
 }
@@ -618,6 +620,7 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
 export function sleep(s: GameState): GameState {
   const n = clone(s);
   Object.assign(n, { screen: 'morning', doc: 0, ap: 1, last: {} });
+  if (n.city) cityMorning(n, n.city); else n.city = initCity(n);
   return n;
 }
 

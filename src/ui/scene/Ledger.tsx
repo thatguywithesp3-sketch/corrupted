@@ -171,6 +171,11 @@ export function Ledger({ s, run }: { s: GameState; run: Run }) {
         <Sticker label="ЧИСТІ" tone="clean" seed={2} sub="на рахунку">{G.fmt(s.clean)}</Sticker>
         <Sticker label="ОБШУК" tone={risky ? 'risk' : 'neu'} seed={3} sub={`ризик ${Math.round(s.threat)}`}>{odds}%</Sticker>
       </Stickers>
+      {(s.city?.tribute || 0) > 0 && (
+        <Sec title="ПРИХІД СЬОГОДНІ" tone="dirty">
+          <Line label="Данина з «даху»" note={`Платять ${s.city!.biz.filter((b) => b.status === 'roof').length} заклад(и). Вже в шухляді.`}><Block v={s.city!.tribute} tone="dirty" sign="+ " seed={9} /></Line>
+        </Sec>
+      )}
       <Sec title="ВЖЕ НЕ ВАШЕ" tone="out">
         <Line label="Частки спільникам" note={owedAll ? 'Їхні 20% зі схем. Віддати чи ні — на сторінці II.' : 'Сьогодні нікому не винні.'}><Block v={owedAll} tone="out" sign={owedAll ? '− ' : ''} seed={4} /></Line>
         <Line label="Утримання дітям" note="Платиться з чистих — сторінка III."><Block v={upkeep} tone="clean" sign={upkeep ? '− ' : ''} seed={5} /></Line>

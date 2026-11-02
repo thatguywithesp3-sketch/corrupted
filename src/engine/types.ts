@@ -181,6 +181,8 @@ export interface GameState {
   owed: Partial<Record<AccKey, number>>;
   pay: Partial<Record<AccKey, boolean>>;
   alloc: Alloc;
+  /** the living city (businesses, economy, morning news) — absent in old saves */
+  city?: import('./city').CityState;
   /** banker bribed tonight (cleared when the safe is locked) */
   bank?: BankDeal | null;
   lastAlloc: Alloc | null;

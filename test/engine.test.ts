@@ -114,3 +114,25 @@ describe('banker bribe', () => {
     expect(G.setBank(s1, 'fee').bank).toBeNull();
   });
 });
+
+describe('city', () => {
+  const morning = () => G.signForm(newGame(11));
+  it('starts with businesses, an economy and a lead in the paper', () => {
+    const s = morning();
+    expect(s.city!.biz.length).toBeGreaterThanOrEqual(4);
+    expect(s.city!.news.some((n) => n.kind === 'open' || n.kind === 'rumor')).toBe(true);
+  });
+  it('allows one move per morning and records the result', () => {
+    const s0 = morning(), b = s0.city!.biz.find((x) => x.status === 'open')!;
+    const s1 = G.actOnBiz(s0, b.id, 'inspect');
+    expect(s1.city!.acted).toBe(true);
+    expect(s1.city!.last).not.toBeNull();
+    expect(s1.threat).toBeGreaterThan(s0.threat);
+    const s2 = G.actOnBiz(s1, b.id, 'inspect');
+    expect(s2.city!.biz.find((x) => x.id === b.id)!.pressure).toBe(1);
+  });
+  it('does not touch the core RNG', () => {
+    const s0 = morning(), b = s0.city!.biz[0];
+    expect(G.actOnBiz(s0, b.id, 'inspect').rng).toBe(s0.rng);
+  });
+});
