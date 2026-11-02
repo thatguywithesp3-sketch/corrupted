@@ -8,7 +8,11 @@ import * as G from '../../engine';
 
 export type PanoKind = 'morning' | 'evening';
 
-const DUR = 7600; // the pan; the card leaves by itself a little after
+const DUR = 7600;
+/** a touch of blur and less saturation hides the generator's mush at close range */
+const SOFT = 'blur(0.6px) saturate(0.88) contrast(1.06)';
+/** film grain: a tile of noise, drawn once, jittered every frame like an old print under a projector */
+const GRAIN = `url("data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 1.1 -0.2"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>')}")`; // the pan; the card leaves by itself a little after
 
 /** what the city is saying: built from the state, so our deeds come back as the city's talk */
 function voices(s: GameState, kind: PanoKind): { t: string; tone: 'good' | 'bad' | 'neu' }[] {
@@ -55,6 +59,7 @@ const CSS = `
 @keyframes pano-beam { from { transform: rotate(-40deg); } to { transform: rotate(320deg); } }
 @keyframes pano-gull { from { transform: translate(0,0); } to { transform: translate(900px,-60px); } }
 @keyframes pano-wing { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.35); } }
+@keyframes pano-grain { 0% { transform: translate(0,0); } 20% { transform: translate(-40px,22px); } 40% { transform: translate(28px,-36px); } 60% { transform: translate(-18px,-12px); } 80% { transform: translate(36px,30px); } 100% { transform: translate(0,0); } }
 @keyframes pano-hint { 0%,100% { opacity: .35; } 50% { opacity: .9; } }
 @keyframes pano-sun { 0%,100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
 .pano-smoke { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(235,230,220,.75), rgba(235,230,220,0) 70%); filter: blur(3px); opacity: 0; animation: pano-smoke 4s ease-out infinite; }
@@ -75,8 +80,8 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
       <style>{CSS}</style>
       {/* the picture, wider than the phone: the camera pans across the whole city */}
       <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, aspectRatio: '16 / 9', height: '100%', animation: `pano-pan ${DUR}ms cubic-bezier(.45,.05,.4,1) forwards`, transformOrigin: '0 50%' }}>
-        <img src={img(night ? 'evening' : 'morning')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        {night && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0, animation: `pano-night 3.2s ease-in 1.6s forwards` }} />}
+        <img src={img(night ? 'evening' : 'morning')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT }} />
+        {night && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT, opacity: 0, animation: `pano-night 3.2s ease-in 1.6s forwards` }} />}
 
         {/* life over the picture */}
         {!night && <>
@@ -100,6 +105,10 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
         <Smoke x={14} y={44} d={0} /><Smoke x={54} y={73} d={0.8} s={1.2} /><Smoke x={74} y={74} d={1.6} /><Smoke x={88} y={42} d={0.4} s={1.5} /><Smoke x={30} y={60} d={2.2} s={0.8} />
       </div>
 
+      {/* grain and a soft vignette over the moving picture */}
+      <div aria-hidden="true" style={{ position: 'absolute', inset: -60, backgroundImage: GRAIN, backgroundSize: '220px 220px', opacity: 0.55, mixBlendMode: 'overlay', animation: 'pano-grain .6s steps(5) infinite', pointerEvents: 'none' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', inset: -60, backgroundImage: GRAIN, backgroundSize: '160px 160px', opacity: 0.18, mixBlendMode: 'multiply', animation: 'pano-grain .9s steps(4) infinite reverse', pointerEvents: 'none' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 120px 30px rgba(0,0,0,.55)', pointerEvents: 'none' }} />
       {/* cinema bars and the title */}
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: night ? 'linear-gradient(180deg, rgba(4,6,16,.85) 0%, rgba(4,6,16,.2) 30%, rgba(4,6,16,0) 50%, rgba(4,6,16,.55) 72%, rgba(4,6,16,.92) 100%)' : 'linear-gradient(180deg, rgba(30,14,4,.7) 0%, rgba(30,14,4,.1) 30%, rgba(30,14,4,0) 50%, rgba(20,10,4,.5) 72%, rgba(14,8,4,.9) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, top: 54, textAlign: 'center', color: ink, textShadow: '0 2px 10px rgba(0,0,0,.8)', fontFamily: "'Old Standard TT', serif" }}>
