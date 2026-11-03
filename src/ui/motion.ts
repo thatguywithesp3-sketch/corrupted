@@ -17,6 +17,9 @@ export const MOTION_CSS = `
 /* textured objects need a box for their material layer; inline position (absolute) still wins */
 .tx-auto { position: relative; }
 
+/* enamel tokens (effect pills on documents and offers) */
+.tok { position: relative; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1.5px 1.5px rgba(0,0,0,0.35), 0 1px 0 rgba(0,0,0,0.35), 0 2px 3px rgba(0,0,0,0.3) !important; background-image: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0) 55%, rgba(0,0,0,0.08)) !important; text-shadow: 0 1px 0 rgba(0,0,0,0.25); }
+
 /* every desk object that can be pressed sinks into the desk under the finger */
 .b3d { transition: transform 140ms var(--ease-out), filter 140ms var(--ease-out); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .b3d:active { transform: translateY(2px) scale(0.985); }
@@ -54,6 +57,9 @@ export const MOTION_CSS = `
 .m-stagger > *:nth-child(4) { animation-delay: 150ms; }
 .m-stagger > *:nth-child(5) { animation-delay: 200ms; }
 .m-stagger > *:nth-child(n+6) { animation-delay: 240ms; }
+
+/* brass keys spring back */
+.lk-key:active { transform: translateY(2px); box-shadow: inset 0 1px 2px rgba(60,36,8,0.6), 0 0 0 2px #2A1C10, 0 1px 0 2px #1A1008 !important; }
 
 /* the night report: this year's mark slides over from last year's, the pencil fill grows with it */
 @keyframes m-mark { from { transform: translateX(var(--from)); } }

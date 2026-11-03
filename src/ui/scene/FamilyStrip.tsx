@@ -32,19 +32,19 @@ function Cameo({ k, sib }: { k: Kin; sib?: boolean }) {
 function MapRoll({ s, onMap }: { s: GameState; onMap: () => void }) {
   const fresh = !!s.city && !s.city.acted;
   return (
-    <button className="b3d" onClick={onMap} aria-label="План міста" title="План міста"
+    <button className="b3d" onClick={onMap} aria-label="Карта міста" title="Карта міста: заклади, суперники, ваш хід"
       style={{ position: 'relative', flexShrink: 0, width: 64, minHeight: 38, marginTop: 6, padding: '2px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, cursor: 'pointer', fontFamily: SERIF,
         background: 'linear-gradient(180deg, #5A2E1A, #3A1C0E)', border: '1px solid #1A0C05', borderRadius: 4, boxShadow: 'inset 0 1px 0 rgba(255,210,160,0.2), inset 0 0 0 2px rgba(176,141,60,0.35), 0 3px 5px rgba(0,0,0,0.5)' }}>
-      <svg viewBox="0 0 34 26" width="30" height="21" aria-hidden="true" style={{ flexShrink: 0, filter: 'drop-shadow(1px 2px 1px rgba(0,0,0,0.6))' }}>
-        <defs><linearGradient id="mr-p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FBF1D2" /><stop offset=".45" stopColor="#E3CF9C" /><stop offset="1" stopColor="#9C8354" /></linearGradient></defs>
-        <rect x="3" y="7" width="28" height="12" rx="6" fill="url(#mr-p)" stroke="#5A4630" strokeWidth=".8" />
-        <ellipse cx="4.5" cy="13" rx="2.6" ry="6" fill="#E9D7A6" stroke="#5A4630" strokeWidth=".8" />
-        <path d="M4.5 9.5 a2 3.5 0 1 0 .1 0" fill="none" stroke="#8C7448" strokeWidth=".7" />
-        <path d="M12 8 v10" stroke="#7A2A1E" strokeWidth="2.2" />
-        <path d="M12 18 l-2 6 M12 18 l2.5 5.5" stroke="#7A2A1E" strokeWidth="1.4" strokeLinecap="round" />
-        <path d="M16 10 H29 M16 13 H27 M16 16 H28" stroke="#A88E5E" strokeWidth=".6" />
+      <svg viewBox="0 0 30 22" width="30" height="22" aria-hidden="true" style={{ flexShrink: 0, filter: 'drop-shadow(1px 2px 1px rgba(0,0,0,0.6))' }}>
+        {/* a folded city map: three panels, a road, the river and a red pin */}
+        <path d="M2 4 L10 2 L20 4 L28 2 L28 18 L20 20 L10 18 L2 20 Z" fill="#E9D7A6" stroke="#5A4630" strokeWidth=".9" strokeLinejoin="round" />
+        <path d="M10 2 L10 18 M20 4 L20 20" stroke="#9C8354" strokeWidth=".8" />
+        <path d="M10 2 L20 4 L20 20 L10 18 Z" fill="rgba(90,60,20,0.18)" />
+        <path d="M2 13 C8 11 12 15 18 12 S26 11 28 12" fill="none" stroke="#5F7F98" strokeWidth="1.6" />
+        <path d="M5 6 L24 16" stroke="#A88E5E" strokeWidth=".8" />
+        <circle cx="17" cy="8" r="2.6" fill="#C93A26" stroke="#5A1008" strokeWidth=".7" /><circle cx="16.3" cy="7.3" r=".8" fill="#FFD9C8" />
       </svg>
-      <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1.2, color: '#F2DFA8', lineHeight: 1 }}>ПЛАН</span>
+      <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1.2, color: '#F2DFA8', lineHeight: 1, marginTop: 1 }}>КАРТА</span>
       {fresh && <span style={{ position: 'absolute', top: -6, right: -4, padding: '0 5px', fontSize: 9, fontWeight: 700, color: '#F6EEDA', background: '#9A2418', borderRadius: 7, border: '1px solid #1A0C05' }}>1 хід</span>}
     </button>
   );

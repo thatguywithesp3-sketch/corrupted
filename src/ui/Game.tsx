@@ -74,6 +74,9 @@ function withSlots(root: DcNode): DcNode {
     n.ch.forEach(tex);
   };
   tex(r);
+  // effect pills become little enamel tokens: domed, rimmed, with a lit top edge
+  const tok = (n: DcNode) => { if (n.t === 'x') return; if (n.t === 'e' && /border-radius: 11px; background: \{\{/.test(n.a.style || '')) n.a.class = ((n.a.class || '') + ' tok').trim(); n.ch.forEach(tok); };
+  tok(r);
   // the blotter is real leather: a painted tile in the same engraving style, over the old dotted colour
   const blot = r.ch[0];
   if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: linear-gradient(rgba(10,20,12,0.18), rgba(10,20,12,0.18)), url(art/desk/leather.jpg); background-size: 100% 100%, 200px 200px;"); });

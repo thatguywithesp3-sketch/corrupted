@@ -142,7 +142,7 @@ export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run;
 
       <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
         <DeskBtn style={{ flex: 1, fontSize: 14, position: 'relative' }} onClick={() => setMap(null)}>
-          <Ic k="floor" size={18} /> План міста
+          <Ic k="floor" size={18} /> Карта міста
           {c && !c.acted && <span style={{ position: 'absolute', top: -7, right: -5, padding: '1px 6px', background: RED, color: '#F6EEDA', fontSize: 9.5, fontWeight: 700, borderRadius: 8, boxShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>1 хід</span>}
         </DeskBtn>
         <DeskBtn kind="brass" style={{ flex: 1.4 }} onClick={() => run(G.toOffice)}>До роботи →</DeskBtn>

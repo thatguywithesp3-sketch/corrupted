@@ -125,17 +125,25 @@ function Flow({ segs }: { segs: { label: string; v: number; tone: Tone }[] }) {
   );
 }
 
-/** − / + keys */
+/** − / + keys: round keys of a brass adding machine, the sign engraved and inked */
 const Key = ({ children, onClick, label }: { children: ReactNode; onClick: () => void; label: string }) => (
-  <button className="b3d" onClick={onClick} aria-label={label}
-    style={{ width: 30, height: 30, padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 3, cursor: 'pointer', fontFamily: SERIF, fontSize: 18, fontWeight: 700,
-      background: '#F3EAD3', color: INK, border: `1.5px solid ${INK}`, boxShadow: `0 2px 0 ${INK}` }}>{children}</button>
+  <button className="b3d lk-key" onClick={onClick} aria-label={label}
+    style={{ position: 'relative', width: 34, height: 34, padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer', fontFamily: SERIF, fontSize: 20, fontWeight: 700, lineHeight: 1,
+      color: '#2A1B08', textShadow: '0 1px 0 rgba(255,244,214,0.7)',
+      background: 'radial-gradient(circle at 35% 28%, #FFF2C2 0%, #E2C374 22%, #B8913C 55%, #7A5A1E 100%)', border: '1.5px solid #4A3812',
+      boxShadow: 'inset 0 1px 1px rgba(255,248,220,0.9), inset 0 -2px 3px rgba(60,36,8,0.6), 0 0 0 2px #2A1C10, 0 3px 0 2px #1A1008' }}>
+    <span style={{ position: 'absolute', inset: 4, borderRadius: '50%', boxShadow: 'inset 0 1px 2px rgba(60,36,8,0.55), 0 1px 0 rgba(255,244,214,0.5)' }} />
+    <span style={{ position: 'relative', marginTop: -1 }}>{children}</span>
+  </button>
 );
-/** "all in": everything that's left goes here */
+/** "all in": a brass lever-plate with an enamel inlay in the colour of the stash */
 const AllIn = ({ onClick, tone }: { onClick: () => void; tone: Tone }) => (
   <button className="b3d" onClick={onClick} aria-label="Усе сюди"
-    style={{ height: 30, padding: '0 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, borderRadius: 3, cursor: 'pointer', fontFamily: SERIF, fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6,
-      background: T[tone].ink, color: '#F6EEDA', border: `1.5px solid ${INK}`, boxShadow: `0 2px 0 ${INK}`, whiteSpace: 'nowrap' }}>УСЕ СЮДИ</button>
+    style={{ position: 'relative', height: 34, padding: '3px', flexShrink: 0, display: 'flex', alignItems: 'stretch', borderRadius: 4, cursor: 'pointer', fontFamily: SERIF,
+      background: 'linear-gradient(180deg, #F2D98C, #B8913C 55%, #7A5A1E)', border: '1.5px solid #4A3812', boxShadow: 'inset 0 1px 0 rgba(255,248,220,0.8), 0 3px 0 #2A1C10, 0 5px 6px rgba(0,0,0,0.35)' }}>
+    <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', borderRadius: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, whiteSpace: 'nowrap', color: '#F6EEDA', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
+      background: `linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 45%), ${T[tone].ink}`, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.55)' }}>УСЕ СЮДИ</span>
+  </button>
 );
 
 // ---------- the book
