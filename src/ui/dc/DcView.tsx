@@ -68,7 +68,8 @@ function renderNodes(nodes: DcNode[], scope: Scope, key: string): ReactNode[] {
     }
     // hand-built React scene plugged into the template (see Game.tsx: withSlots)
     if (n.n === 'dc-slot') { const node = scope.slots?.[n.a.name]; if (node) out.push(createElement(Fragment, { key: k }, node)); return; }
-    const props: Record<string, any> = { key: k };
+    // data-k: a key from the view-model, so a new document remounts (and plays its entrance) instead of being patched
+    const props: Record<string, any> = { key: n.a['data-k'] ? k + '#' + interp(scope, n.a['data-k']) : k };
     for (const [a, raw] of Object.entries(n.a)) {
       if (a === 'onClick') {
         const fn = evalOne(scope, raw);

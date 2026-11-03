@@ -30,7 +30,7 @@ function Engraving({ era, seed, caption }: { era: number; seed: number; caption:
   );
 }
 
-export function Newspaper({ s, run, v }: { s: GameState; run: Run; v: any }) {
+export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run; v: any; fresh?: boolean }) {
   useEffect(() => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); }, [s.city, run]);
   const [map, setMap] = useState<string | null | false>(false);
   const c = s.city;
@@ -50,7 +50,7 @@ export function Newspaper({ s, run, v }: { s: GameState; run: Run; v: any }) {
         <span style={{ fontWeight: 400, letterSpacing: 0.4, color: stage === 3 ? '#E8603F' : '#E6D9BC' }}>{['дрібна замітка', 'про вас пишуть', 'ВИ НА ПЕРШІЙ ШПАЛЬТІ'][stage - 1]}</span>
       </div>
 
-      <div className="tx-paper" style={{ position: 'relative', flex: 1, minHeight: 0, background: NEWS, transform: 'rotate(-0.8deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.18)', display: 'flex', flexDirection: 'column' }}>
+      <div key={String(fresh)} className={'tx-paper' + (fresh ? ' m-paper-in' : '')} style={{ position: 'relative', flex: 1, minHeight: 0, background: NEWS, transform: 'rotate(-0.8deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.18)', display: 'flex', flexDirection: 'column' }}>
         {/* the fold */}
         <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'linear-gradient(90deg, rgba(0,0,0,0.08), rgba(255,255,255,0.4))', pointerEvents: 'none' }} />
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 12px 10px' }}>

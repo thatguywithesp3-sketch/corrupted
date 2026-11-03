@@ -140,7 +140,7 @@ const AllIn = ({ onClick, tone }: { onClick: () => void; tone: Tone }) => (
 
 // ---------- the book
 
-export function Ledger({ s, run }: { s: GameState; run: Run }) {
+export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh?: boolean }) {
   const [page, setPage] = useState(0);
   const last = PAGES.length - 1;
   const kids = G.liveKids(s), kt = G.kidStashTarget(s);
@@ -296,7 +296,7 @@ export function Ledger({ s, run }: { s: GameState; run: Run }) {
 
   return (
     <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 2px 0', fontFamily: SERIF, color: INK }}>
-      <div className="tx-paper" style={{ position: 'relative', flex: 1, minHeight: 0, marginRight: 12, display: 'flex', flexDirection: 'column', transform: 'rotate(-0.4deg)',
+      <div key={String(fresh)} className={'tx-paper' + (fresh ? ' m-paper-in' : '')} style={{ position: 'relative', flex: 1, minHeight: 0, marginRight: 12, display: 'flex', flexDirection: 'column', transform: 'rotate(-0.4deg)',
         background: '#F2E9D0', boxShadow: '0 14px 26px rgba(0,0,0,0.55), 0 2px 3px rgba(0,0,0,0.4), inset 0 0 34px rgba(150,110,50,0.22)' }}>
         {/* black leather spine at the top, stitched */}
         <div style={{ height: 20, flexShrink: 0, background: 'linear-gradient(180deg, #2A221A, #15100B)', boxShadow: '0 2px 3px rgba(0,0,0,0.5)', position: 'relative' }}>

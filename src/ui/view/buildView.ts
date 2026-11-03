@@ -217,6 +217,7 @@ export function buildView(ctx: Ctx): any {
   const MI = C.meters, keys4 = ['patron', 'people', 'system', 'threat'] as const;
   const opener = (k: G.Meter) => () => setUi({ info: k });
   v.legend = keys4.map((k) => ({ ic: icon(k, 18), name: MI[k].name, short: MI[k].short, open: opener(k) }));
+  v.docKey = s.year + '-' + s.doc;
   v.infoOn = !!ui.info; v.closeInfo = () => setUi({ info: null });
   v.info = { ic: icon(ui.info || 'patron', 26), name: '', val: '', what: '', low: '', high: '', up: '', down: '', zone: '' };
   if (ui.info) v.info = Object.assign(v.info, MI[ui.info], { val: String(cl(s[ui.info])), zone: ui.info === 'threat' ? 'від 70 — обшуки майже щоночі.' : 'заштриховані краї шкали (' + dz + ' з кожного боку): там шкала щороку сама сповзає до краю.' });

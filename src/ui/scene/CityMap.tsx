@@ -277,8 +277,8 @@ function Legend({ rivals, onClose }: { rivals: Rival[]; onClose: () => void }) {
   );
   const H = ({ t }: { t: string }) => <div style={{ margin: '10px 0 2px', fontSize: 10.5, letterSpacing: 2, fontWeight: 700, color: RED }}>{t}</div>;
   return (
-    <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 9, background: 'rgba(20,12,4,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '56px 14px 14px' }}>
-      <div className="tx-paper" onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '100%', overflowY: 'auto', background: '#F5EDD7', padding: '14px 14px 12px', boxShadow: '0 14px 30px rgba(0,0,0,0.7), inset 0 0 24px rgba(140,110,50,0.25)', border: `1.5px solid ${INK}` }}>
+    <div onClick={onClose} className="m-fade" style={{ position: 'absolute', inset: 0, zIndex: 9, background: 'rgba(20,12,4,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '56px 14px 14px' }}>
+      <div className="tx-paper m-pop" onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '100%', overflowY: 'auto', background: '#F5EDD7', padding: '14px 14px 12px', boxShadow: '0 14px 30px rgba(0,0,0,0.7), inset 0 0 24px rgba(140,110,50,0.25)', border: `1.5px solid ${INK}` }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 22, flex: 1 }}>Умовні знаки</span>
           <button onClick={onClose} aria-label="Закрити" style={{ width: 36, height: 36, fontSize: 18, fontWeight: 700, cursor: 'pointer', background: 'rgba(0,0,0,0.08)', border: `1.5px solid ${INK}`, color: INK }}>✕</button>
@@ -522,7 +522,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
           <span style={{ flex: 1, fontSize: 12, fontStyle: 'italic', color: '#E6D9BC', lineHeight: 1.25 }}>{c.acted ? 'Хід зроблено. Наступний — завтра зранку.' : 'Торкніться закладу на плані.'}</span>
         </div>
       ) : (
-        <div style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '93%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
+        <div key={panel} className="m-sheet" style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '93%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 6px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
           <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 2px 4px' }}>
             {panel === 'riv' ? null : tabs}
             {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR}>{null}</PowerSheet> : <>{card}{actions}</>}

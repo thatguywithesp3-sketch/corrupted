@@ -113,8 +113,8 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
     <div onClick={leave} role="button" aria-label="Продовжити" style={{ position: 'absolute', inset: 0, zIndex: 95, overflow: 'hidden', background: '#000', cursor: 'pointer', opacity: out ? 0 : 1, transition: 'opacity .6s ease', pointerEvents: 'auto' }}>
       <style>{CSS}</style>
       {/* the picture, wider than the phone: the camera pans across the whole city */}
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, aspectRatio: '16 / 9', height: '100%', animation: `pano-pan ${DUR}ms cubic-bezier(.37,0,.63,1) forwards`, transformOrigin: '0 50%' }}>
-        <div style={{ position: 'absolute', inset: 0, animation: 'pano-breath 11s ease-in-out infinite alternate', transformOrigin: '50% 60%' }}>
+      <div className="pano-move" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, aspectRatio: '16 / 9', height: '100%', animation: `pano-pan ${DUR}ms cubic-bezier(.37,0,.63,1) forwards`, transformOrigin: '0 50%' }}>
+        <div className="pano-breath" style={{ position: 'absolute', inset: 0, animation: 'pano-breath 11s ease-in-out infinite alternate', transformOrigin: '50% 60%' }}>
         <img src={img(night ? 'evening' : 'morning')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT }} />
         {night && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT, opacity: 0, animation: `pano-night 6s ease-in-out 2.5s forwards` }} />}
 

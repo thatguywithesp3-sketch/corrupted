@@ -7,6 +7,7 @@ import { buildView, freshUi, type UiState } from './view/buildView';
 import { MainMenu } from './MainMenu';
 import { Onboarding } from './Onboarding';
 import { injectTextures } from './textures';
+import { injectMotion } from './motion';
 import { Ledger } from './scene/Ledger';
 import { NightScene } from './scene/NightScene';
 import { Newspaper } from './scene/Newspaper';
@@ -14,7 +15,10 @@ import { FamilyStrip } from './scene/FamilyStrip';
 import { FamilyAlbum, MeterInfo, MeterLegend } from './scene/Family';
 import { WindowLight, phaseOf } from './scene/WindowLight';
 import { Panorama, type PanoKind } from './scene/Panorama';
+import { MeterPops } from './scene/MeterPops';
+import { DeskProps } from './scene/DeskProps';
 injectTextures();
+injectMotion();
 import v1 from '../data/views/era1.json';
 import v2 from '../data/views/era2.json';
 import v3 from '../data/views/era3.json';
@@ -46,6 +50,15 @@ function withSlots(root: DcNode): DcNode {
   const legend = (n: DcNode): boolean => n.t === 'e' && n.ch.some((c) => c.t === 'e' && c.ch.some((x) => x.t === 'x' && /ЩО ОЗНАЧАЄ КОЖНА ШКАЛА/.test(x.v)));
   const swap = (n: DcNode) => { if (n.t === 'x') return; n.ch = n.ch.map((c) => (legend(c) ? slot('legend') : c)); n.ch.forEach(swap); };
   swap(r);
+  // motion hooks: the document card arrives (and is keyed by the document), the stamp bites
+  const mark = (n: DcNode) => {
+    if (n.t === 'x') return;
+    if (n.t === 'e' && /transform: rotate\(\{\{L\.docRot\}\}\)/.test(n.a.style || '')) { n.a.class = ((n.a.class || '') + ' m-doc-in').trim(); n.a['data-k'] = '{{docKey}}'; }
+    if (n.t === 'if' && n.v === '{{isDialog}}') n.ch.forEach((c) => { if (c.t === 'e') { c.a.class = ((c.a.class || '') + ' m-doc-in').trim(); c.a['data-k'] = '{{docKey}}'; } });
+    if (n.t === 'if' && n.v === '{{hasStamp}}') n.ch.forEach((c) => { if (c.t === 'e') { c.a.class = ((c.a.class || '') + ' m-stamp').trim(); c.a['data-k'] = '{{docKey}}'; } });
+    n.ch.forEach(mark);
+  };
+  mark(r);
   // the old "Family N" pill squeezed into the name plate
   const drop = (n: DcNode) => { if (n.t !== 'x') n.ch = n.ch.filter((c) => !(c.t === 'e' && c.a['aria-label'] === 'Родинний альбом')); if (n.t !== 'x') n.ch.forEach(drop); };
   drop(r);
@@ -123,8 +136,8 @@ export function Game() {
   const view = useMemo(() => {
     const v = buildView({ s, ui, run, setUi });
     if (scenes) v.slots = {
-      morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} /> : null,
-      evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} /> : null,
+      morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} fresh={!pano} /> : null,
+      evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} fresh={!pano} /> : null,
       night: s.screen === 'night' ? <NightScene key={s.year} s={s} run={run} before={eve.current} /> : null,
       family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} />,
       album: ui.album ? <FamilyAlbum s={s} onClose={() => setUi({ album: false })} /> : null,
@@ -132,7 +145,7 @@ export function Game() {
       legend: <MeterLegend s={s} open={(m) => setUi({ info: m })} />
     };
     return v;
-  }, [s, ui, run, setUi, scenes]);
+  }, [s, ui, run, setUi, scenes, pano]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -142,11 +155,13 @@ export function Game() {
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
+            {scenes && s.screen === 'office' && <DeskProps />}
             <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
               style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
           </>
         )}
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
+        {mode === 'play' && scenes && <MeterPops s={s} on={s.screen === 'office' && !ui.hudOpen} />}
         {mode === 'play' && pano && <Panorama key={pano + s.year} s={s} kind={pano} onDone={() => setPano(null)} />}
         <div id="overlay-root" style={{ position: 'absolute', inset: 0, zIndex: 85, pointerEvents: 'none' }} />
         <div className="room-light" />

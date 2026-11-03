@@ -6,6 +6,27 @@ import type { GameState } from '../engine';
 
 const ERA_ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
+// The gallery opens like a ceremony (a rare moment, so it may take a beat): the seal is pressed in,
+// the name rises under it, the plaques follow. Then only the gas lamp and a glint on the wax stay alive.
+const MENU_CSS = `
+@keyframes mm-press { 0% { opacity: 0; transform: scale(1.35) rotate(-8deg); } 55% { opacity: 1; transform: scale(0.96) rotate(1deg); } 100% { transform: none; } }
+@keyframes mm-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes mm-flame { 0%, 100% { opacity: .85; } 20% { opacity: 1; } 35% { opacity: .7; } 60% { opacity: .95; } 80% { opacity: .78; } }
+@keyframes mm-gloss { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(260%); } }
+.mm-seal { animation: mm-press 700ms cubic-bezier(0.5, 0, 0.75, 0) 250ms both; }
+.mm-gloss { animation: mm-gloss 6s cubic-bezier(0.77, 0, 0.175, 1) 1.6s infinite; }
+.mm-word { animation: mm-rise 600ms cubic-bezier(0.23, 1, 0.32, 1) 750ms both; }
+.mm-menu > * { animation: mm-rise 420ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.mm-menu > *:nth-child(1) { animation-delay: 1000ms; }
+.mm-menu > *:nth-child(2) { animation-delay: 1070ms; }
+.mm-menu > *:nth-child(3) { animation-delay: 1140ms; }
+.mm-flame { animation: mm-flame 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mm-seal, .mm-word, .mm-menu > * { animation: m-fade 200ms ease both; }
+  .mm-gloss, .mm-flame { animation: none; }
+}
+`;
+
 
 export interface MainMenuProps {
   save: GameState | null;
@@ -51,11 +72,20 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
       <div style={S.art} />
       <div style={S.shade} />
       <div style={S.frameBg} />
-      <img src="art/brand/seal.png" alt="" style={S.seal} />
-      <img src="art/brand/wordmark.png" alt="Corrupted!" style={S.wordmark} />
+      <style>{MENU_CSS}</style>
+      {/* the lamp over the gallery breathes a little, like a gas flame */}
+      <div aria-hidden="true" className="mm-flame" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 60% 32% at 50% 0%, rgba(255,196,120,0.22), transparent 70%)', mixBlendMode: 'screen' }} />
+      {/* the family seal is pressed into the empty frame, then catches the light now and then */}
+      <div className="mm-seal" style={S.seal}>
+        <img src="art/brand/seal.png" alt="" style={{ width: '100%', display: 'block' }} />
+        <span aria-hidden="true" style={{ position: 'absolute', inset: 0, overflow: 'hidden', WebkitMaskImage: 'url(art/brand/seal.png)', maskImage: 'url(art/brand/seal.png)', WebkitMaskSize: '100% auto', maskSize: '100% auto', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat' }}>
+          <span className="mm-gloss" style={{ position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '45%', background: 'linear-gradient(100deg, transparent, rgba(255,235,220,0.45), transparent)', mixBlendMode: 'screen' }} />
+        </span>
+      </div>
+      <img className="mm-word" src="art/brand/wordmark.png" alt="Corrupted!" style={S.wordmark} />
 
       {panel === 'none' && (
-        <div style={S.menu}>
+        <div className="mm-menu" style={S.menu}>
           {inProgress && <Plaque title="Продовжити" sub={where} onClick={onContinue} />}
           <Plaque title="Нова династія" sub={inProgress ? 'Поточна гра буде втрачена' : 'Сім епох, два покоління в кожній'} onClick={() => (inProgress ? setPanel('confirm') : onNew())} quiet={inProgress} />
           {history.length > 0 && <Plaque title="Історія роду" sub={`${history.length} ${history.length === 1 ? 'покоління' : 'поколінь'} у галереї`} onClick={() => setPanel('history')} quiet />}

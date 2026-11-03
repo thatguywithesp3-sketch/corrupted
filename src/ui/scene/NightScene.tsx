@@ -1,7 +1,7 @@
 // Night: the year is closed. Between heavy velvet curtains Port-Aurum sleeps; on the desk lies the year's
 // report from the copy-book, stamped CLOSED. "Next year" brings the dawn into the view.
 // The report speaks the same paper language as the black book: colour = meaning, pencil blocks, stickers, sections.
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import * as G from '../../engine';
 import type { GameState, Meter, ReportLine } from '../../engine';
 import { City, type Phase } from './City';
@@ -130,6 +130,7 @@ function Scale({ m, v, was, dz, label }: { m: Meter; v: number; was: number | nu
   const danger = isT ? v >= 60 : v <= dz || v >= 100 - dz;
   const hatch = (c: string) => `repeating-linear-gradient(-62deg, ${c} 0 1.3px, transparent 1.3px 3px)`;
   const tone: Tone = danger ? 'risk' : 'neu';
+  const moved = was !== null && Math.round(dv) !== 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '3px 0' }}>
       <Ic k={m} size={16} color={danger ? T.risk.ink : MUTE} />
@@ -139,9 +140,12 @@ function Scale({ m, v, was, dz, label }: { m: Meter; v: number; was: number | nu
         {isT ? <span style={{ position: 'absolute', left: '60%', right: 0, top: 0, bottom: 0, background: hatch(`${T.risk.pen}88`) }} />
           : <><span style={{ position: 'absolute', left: 0, width: dz + '%', top: 0, bottom: 0, background: hatch(`${T.risk.pen}88`) }} /><span style={{ position: 'absolute', right: 0, width: dz + '%', top: 0, bottom: 0, background: hatch(`${T.risk.pen}88`) }} /></>}
         {/* this year's value: pencil fill to the mark */}
-        <span style={{ position: 'absolute', left: 0, width: Math.max(0, Math.min(100, v)) + '%', top: 2, bottom: 2, background: hatch(danger ? T.risk.pen : '#6A5A3E'), opacity: 0.75 }} />
+        <span style={{ position: 'absolute', left: 0, width: Math.max(0, Math.min(100, v)) + '%', top: 2, bottom: 2, background: hatch(danger ? T.risk.pen : '#6A5A3E'), opacity: 0.75, transformOrigin: 'left center', ...(moved ? { '--k': String(Math.max(0, was!) / Math.max(1, v)), animation: 'm-fill 900ms var(--ease-in-out) 450ms both' } : {}) } as CSSProperties} />
         {was !== null && dv !== 0 && <span title="минулого року" style={{ position: 'absolute', left: `calc(${Math.max(0, Math.min(100, was))}% - 1px)`, top: -3, bottom: -3, width: 2, background: 'rgba(31,26,20,0.35)' }} />}
-        <span style={{ position: 'absolute', left: `calc(${Math.max(0, Math.min(100, v))}% - 1.5px)`, top: -4, bottom: -4, width: 3, background: danger ? T.risk.ink : INK }} />
+        {/* this year's mark slides over from last year's, once, when the report is laid out */}
+        <span style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transform: `translateX(${Math.max(0, Math.min(100, v))}%)`, ...(moved ? { '--from': `${Math.max(0, Math.min(100, was!))}%`, animation: 'm-mark 900ms var(--ease-in-out) 450ms both' } : {}) } as CSSProperties}>
+          <span style={{ position: 'absolute', left: -1.5, top: -4, bottom: -4, width: 3, background: danger ? T.risk.ink : INK }} />
+        </span>
       </span>
       <span style={{ width: 28, textAlign: 'right' }}><span style={{ fontFamily: HAND, fontSize: 19, color: T[tone].ink }}>{Math.round(v)}</span></span>
       <span style={{ width: 40, textAlign: 'center', fontSize: 11, fontWeight: 700, padding: '1px 0', borderRadius: 2,
@@ -187,7 +191,7 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
     <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: 18, fontFamily: SERIF, color: INK, opacity: dawn ? 0 : 1, transition: 'opacity 1.3s ease' }}>
 
       {/* the report sheet on the desk */}
-      <div className="tx-paper" style={{ position: 'relative', flex: 1, minHeight: 0, margin: '0 4px 10px', padding: '11px 14px 8px', background: '#F1E8CF', transform: 'rotate(0.5deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', zIndex: 2 }}>
+      <div className="tx-paper m-paper-in" style={{ position: 'relative', flex: 1, minHeight: 0, margin: '0 4px 10px', padding: '11px 14px 8px', background: '#F1E8CF', transform: 'rotate(0.5deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', zIndex: 2 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, letterSpacing: 2, color: MUTE }}><span>КОПІЮВАЛЬНА КНИГА</span><span>ЗВІТ ЗА РІК</span></div>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
           <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 28, lineHeight: 1 }}>РІК {closedYear}</span>

@@ -82,7 +82,7 @@ export function MeterInfo({ s, m, onClose }: { s: GameState; m: Meter; onClose: 
   );
   return (
     <Backdrop onClose={onClose}>
-      <div className="tx-paper" onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '100%', overflowY: 'auto', background: '#F6EEDA', padding: '16px 16px 14px', boxShadow: '0 18px 36px rgba(0,0,0,0.7), inset 0 0 28px rgba(150,110,50,0.22)', border: `1.5px solid ${INK}`, fontFamily: SERIF, color: INK }}>
+      <div className="tx-paper m-pop" onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '100%', overflowY: 'auto', background: '#F6EEDA', padding: '16px 16px 14px', boxShadow: '0 18px 36px rgba(0,0,0,0.7), inset 0 0 28px rgba(150,110,50,0.22)', border: `1.5px solid ${INK}`, fontFamily: SERIF, color: INK }}>
         {/* a red rule like on an office index card */}
         <span aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, top: 74, height: 1.5, background: 'rgba(190,60,50,0.5)' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -135,7 +135,7 @@ export function MeterInfo({ s, m, onClose }: { s: GameState; m: Meter; onClose: 
 }
 
 const Backdrop = ({ children, onClose }: { children: ReactNode; onClose: () => void }) => (
-  <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(12,8,4,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 14px 24px' }}>{children}</div>
+  <div onClick={onClose} className="m-fade" style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'rgba(12,8,4,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 14px 24px' }}>{children}</div>
 );
 
 // ============================================================ the family album
@@ -213,7 +213,7 @@ export function FamilyAlbum({ s, onClose }: { s: GameState; onClose: () => void 
   return (
     <Backdrop onClose={onClose}>
       {/* the cover: dark leather, gilt edge */}
-      <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '100%', display: 'flex', flexDirection: 'column', padding: 10, background: 'radial-gradient(120% 90% at 30% 0%, #5A2E22, #3A1C14 60%, #26110B)', borderRadius: 6, border: '2px solid #1A0B06', boxShadow: '0 20px 40px rgba(0,0,0,0.75), inset 0 0 0 3px rgba(200,160,80,0.35), inset 0 0 0 4px rgba(0,0,0,0.5)', fontFamily: SERIF, color: INK }}>
+      <div className="m-pop" onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '100%', display: 'flex', flexDirection: 'column', padding: 10, background: 'radial-gradient(120% 90% at 30% 0%, #5A2E22, #3A1C14 60%, #26110B)', borderRadius: 6, border: '2px solid #1A0B06', boxShadow: '0 20px 40px rgba(0,0,0,0.75), inset 0 0 0 3px rgba(200,160,80,0.35), inset 0 0 0 4px rgba(0,0,0,0.5)', fontFamily: SERIF, color: INK }}>
         <div style={{ textAlign: 'center', padding: '4px 0 9px', color: '#E8C878', textShadow: '0 -1px 0 rgba(0,0,0,0.8), 0 1px 0 rgba(255,230,170,0.25)' }}>
           <div style={{ fontSize: 10, letterSpacing: 3 }}>РОДИННИЙ АЛЬБОМ</div>
           <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 24, lineHeight: 1.1 }}>Рід {s.surname}</div>
@@ -221,7 +221,7 @@ export function FamilyAlbum({ s, onClose }: { s: GameState; onClose: () => void 
         {/* the page: thick cream card */}
         <div className="tx-paper" style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: 'linear-gradient(180deg,#F3EAD2,#E9DDBE)', padding: '4px 10px 10px', boxShadow: 'inset 0 0 24px rgba(120,90,40,0.3)', border: '1px solid #8C7A54' }}>
           {s.kids.length === 0 && <div style={{ padding: '20px 6px', fontFamily: HAND, fontSize: 20, color: MUTE, textAlign: 'center' }}>Сторінки ще порожні.</div>}
-          {s.kids.map((k, i) => <KidPage key={k.id} s={s} k={k} i={i} />)}
+          <div className="m-stagger">{s.kids.map((k, i) => <KidPage key={k.id} s={s} k={k} i={i} />)}</div>
           {s.sibs.length > 0 && <>
             <div style={{ marginTop: 10, fontSize: 10, letterSpacing: 1.8, fontWeight: 700, color: MUTE }}>БРАТИ Й СЕСТРИ</div>
             {s.sibs.map((k) => (
