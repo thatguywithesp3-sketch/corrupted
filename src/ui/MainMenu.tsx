@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import * as G from '../engine';
 import type { GameState } from '../engine';
+import { FamilyTree } from './FamilyTree';
 
 const ERA_ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
@@ -13,17 +14,23 @@ const MENU_CSS = `
 @keyframes mm-rise { from { opacity: 0; transform: translateY(14px); } }
 @keyframes mm-flame { 0%, 100% { opacity: .85; } 20% { opacity: 1; } 35% { opacity: .7; } 60% { opacity: .95; } 80% { opacity: .78; } }
 @keyframes mm-gloss { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(260%); } }
-.mm-seal { animation: mm-press 700ms cubic-bezier(0.5, 0, 0.75, 0) 250ms both; }
-.mm-gloss { animation: mm-gloss 6s cubic-bezier(0.77, 0, 0.175, 1) 1.6s infinite; }
-.mm-word { animation: mm-rise 600ms cubic-bezier(0.23, 1, 0.32, 1) 750ms both; }
+.mm-dark { animation: mm-dark 1300ms linear both; }
+.mm-cone { animation: mm-cone 1400ms linear both, mm-flame 3.2s ease-in-out 1.4s infinite; }
+@keyframes mm-dark { 0%, 18% { opacity: 1; } 24% { opacity: .55; } 28% { opacity: .9; } 36% { opacity: .35; } 40% { opacity: .7; } 100% { opacity: 0; } }
+@keyframes mm-cone { 0%, 18% { opacity: 0; } 24% { opacity: .8; } 28% { opacity: .2; } 36% { opacity: 1; } 40% { opacity: .6; } 100% { opacity: 1; } }
+.mm-seal { animation: mm-press 700ms cubic-bezier(0.5, 0, 0.75, 0) 900ms both; }
+.mm-gloss { animation: mm-gloss 6s cubic-bezier(0.77, 0, 0.175, 1) 2.2s infinite; }
+.mm-word { animation: mm-rise 600ms cubic-bezier(0.23, 1, 0.32, 1) 1300ms both; }
 .mm-menu > * { animation: mm-rise 420ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.mm-menu > *:nth-child(1) { animation-delay: 1000ms; }
-.mm-menu > *:nth-child(2) { animation-delay: 1070ms; }
-.mm-menu > *:nth-child(3) { animation-delay: 1140ms; }
+.mm-menu > *:nth-child(1) { animation-delay: 1450ms; }
+.mm-menu > *:nth-child(2) { animation-delay: 1520ms; }
+.mm-menu > *:nth-child(3) { animation-delay: 1590ms; }
 .mm-flame { animation: mm-flame 3.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .mm-seal, .mm-word, .mm-menu > * { animation: m-fade 200ms ease both; }
   .mm-gloss, .mm-flame { animation: none; }
+  .mm-dark { animation: none; opacity: 0; }
+  .mm-cone { animation: none; }
 }
 `;
 
@@ -73,6 +80,9 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
       <div style={S.shade} />
       <div style={S.frameBg} />
       <style>{MENU_CSS}</style>
+      {/* the room is dark when you come in; the gas lamp over the gallery catches, flickers and lights the portraits */}
+      <div aria-hidden="true" className="mm-dark" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: '#050302' }} />
+      <div aria-hidden="true" className="mm-cone" style={{ position: 'absolute', left: '50%', top: -40, width: 520, height: 720, marginLeft: -260, pointerEvents: 'none', background: 'radial-gradient(ellipse 42% 60% at 50% 4%, rgba(255,214,150,0.32), rgba(255,180,100,0.08) 55%, transparent 75%)', mixBlendMode: 'screen' }} />
       {/* the lamp over the gallery breathes a little, like a gas flame */}
       <div aria-hidden="true" className="mm-flame" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 60% 32% at 50% 0%, rgba(255,196,120,0.22), transparent 70%)', mixBlendMode: 'screen' }} />
       {/* the family seal is pressed into the empty frame, then catches the light now and then */}
@@ -88,7 +98,7 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
         <div className="mm-menu" style={S.menu}>
           {inProgress && <Plaque title="Продовжити" sub={where} onClick={onContinue} />}
           <Plaque title="Нова династія" sub={inProgress ? 'Поточна гра буде втрачена' : 'Сім епох, два покоління в кожній'} onClick={() => (inProgress ? setPanel('confirm') : onNew())} quiet={inProgress} />
-          {history.length > 0 && <Plaque title="Історія роду" sub={`${history.length} ${history.length === 1 ? 'покоління' : 'поколінь'} у галереї`} onClick={() => setPanel('history')} quiet />}
+          {(history.length > 0 || inProgress) && <Plaque title="Історія роду" sub={history.length ? `${history.length} ${history.length === 1 ? 'покоління' : 'поколінь'} у галереї` : 'Родовідне дерево'} onClick={() => setPanel('history')} quiet />}
         </div>
       )}
 
@@ -100,27 +110,7 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
         </div>
       )}
 
-      {panel === 'history' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,5,4,0.88)', display: 'flex', flexDirection: 'column', padding: '28px 20px 24px', gap: 12 }}>
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={S.sub}>Галерея предків</span>
-            <span style={{ ...S.word, fontSize: 24 }}>Рід {save?.surname}</span>
-          </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {history.map((h, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 10px', borderRadius: 3, background: 'linear-gradient(180deg, #E9CF86, #B8913C)', color: '#2A1B08', boxShadow: '0 2px 0 #4A3812' }}>
-                <span style={{ width: 34, textAlign: 'center', fontFamily: "'Ruslan Display', serif", fontSize: 18 }}>{ERA_ROMAN[h.era - 1]}</span>
-                <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                  <b style={{ fontSize: 14 }}>{h.name}</b>
-                  <span style={{ fontSize: 12, fontStyle: 'italic' }}>покоління {h.gen} · {h.title.toLowerCase()}</span>
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>{G.fmt(h.inherit)} кр.</span>
-              </div>
-            ))}
-          </div>
-          <Plaque title="Назад до галереї" onClick={() => setPanel('none')} quiet />
-        </div>
-      )}
+      {panel === 'history' && <FamilyTree save={save} onBack={() => setPanel('none')} />}
     </div>
   );
 }

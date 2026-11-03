@@ -281,7 +281,8 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
     life: S(n, 'end.life', { rank: rankName(n), from: n.year - n.served, to: n.year, gen: n.gen }),
     kidAssets: liveKids(n).reduce((a, k) => a + k.assets, 0)
   };
-  n.history.push({ era: n.era, gen: n.gen, name: n.first + ' ' + n.surname, kind, title, inherit });
+  n.history.push({ era: n.era, gen: n.gen, name: n.first + ' ' + n.surname, kind, title, inherit,
+    g: n.gender, face: n.face ?? null, rank: rankName(n), from: n.year - n.served, to: n.year, text, lost, dream, kids: n.kids.length });
   const heirs: Heir[] = [...liveKids(n)].sort((a, b) => b.age - a.age).slice(0, 3);
   if (!heirs.length) {
     const N = getEra(n.era).names;

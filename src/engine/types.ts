@@ -202,7 +202,9 @@ export interface GameState {
   kidPay: Record<string, boolean>;
   sibs: Kin[];
   /** stats for the whole campaign */
-  history: Array<{ era: number; gen: number; name: string; kind: EndKind; title: string; inherit: number }>;
+  history: Array<{ era: number; gen: number; name: string; kind: EndKind; title: string; inherit: number;
+    /** for the family tree (saves made before these fields existed lack them) */
+    g?: Gender; face?: number | null; rank?: string; from?: number; to?: number; text?: string; lost?: number; dream?: boolean; kids?: number; dreamT?: string }>;
 }
 
 // ---------- office documents ----------

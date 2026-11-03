@@ -59,6 +59,9 @@ function withSlots(root: DcNode): DcNode {
     n.ch.forEach(mark);
   };
   mark(r);
+  // the blotter is real leather: a painted tile in the same engraving style, over the old dotted colour
+  const blot = r.ch[0];
+  if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: linear-gradient(rgba(10,20,12,0.18), rgba(10,20,12,0.18)), url(art/desk/leather.jpg); background-size: 100% 100%, 200px 200px;"); });
   // the old "Family N" pill squeezed into the name plate
   const drop = (n: DcNode) => { if (n.t !== 'x') n.ch = n.ch.filter((c) => !(c.t === 'e' && c.a['aria-label'] === 'Родинний альбом')); if (n.t !== 'x') n.ch.forEach(drop); };
   drop(r);
@@ -155,7 +158,7 @@ export function Game() {
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
-            {scenes && s.screen === 'office' && <DeskProps />}
+            {scenes && s.screen === 'office' && !view.isDialog && <DeskProps />}
             <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
               style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
           </>
