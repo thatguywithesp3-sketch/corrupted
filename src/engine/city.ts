@@ -275,7 +275,7 @@ export function bizActs(s: GameState, b: Biz): ActOption[] {
 
 /** One move per morning against one business. */
 export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
-  if (s.screen !== 'morning') throw new Error('Moves are made in the morning');
+  if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
   if (c.acted) return n;
@@ -444,7 +444,7 @@ export function rivalActs(s: GameState, r: Rival): RivalOption[] {
 }
 
 export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
-  if (s.screen !== 'morning') throw new Error('Moves are made in the morning');
+  if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
   if (c.acted) return n;

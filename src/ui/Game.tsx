@@ -17,6 +17,9 @@ import { WindowLight, phaseOf } from './scene/WindowLight';
 import { Panorama, type PanoKind } from './scene/Panorama';
 import { MeterPops } from './scene/MeterPops';
 import { DeskProps } from './scene/DeskProps';
+import { CityMap } from './scene/CityMap';
+
+const MAP_SCREENS = new Set(['morning', 'office', 'evening']);
 injectTextures();
 injectMotion();
 import v1 from '../data/views/era1.json';
@@ -59,6 +62,18 @@ function withSlots(root: DcNode): DcNode {
     n.ch.forEach(mark);
   };
   mark(r);
+  // texture pass: every pressable object gets the material it is made of (leather, paper, brass)
+  const DARK = /#1F1A14|#2E261C|#14161F|#2C2C2E|#5E1A12|#3A2A1A/i, LIGHT = /#F7F0DE|#E9E1C2|#EFE4C8|#FFFDF6|#F4EAD0/i;
+  const tex = (n: DcNode) => {
+    if (n.t === 'x') return;
+    if (n.t === 'e' && /\bb3d\b/.test(n.a.class || '') && !/tx-/.test(n.a.class || '')) {
+      const bg = (/background(?:-color)?: ([^;]+)/.exec(n.a.style || '') || [])[1] || '';
+      const add = bg === '{{o.bg}}' ? '{{o.tx}}' : DARK.test(bg) ? 'tx-leather' : LIGHT.test(bg) ? 'tx-paper' : /#E2C374|#B8913C/.test(bg) ? 'tx-brass' : '';
+      if (add) n.a.class = n.a.class + ' tx-auto ' + add;
+    }
+    n.ch.forEach(tex);
+  };
+  tex(r);
   // the blotter is real leather: a painted tile in the same engraving style, over the old dotted colour
   const blot = r.ch[0];
   if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: linear-gradient(rgba(10,20,12,0.18), rgba(10,20,12,0.18)), url(art/desk/leather.jpg); background-size: 100% 100%, 200px 200px;"); });
@@ -128,6 +143,7 @@ export function Game() {
   const scenes = SCENE_ERAS.has(s.era);
   // the city between parts of the day: a panorama before the paper and before the dark ledger
   const [pano, setPano] = useState<PanoKind | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const prevScreen = useRef<string | null>(null);
   useEffect(() => {
     if (mode !== 'play') { prevScreen.current = null; return; }
@@ -142,13 +158,14 @@ export function Game() {
       morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} fresh={!pano} /> : null,
       evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} fresh={!pano} /> : null,
       night: s.screen === 'night' ? <NightScene key={s.year} s={s} run={run} before={eve.current} /> : null,
-      family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} />,
+      family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} onMap={MAP_SCREENS.has(s.screen) ? () => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); setMapOpen(true); } : undefined} />,
       album: ui.album ? <FamilyAlbum s={s} onClose={() => setUi({ album: false })} /> : null,
       info: ui.info ? <MeterInfo s={s} m={ui.info} onClose={() => setUi({ info: null })} /> : null,
       legend: <MeterLegend s={s} open={(m) => setUi({ info: m })} />
     };
     return v;
   }, [s, ui, run, setUi, scenes, pano]);
+  useEffect(() => { if (!MAP_SCREENS.has(s.screen)) setMapOpen(false); }, [s.screen]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -158,13 +175,14 @@ export function Game() {
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
-            {scenes && s.screen === 'office' && !view.isDialog && <DeskProps />}
+            {scenes && s.screen === 'office' && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
             <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
               style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
           </>
         )}
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
         {mode === 'play' && scenes && <MeterPops s={s} on={s.screen === 'office' && !ui.hudOpen} />}
+        {mode === 'play' && mapOpen && s.city && <div style={{ position: 'absolute', inset: 0, zIndex: 86 }}><CityMap s={s} run={run} focus={null} onClose={() => setMapOpen(false)} /></div>}
         {mode === 'play' && pano && <Panorama key={pano + s.year} s={s} kind={pano} onDone={() => setPano(null)} />}
         <div id="overlay-root" style={{ position: 'absolute', inset: 0, zIndex: 85, pointerEvents: 'none' }} />
         <div className="room-light" />

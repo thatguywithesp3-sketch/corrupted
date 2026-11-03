@@ -25,8 +25,8 @@ export function DeskBtn({ children, onClick, kind = 'paper', disabled, style }: 
     ink: { background: 'linear-gradient(180deg, #2E261C, #1F1A14)', color: '#F3E9D2', border: '2px solid #6E531E', boxShadow: '0 3px 0 #4A3812' }
   };
   return (
-    <button className="b3d" onClick={disabled ? undefined : onClick} disabled={disabled}
-      style={{ minHeight: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 3, fontSize: 15, fontWeight: 700, fontFamily: SERIF, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.4 : 1, ...look[kind], ...style }}>
+    <button className={'b3d ' + (kind === 'brass' ? 'tx-brass' : kind === 'ink' ? 'tx-leather' : 'tx-paper')} onClick={disabled ? undefined : onClick} disabled={disabled}
+      style={{ position: 'relative', minHeight: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 3, fontSize: 15, fontWeight: 700, fontFamily: SERIF, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.4 : 1, ...look[kind], ...style }}>
       {children}
     </button>
   );

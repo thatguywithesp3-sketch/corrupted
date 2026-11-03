@@ -14,6 +14,9 @@ export const MOTION_CSS = `
   --ease-stamp: cubic-bezier(0.5, 0, 0.75, 0);
 }
 
+/* textured objects need a box for their material layer; inline position (absolute) still wins */
+.tx-auto { position: relative; }
+
 /* every desk object that can be pressed sinks into the desk under the finger */
 .b3d { transition: transform 140ms var(--ease-out), filter 140ms var(--ease-out); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .b3d:active { transform: translateY(2px) scale(0.985); }

@@ -119,7 +119,7 @@ export function buildView(ctx: Ctx): any {
     const armed = ui.pend === id, other = !!ui.pend && !armed, light = !dark && i === 1;
     return {
       t, pills: fxPills(d, s), armed, flex: dark ? '1 1 100%' : '1 1 40%',
-      bg: dark ? '#5E1A12' : light ? '#F7F0DE' : '#1F1A14', color: light ? '#1F1A14' : '#F3E9D2',
+      bg: dark ? '#5E1A12' : light ? '#F7F0DE' : '#1F1A14', tx: light ? 'tx-paper' : 'tx-leather', color: light ? '#1F1A14' : '#F3E9D2',
       border: armed ? '3px solid #D9A441' : '2px solid ' + (dark ? '#3A0E08' : '#1F1A14'),
       stripBg: dark ? '#3A0E08' : light ? '#1F1A14' : '#2E261C',
       shadow: armed ? '0 6px 0 #000, 0 10px 16px rgba(0,0,0,0.5)' : light ? '0 3px 0 #1F1A14' : '0 3px 0 #000',
