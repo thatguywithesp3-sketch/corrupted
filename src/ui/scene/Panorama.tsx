@@ -35,6 +35,13 @@ function voices(s: GameState, kind: PanoKind): { t: string; tone: 'good' | 'bad'
     if (stage >= 2) out.push({ t: stage === 3 ? 'Біля управи до ночі чергує репортер' : 'У шинках шепочуться про ваші статки', tone: 'bad' });
     if (out.length < 2) out.push({ t: 'Ліхтарники обходять набережну. Гавань засинає.', tone: 'neu' });
   }
+  // the quiet background of the era: one observed fact, never a judgement
+  if (s.era === 1 && out.length < 3) {
+    const BG = kind === 'morning'
+      ? ['На Ринковій торгують чотирма мовами, а сваряться однією', 'Над Ратушею два прапори: імперський вище, вальдорський новіший', 'Біля гімназії продають вальдорський буквар — з-під поли, але відкрито', 'Пошта зі столиці знову запізнилася на тиждень']
+      : ['У шинку на Подолі співають пісню, якої немає в імперському співанику', 'Імперський патруль сьогодні не вийшов: нема чим платити', 'У вікнах Старого міста світло до півночі — сперечаються про мову', 'На вокзалі проводжають делегатів до столиці. Мало хто вірить, що їх почують'];
+    out.push({ t: BG[(s.year + (kind === 'morning' ? 0 : 1)) % BG.length], tone: 'neu' });
+  }
   return out.slice(0, 3);
 }
 
@@ -187,7 +194,7 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
       {/* cinema bars and the title */}
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: night ? 'linear-gradient(180deg, rgba(4,6,16,.85) 0%, rgba(4,6,16,.2) 30%, rgba(4,6,16,0) 50%, rgba(4,6,16,.55) 72%, rgba(4,6,16,.92) 100%)' : 'linear-gradient(180deg, rgba(30,14,4,.7) 0%, rgba(30,14,4,.1) 30%, rgba(30,14,4,0) 50%, rgba(20,10,4,.5) 72%, rgba(14,8,4,.9) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, top: 54, textAlign: 'center', color: ink, textShadow: '0 2px 10px rgba(0,0,0,.8)', fontFamily: "'Old Standard TT', serif" }}>
-        <div style={{ fontSize: 11, letterSpacing: 4, fontWeight: 700, opacity: 0.85, animation: 'pano-in 1.2s ease-out .2s both' }}>ПОРТ-АУРУМ · СТОЛИЦЯ ВАЛЬДОРІЇ</div>
+        <div style={{ fontSize: 11, letterSpacing: 4, fontWeight: 700, opacity: 0.85, animation: 'pano-in 1.2s ease-out .2s both' }}>{s.era === 1 ? 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ · РОМАНСЬКА ІМПЕРІЯ' : 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ'}</div>
         <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 66, lineHeight: 1, marginTop: 10, animation: 'pano-in 1.4s ease-out .5s both' }}>{night ? 'Вечір' : 'Ранок'}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 8, animation: 'pano-in 1.4s ease-out .9s both' }}>
           <span style={{ width: 40, height: 1, background: ink, opacity: 0.6 }} />
