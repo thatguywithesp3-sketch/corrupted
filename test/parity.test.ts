@@ -17,10 +17,23 @@ function mulberry(seed: number) {
   return () => { let t = (a = (a + 0x6d2b79f5) >>> 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 // gender-suffix typos in the prototype ("заснув"+"ла"), fixed in the engine
-const fixProto = (t: string) => (t || '').replace(/заснувла/g, 'заснула').replace(/грюкнувла/g, 'грюкнула').replace(/пішовла/g, 'пішла');
+// news lines reworded in the engine to follow the lore (LORE.md); the prototype keeps the old wording
+const REWORD: [string, string][] = [
+  ['Зроблено скромно, але зроблено. Пайк задоволений співпрацею.', 'Зроблено скромно, але зроблено. Намісник проїхав і нічого не помітив. Пайк задоволений співпрацею.'],
+  ['Страховики відмовляються працювати з портом. Губернатор питає, хто підписав звіти.', 'Страховики відмовляються працювати з портом. Адміралтейство в столиці питає, хто підписав звіти.'],
+  ['Дами Верхнього міста їздять із комфортом. Губернатор проїхав першим.', 'Дами Верхнього міста їздять із комфортом. Губернатор проїхав першим і помахав капелюхом обома мовами.'],
+  ['Ревізор поїхав задоволений. Доббс купив новий капелюх.', 'Ревізор поїхав задоволений і з подарунками для столиці. Доббс купив новий капелюх.'],
+  ['Судновласники кажуть — зрада. Докери кажуть — нарешті.', 'Судновласники кажуть — зрада. Докери співають у порту вальдорською.'],
+  ['Газета хвалить щедрого урядовця.', 'Газета хвалить щедрого урядовця. Гімназії вистачить на дах.']
+];
+const fixProto = (t: string) => {
+  let x = (t || '').replace(/заснувла/g, 'заснула').replace(/грюкнувла/g, 'грюкнула').replace(/пішовла/g, 'пішла');
+  for (const [a, b] of REWORD) if (x === a) x = b;
+  return x;
+};
 const pickFields = (x: any) => ({
   screen: x.screen, served: x.served, year: x.year, rank: x.rank, patron: x.patron, people: x.people, system: x.system, threat: x.threat,
-  cash: x.cash, floor: x.floor, wh: x.wh, clean: x.clean, headline: fixProto(x.headline), body: fixProto(x.body),
+  cash: x.cash, floor: x.floor, wh: x.wh, clean: x.clean, headline: x.headline, body: x.body,
   acc: Object.fromEntries(Object.entries(x.acc).map(([k, a]: any) => [k, [a.l, a.k]])),
   kids: x.kids.map((k: any) => [k.first, k.g, k.age, k.l, k.k, k.prep, k.assets, k.gone, k.why, k.trait]),
   report: (x.report || []).map((r: any) => r.t)
@@ -67,7 +80,7 @@ describe('parity with HTML prototype (Era I)', () => {
             }
             s = next;
             if (diverged) break;
-            expect(pickFields(p.state), `seed ${seed} step ${step} (${before.screen})`).toEqual(pickFields(s));
+            expect({ ...pickFields(p.state), headline: fixProto(p.state.headline), body: fixProto(p.state.body) }, `seed ${seed} step ${step} (${before.screen})`).toEqual(pickFields(s));
             compared++;
           }
         }
