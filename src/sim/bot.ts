@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs
+  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -36,10 +36,10 @@ function score(s: GameState, d: Delta): number {
 export function cityMove(s: GameState, policy: CityPolicy = 'none'): GameState | null {
   if (policy === 'none') return null;
   const c = s.city;
-  if (!c || c.acted) return null;
+  if (!c) return null;
   if (policy === 'wise') {
     const angry = [...c.rivals].filter((r) => !r.ally && r.heat >= 4.5).sort((a, b) => b.heat - a.heat);
-    for (const r of angry) {
+    for (const r of angry.filter((x) => !didAct(c, x.id))) {
       const acts = rivalActs(s, r), by = (k: string) => acts.find((o) => o.act === k && o.can);
       const m = by('marry') || by('bribe') || (by('expose') && by('expose')!.odds > 0.5 ? by('expose') : null);
       if (m) return actOnRival(s, r.id, m.act as 'bribe' | 'expose' | 'marry');
@@ -48,7 +48,7 @@ export function cityMove(s: GameState, policy: CityPolicy = 'none'): GameState |
   }
   let best: { id: string; act: string; v: number } | null = null;
   for (const b of c.biz) {
-    if (b.status !== 'open') continue;
+    if (b.status !== 'open' || didAct(c, b.id)) continue;
     for (const o of bizActs(s, b)) {
       if (!('can' in o) || !o.can) continue;
       const gain = o.perYear ? o.gain * 3 : o.gain;

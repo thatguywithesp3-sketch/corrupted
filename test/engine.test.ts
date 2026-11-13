@@ -122,10 +122,14 @@ describe('city', () => {
     expect(s.city!.biz.length).toBeGreaterThanOrEqual(4);
     expect(s.city!.news.some((n) => n.kind === 'open' || n.kind === 'rumor')).toBe(true);
   });
-  it('allows one move per morning and records the result', () => {
-    const s0 = morning(), b = s0.city!.biz.find((x) => x.status === 'open')!;
+  it('allows one move per shop per turn and records the result', () => {
+    const s0 = morning(), [b, b2] = s0.city!.biz.filter((x) => x.status === 'open');
     const s1 = G.actOnBiz(s0, b.id, 'inspect');
-    expect(s1.city!.acted).toBe(true);
+    expect(G.didAct(s1.city!, b.id)).toBe(true);
+    expect(G.didAct(s1.city!, b2.id)).toBe(false);
+    const s3 = G.actOnBiz(s1, b2.id, 'inspect');
+    expect(G.movesMade(s3.city!)).toBe(2);
+    expect(s3.city!.today.length).toBe(2);
     expect(s1.city!.last).not.toBeNull();
     expect(s1.threat).toBeGreaterThan(s0.threat);
     const s2 = G.actOnBiz(s1, b.id, 'inspect');
@@ -163,7 +167,7 @@ describe('city plan and rivals', () => {
     const c = s0.city!, b = c.biz.find((x) => x.status === 'open')!;
     b.rival = c.rivals[0].id; s0 = { ...s0, cash: 5000, patron: 90 };
     const n = G.actOnBiz(s0, b.id, 'outbid');
-    expect(n.city!.acted).toBe(true);
+    expect(G.didAct(n.city!, b.id)).toBe(true);
     expect(n.cash).toBeLessThan(5000);
     expect(n.city!.rivals[0].heat).toBeGreaterThan(c.rivals[0].heat);
   });

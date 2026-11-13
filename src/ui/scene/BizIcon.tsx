@@ -1,45 +1,63 @@
-// One small line-drawn emblem per kind of business, shared by the map pins and the owner's blank.
+// One emblem per kind of business, shared by the map pins and the owner's blank. These are the shop signs
+// of a 19th-century street: a pretzel over the bakery, three balls over the pawnshop, a mortar over the
+// apothecary. Solid ink silhouettes with paper-coloured cut lines read at pin size, where thin outlines blur.
 import type { CSSProperties } from 'react';
 
-const P: Record<string, string> = {
-  'бакалійна лавка': 'M8 7h8l3 4v9H5v-9z M9 7L8 4h8l-1 3 M9 14h6',
-  'аптека': 'M9 3.5h6V7H9z M7.5 7h9V20h-9z M12 10v6 M9 13h6',
-  'шинок': 'M5 8h10v12H5z M15 10h3.5v6H15 M7 5c1-1.5 2 .5 3 -.5s2 .5 3 -.5 M8 11v6 M12 11v6',
-  'кравецька майстерня': 'M8.5 16.5L18 4 M15.5 16.5L6 4 M7 15.5a2.6 2.6 0 100 .1 M17 15.5a2.6 2.6 0 100 .1 M3 21h18',
-  'пекарня': 'M3.5 14c0-4.5 3.5-8 8.5-8s8.5 3.5 8.5 8v4h-17z M8.5 10.5l2 3 M12.5 9.5l2 3 M16.5 11l1.5 2.5',
-  'ювелірна крамниця': 'M6 4h12l4 6-10 11L2 10z M2 10h20 M9 4l-2 6 5 11 5-11-2-6',
-  'друкарня': 'M4 4.5h16v15H4z M7 8h5v4H7z M14 8h3 M14 11h3 M7 15h10 M7 17.5h7',
-  'винний склад': 'M7 3.5h10c2.2 3.5 2.2 13.5 0 17H7c-2.2-3.5-2.2-13.5 0-17z M5.8 8.5h12.4 M5.8 15.5h12.4 M12 3.5v17',
-  'цукерня': 'M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 100-9z M7.8 12L2.5 8v8z M16.2 12l5.3-4v8z M10 11a2.5 2.5 0 012-1.5',
-  'годинникова майстерня': 'M12 3.5a8.5 8.5 0 100 17 8.5 8.5 0 100-17z M12 7v5.2l3.6 2.2 M12 3.5v1.6 M12 18.9v1.6 M3.5 12h1.6 M18.9 12h1.6',
-  'ломбард': 'M8 4.5a3 3 0 100 6 3 3 0 100-6z M16 4.5a3 3 0 100 6 3 3 0 100-6z M12 13a3 3 0 100 6 3 3 0 100-6z M10.5 10.5l.8 2.6 M13.5 10.5l-.8 2.6',
-  'кав’ярня': 'M4.5 9.5h11v5.5a4 4 0 01-4 4h-3a4 4 0 01-4-4z M15.5 10.5h2a2.3 2.3 0 010 4.6h-2 M8 3.5c0 1.2 1.2 1.2 1.2 2.6 M12 3.5c0 1.2 1.2 1.2 1.2 2.6 M3 21h14',
-  'готель': 'M3.5 17.5h17 M5.5 17.5a6.5 6.5 0 0113 0 M12 8.5V6 M10 6h4 M3 20.5h18 M9 13a3.5 3.5 0 012.5-2.2',
-  'тютюнова крамниця': 'M13.5 8h5.5v7a3.2 3.2 0 01-3.2 3.2h-2.3z M13.5 16.5H3.5 M3.5 15v3 M15 5.5c1.4-1.2-1.4-2.3 0-4 M18 5.5c1.4-1.2-1.4-2.3 0-4',
-  'зерновий склад': 'M12 21V8 M12 8.5c-3.2 0-4.2-2.2-4.2-4.5 3.2 0 4.2 2.2 4.2 4.5z M12 8.5c3.2 0 4.2-2.2 4.2-4.5-3.2 0-4.2 2.2-4.2 4.5z M12 14c-3.2 0-4.2-2.2-4.2-4.5 3.2 0 4.2 2.2 4.2 4.5z M12 14c3.2 0 4.2-2.2 4.2-4.5-3.2 0-4.2 2.2-4.2 4.5z M12 19.5c-3 0-4-2-4-4 3 0 4 2 4 4z M12 19.5c3 0 4-2 4-4-3 0-4 2-4 4z',
-  'книгарня': 'M4 5.5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z M12 6.5v13',
-  'залізничний буфет': 'M4 7h16v9H4z M7 16v3 M17 16v3 M7 10h4v3H7z M14 10h3 M3 19.5h18',
-  'вугільний склад': 'M3.5 19.5l3-7 4 2 3-6 4 5 3-2v8z M3.5 19.5h17',
-  'ливарня': 'M5 20V9l5 3V9l5 3V6h4v14z M17 6V3.5 M8 16h2 M13 16h2',
-  'візницька біржа': 'M3 15h13l2-4h3 M6.5 15v-4h6v4 M7 17.5a2 2 0 100 .1 M15.5 17.5a2 2 0 100 .1',
-  'фотоательє': 'M4 8h4l1.5-2.5h5L16 8h4v11H4z M12 11a3.2 3.2 0 100 6.4 3.2 3.2 0 100-6.4z',
-  'лазня': 'M3.5 14h17v2a4 4 0 01-4 4h-9a4 4 0 01-4-4z M8 11.5c0-2.2 2-2.2 2-4.5 M12 11.5c0-2.2 2-2.2 2-4.5 M16 11.5c0-2.2 2-2.2 2-4.5'
-};
-const FALLBACK = 'M4 20V10l8-6 8 6v10z M10 20v-6h4v6';
+/** f: filled silhouettes (each its own path, even-odd holes); s: heavy ink strokes; l: thin paper-coloured cut lines */
+type Sign = { f?: string[]; s?: string; sw?: number; l?: string };
 
-export function BizIcon({ kind, size = 22, color = '#1F1A14', sw = 1.7, style }: { kind: string; size?: number; color?: string; sw?: number; style?: CSSProperties }) {
+const S: Record<string, Sign> = {
+  'бакалійна лавка': { f: ['M8.2 7.2h7.6l-.9 1.6c3.6 1.6 5 5 4.6 9.2-.3 2.3-2.2 3-7.5 3s-7.2-.7-7.5-3c-.4-4.2 1-7.6 4.6-9.2z', 'M6.8 3h10.4l-1.4 3.2H8.2z'], l: 'M8.6 14h6.8 M9.4 17h5.2' },
+  'аптека': { f: ['M3.8 10h16.4v1c0 4.4-3 7.4-6 8.2v.9h2.8V22H7v-1.9h2.8v-.9c-3-.8-6-3.8-6-8.2z', 'M12.6 9.4l5.6-7a1.4 1.4 0 012.1 1.8L15.6 9.4z'], l: 'M6 12.6h12' },
+  'шинок': { f: ['M5 8h10.2v12.4a1 1 0 01-1 1H6a1 1 0 01-1-1z', 'M15.2 9.6h2.4a2.6 2.6 0 012.6 2.6v3a2.6 2.6 0 01-2.6 2.6h-2.4v-2h2.3a.7.7 0 00.7-.7v-2.8a.7.7 0 00-.7-.7h-2.3z', 'M4.4 8.6c-.3-2.3 1.4-3.6 3.2-3.1.7-1.6 3.2-2 4.4-.6 1.4-.9 3.9-.2 3.8 2v1.7z'], l: 'M8 11.5v7 M12.2 11.5v7' },
+  'кравецька майстерня': { f: ['M6.4 13.8a3.6 3.6 0 110 7.2 3.6 3.6 0 010-7.2zm0 2a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2z', 'M17.6 13.8a3.6 3.6 0 110 7.2 3.6 3.6 0 010-7.2zm0 2a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2z', 'M8.4 14.4L18.6 2.4l1.3 1.1-9.4 12.2z', 'M15.6 14.4L5.4 2.4 4.1 3.5l9.4 12.2z'] },
+  'пекарня': { s: 'M12 12.4C10 16.6 7.4 18.8 4.8 19.4 M12 12.4c2 4.2 4.6 6.4 7.2 7 M12 12.4C13.6 8.4 11.6 5 8.4 5 4.6 5 2.6 9.4 3.4 13.6c.9 4.6 4.6 7 8.6 7s7.7-2.4 8.6-7C21.4 9.4 19.4 5 15.6 5c-3.2 0-5.2 3.4-3.6 7.4', sw: 2.7 },
+  'ювелірна крамниця': { f: ['M8 2.5h8l3 3.6-7 6.4-7-6.4z'], s: 'M12 12.2a4.6 4.6 0 110 9.2 4.6 4.6 0 010-9.2', sw: 2.4, l: 'M5.6 6.1h12.8 M10 2.8l-1.2 3.3L12 11 M14 2.8l1.2 3.3L12 11' },
+  'друкарня': { f: ['M3.5 19.8h17V22h-17z', 'M4.5 5.5h15v2.6h-15z', 'M6 8.1h2.4v11.7H6z', 'M15.6 8.1H18v11.7h-2.4z', 'M8.4 13h7.2v3.4H8.4z'], s: 'M12 8.1V13 M8.6 3h6.8', sw: 2 },
+  'винний склад': { f: ['M6.8 2.8h10.4c2.8 4.2 2.8 14.2 0 18.4H6.8c-2.8-4.2-2.8-14.2 0-18.4z'], l: 'M5.2 8h13.6 M5.2 16h13.6 M12 2.8v2.4 M12 18.8v2.4' },
+  'цукерня': { f: ['M4.5 13.4h15V21h-15z', 'M7 8.6h10v4.8H7z', 'M11.2 4.4h1.6v4.2h-1.6z', 'M12 1.4c1.3 1.3 1.3 2.6 0 3-1.3-.4-1.3-1.7 0-3z'], l: 'M4.5 16.2c1.6 1.2 3.2 1.2 5 0s3.4 1.2 5 0 3.4 1.2 5 0 M7 10.8h10' },
+  'годинникова майстерня': { f: ['M12 4.6a8.2 8.2 0 110 16.4 8.2 8.2 0 010-16.4zm0 2.2a6 6 0 100 12 6 6 0 000-12z', 'M10.4 1.4h3.2v3.4h-3.2z'], s: 'M12 12.8V9 M12 12.8l2.8 1.7', sw: 1.8 },
+  'ломбард': { f: ['M7 7.6a3.1 3.1 0 110 6.2 3.1 3.1 0 010-6.2z', 'M17 7.6a3.1 3.1 0 110 6.2 3.1 3.1 0 010-6.2z', 'M12 14.4a3.1 3.1 0 110 6.2 3.1 3.1 0 010-6.2z'], s: 'M3 3.6h18 M7 3.6v4 M17 3.6v4 M12 3.6v10.8', sw: 1.6, l: 'M5.6 9.6a1.6 1.6 0 011.6-.9 M15.6 9.6a1.6 1.6 0 011.6-.9 M10.6 16.4a1.6 1.6 0 011.6-.9' },
+  'кав’ярня': { f: ['M3.8 9h12.4v4.8a5.4 5.4 0 01-5.4 5.4H9.2a5.4 5.4 0 01-5.4-5.4z', 'M2 20h16v1.8H2z'], s: 'M16.2 10.6h1.6a2.4 2.4 0 010 4.8h-2.2 M7.6 2.6c0 1.4 1.4 1.4 1.4 3 M11.6 2.6c0 1.4 1.4 1.4 1.4 3', sw: 1.7 },
+  'готель': { f: ['M6.6 3.4a4.2 4.2 0 110 8.4 4.2 4.2 0 010-8.4zm0 2.1a2.1 2.1 0 100 4.2 2.1 2.1 0 000-4.2z', 'M10.6 6.6h10.8v2.2H10.6z', 'M16.4 8.8h2.2v3.4h-2.2z', 'M19.6 8.8h1.8v2.6h-1.8z', 'M3.4 14.6h8.2l1.8 2.6-1.8 2.6H3.4z'], l: 'M5 17.2h5' },
+  'тютюнова крамниця': { f: ['M12.6 8.6h7v6.2a3.8 3.8 0 01-3.8 3.8 3.8 3.8 0 01-3.2-1.8z'], s: 'M13.8 15.6L2.8 12.8 M15.4 6.4c1.4-1.2-1.4-2.4 0-4.2 M18.4 6.4c1.4-1.2-1.4-2.4 0-4.2', sw: 2.1 },
+  'зерновий склад': { f: ['M12 8.5c-3.2 0-4.2-2.2-4.2-4.5 3.2 0 4.2 2.2 4.2 4.5z', 'M12 8.5c3.2 0 4.2-2.2 4.2-4.5-3.2 0-4.2 2.2-4.2 4.5z', 'M12 14c-3.2 0-4.2-2.2-4.2-4.5 3.2 0 4.2 2.2 4.2 4.5z', 'M12 14c3.2 0 4.2-2.2 4.2-4.5-3.2 0-4.2 2.2-4.2 4.5z', 'M12 19.5c-3 0-4-2-4-4 3 0 4 2 4 4z', 'M12 19.5c3 0 4-2 4-4-3 0-4 2-4 4z', 'M12 1.6c1 1 1.2 2.4 0 3.6-1.2-1.2-1-2.6 0-3.6z'], s: 'M12 21.8V5', sw: 1.6 },
+  'книгарня': { f: ['M2.6 5.2c3.4-1.1 6.6-.9 8.8 1.1v14.3c-2.2-1.8-5.4-2.1-8.8-1.1z', 'M21.4 5.2c-3.4-1.1-6.6-.9-8.8 1.1v14.3c2.2-1.8 5.4-2.1 8.8-1.1z'], l: 'M4.8 9c1.6-.4 3.2-.3 4.6.3 M4.8 12c1.6-.4 3.2-.3 4.6.3 M4.8 15c1.6-.4 3.2-.3 4.6.3 M19.2 9c-1.6-.4-3.2-.3-4.6.3 M19.2 12c-1.6-.4-3.2-.3-4.6.3' },
+  'залізничний буфет': { f: ['M6.6 8.4h10.8v7.4a5.4 5.4 0 01-10.8 0z', 'M8.6 5.2h6.8v3.2H8.6z', 'M10.8 2h2.4v3.2h-2.4z', 'M7.4 20.2h9.2V22H7.4z', 'M9.4 18.8h5.2v1.6H9.4z'], s: 'M17.4 12.6h3.2v2.4', sw: 1.8, l: 'M6.8 11.4h10.4' },
+  'вугільний склад': { f: ['M2.8 10h18.4l-2.2 7.6H5z', 'M7 17.4a2.1 2.1 0 110 4.2 2.1 2.1 0 010-4.2z', 'M17 17.4a2.1 2.1 0 110 4.2 2.1 2.1 0 010-4.2z', 'M4.6 9.6c0-2 2-3 3.6-2.1.6-2.1 3.2-2.6 4.3-.8 1.1-1.5 3.8-1.1 4.2.9 1.7-.4 3.1.6 3.5 2z'], l: 'M5 13.2h14' },
+  'ливарня': { f: ['M2.8 21.4V11l5.2 3.2V11l5.2 3.2V11l4.4 2.8V3.6h3.6v17.8z'], s: 'M19.4 2.4c-1.6-1.2.6-2-1-2.6', sw: 1.4, l: 'M5.6 17.6h2.4 M10.8 17.6h2.4' },
+  'візницька біржа': { s: 'M6.4 3.4v8.2a5.6 5.6 0 0011.2 0V3.4', sw: 3.6, l: 'M6.4 6h0 M6.4 9.6h0 M17.6 6h0 M17.6 9.6h0 M9.4 15.6h0 M14.6 15.6h0' },
+  'фотоательє': { f: ['M2.6 6.6h7.6v8.4H2.6z', 'M10.2 7.6l6.8-2.2v11.6l-6.8-2.2z', 'M17 6.4h3.6v8.2H17z'], s: 'M6.4 15L3.8 22 M6.4 15v7 M6.4 15L9 22', sw: 1.6, l: 'M4.2 9h4.4' },
+  'лазня': { f: ['M2.2 10.8h19.6v2.2a5.8 5.8 0 01-5.8 5.8H8A5.8 5.8 0 012.2 13z', 'M5.4 18.2h2.2l-.8 3.2H5z', 'M16.4 18.2h2.2l.4 3.2h-1.8z'], s: 'M7.6 8.4c0-1.8 1.6-1.8 1.6-3.6s-1.6-1.8-1.6-3.2 M12 8.4c0-1.8 1.6-1.8 1.6-3.6S12 3 12 1.6 M16.4 8.4c0-1.8 1.6-1.8 1.6-3.6s-1.6-1.8-1.6-3.2', sw: 1.5, l: 'M4 12.8h16' }
+};
+const FALLBACK: Sign = { f: ['M3.6 20.6V10l8.4-6.4 8.4 6.4v10.6z'], l: 'M10 20.6v-6h4v6' };
+
+const PAPER = '#F5EDD7';
+const Body = ({ k, color, paper }: { k: string; color: string; paper: string }) => {
+  const g = S[k] || FALLBACK;
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0, ...style }} aria-hidden="true">
-      <path d={P[kind] || FALLBACK} />
+    <>
+      {g.f?.map((d, i) => <path key={i} d={d} fill={color} fillRule="evenodd" />)}
+      {g.s && <path d={g.s} fill="none" stroke={color} strokeWidth={g.sw || 2} strokeLinecap="round" strokeLinejoin="round" />}
+      {g.l && <path d={g.l} fill="none" stroke={paper} strokeWidth={g.sw && !g.f ? 1.4 : 1.1} strokeLinecap="round" />}
+    </>
+  );
+};
+
+/** the shop sign as a standalone icon; `sw` is kept for old call sites and no longer used */
+export function BizIcon({ kind, size = 22, color = '#1F1A14', paper = PAPER, style }: { kind: string; size?: number; color?: string; paper?: string; sw?: number; style?: CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} style={{ display: 'block', flexShrink: 0, ...style }} aria-hidden="true">
+      <Body k={kind} color={color} paper={paper} />
     </svg>
   );
 }
 
-/** the same glyph as an SVG fragment, for placing inside the map's own <svg> */
-export function BizGlyph({ kind, x, y, size, color = '#1F1A14', sw = 1.8 }: { kind: string; x: number; y: number; size: number; color?: string; sw?: number }) {
+/** the same sign as an SVG fragment, for placing inside the map's own <svg> */
+export function BizGlyph({ kind, x, y, size, color = '#1F1A14', paper = PAPER }: { kind: string; x: number; y: number; size: number; color?: string; paper?: string; sw?: number }) {
   return (
-    <svg x={x} y={y} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-      <path d={P[kind] || FALLBACK} />
+    <svg x={x} y={y} width={size} height={size} viewBox="0 0 24 24">
+      <Body k={kind} color={color} paper={paper} />
     </svg>
   );
 }

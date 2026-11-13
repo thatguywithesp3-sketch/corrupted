@@ -30,7 +30,7 @@ function Cameo({ k, sib }: { k: Kin; sib?: boolean }) {
 
 /** the city plan, rolled up and tied: always within reach on the rail; a red tag while today's move is unused */
 function MapRoll({ s, onMap }: { s: GameState; onMap: () => void }) {
-  const fresh = !!s.city && !s.city.acted;
+  const fresh = !!s.city && G.movesMade(s.city) === 0;
   return (
     <button className="b3d" onClick={onMap} aria-label="Карта міста" title="Карта міста: заклади, суперники, ваш хід"
       style={{ position: 'relative', flexShrink: 0, width: 64, minHeight: 38, marginTop: 4, padding: '2px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, cursor: 'pointer', fontFamily: SERIF,
@@ -45,7 +45,7 @@ function MapRoll({ s, onMap }: { s: GameState; onMap: () => void }) {
         <circle cx="17" cy="8" r="2.6" fill="#C93A26" stroke="#5A1008" strokeWidth=".7" /><circle cx="16.3" cy="7.3" r=".8" fill="#FFD9C8" />
       </svg>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: '#F2DFA8', lineHeight: 1, marginTop: 1 }}>КАРТА</span>
-      {fresh && <span style={{ position: 'absolute', top: -6, right: -4, padding: '0 4px', fontSize: 10, fontWeight: 700, color: '#F6EEDA', background: '#9A2418', borderRadius: 7, border: '1px solid #1A0C05' }}>1 хід</span>}
+      {fresh && <span style={{ position: 'absolute', top: -6, right: -4, padding: '0 4px', fontSize: 10, fontWeight: 700, color: '#F6EEDA', background: '#9A2418', borderRadius: 7, border: '1px solid #1A0C05' }}>ходи</span>}
     </button>
   );
 }

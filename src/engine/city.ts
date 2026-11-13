@@ -80,8 +80,10 @@ export interface CityState {
   rivals: Rival[];
   seq: number;
   news: CityNews[];
-  /** a move was already made this morning */
-  acted: boolean;
+  /** units (shop ids and magnate ids) already moved on this turn: one move per unit per turn, as in Civilization */
+  done: string[];
+  /** every result of this turn, so each card keeps its own stamp */
+  today: ActResult[];
   last: ActResult | null;
   /** tribute that went into the drawer this evening */
   tribute: number;
@@ -188,7 +190,7 @@ function newBiz(c: CityState, year: number): Biz {
 
 export function initCity(s: GameState): CityState {
   const econ = { treasury: 24000, grain: 3, trade: 100, crown: 100 };
-  const c: CityState = { v: CITY_V, rng: (s.rng ^ 0x9e3779b9) >>> 0, econ, prev: { ...econ }, biz: [], rivals: initRivals(), seq: 0, news: [], acted: false, last: null, tribute: 0 };
+  const c: CityState = { v: CITY_V, rng: (s.rng ^ 0x9e3779b9) >>> 0, econ, prev: { ...econ }, biz: [], rivals: initRivals(), seq: 0, news: [], done: [], today: [], last: null, tribute: 0 };
   for (let i = 0; i < 4; i++) c.biz.push(newBiz(c, s.year - 1 - cint(c, 6)));
   cityMorning(s, c);
   if (!c.news.some((x) => x.kind === 'open')) { const b = newBiz(c, s.year); c.biz.push(b); c.news.unshift({ kind: 'open', biz: b.id, head: `Відкриття на ${street(c, b)}: ${b.kind} «${b.name}»`, text: `${b.owner} відкриває ${b.kind} «${b.name}». Сусіди кажуть, справи підуть добре.` }); }
@@ -205,7 +207,7 @@ export function cityMorning(s: GameState, c: CityState) {
   e.grain = Math.max(1, Math.min(6, Math.round((e.grain + (crand(c) - 0.5) * 0.8) * 10) / 10));
   e.crown = Math.round(Math.max(80, Math.min(120, e.crown + (crand(c) - 0.5) * 6)));
   e.treasury = r10(Math.max(5000, e.treasury + (e.trade - 100) * 60 + (crand(c) - 0.5) * 3000));
-  c.acted = false; c.last = null; c.news = [];
+  c.done = []; c.today = []; c.last = null; c.news = [];
 
   // owners with a grudge go to the paper or to the governor
   c.biz.filter((b) => b.status !== 'closed' && b.grudge >= 2).forEach((b) => {
@@ -249,6 +251,14 @@ export function cityEvening(s: GameState, c: CityState) {
 
 // ---------------------------------------------------------------- the morning move
 
+/** this shop or magnate has already had its move on this turn */
+export const didAct = (c: CityState, id: string) => !!c.done && c.done.includes(id);
+/** how many moves were made on this turn */
+export const movesMade = (c: CityState) => (c.done ? c.done.length : 0);
+/** this turn's result for one unit, if it was moved */
+export const resultFor = (c: CityState, id: string) => (c.today || []).find((r) => (r.rival || r.biz) === id) || null;
+const markDone = (c: CityState, id: string) => { (c.done ||= []).push(id); };
+
 export interface ActOption { act: BizAct | RivalAct; /** money it costs (dirty) */ cost?: number; /** text instead of the cash gain */ gainT?: string; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
 
 /** Chance that a move works (the same numbers actOnBiz rolls against; pressure counts after the move). */
@@ -282,17 +292,17 @@ export function bizActs(s: GameState, b: Biz): ActOption[] {
   ];
 }
 
-/** One move per morning against one business. */
+/** One move per business per turn. */
 export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
   if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
-  if (c.acted) return n;
+  if (didAct(c, id)) return n;
   const b = c.biz.find((x) => x.id === id);
   if (!b) return n;
   const opt = bizActs(n, b).find((o) => o.act === act);
   if (!opt || !opt.can) return n;
-  c.acted = true;
+  markDone(c, b.id);
   const res: ActResult = { biz: b.id, act, ok: false, title: '', text: '', cash: 0, d: {} };
   const q = bizOdds(b, act, n);
   const holder = rivalOf(c, b.rival);
@@ -347,7 +357,7 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
   if (res.d.s) n.system = clamp100(n.system + res.d.s);
   if (res.d.i) n.threat += res.d.i;
   b.grudge = Math.min(3, b.grudge);
-  c.last = res;
+  c.last = res; (c.today ||= []).push(res);
   return n;
 }
 
@@ -456,12 +466,12 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
   if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
-  if (c.acted) return n;
+  if (didAct(c, id)) return n;
   const r = rivalOf(c, id);
   if (!r) return n;
   const opt = rivalActs(n, r).find((o) => o.act === act);
   if (!opt || !opt.can) return n;
-  c.acted = true;
+  markDone(c, r.id);
   const K = CITY_RULES, res: ActResult = { biz: '', rival: r.id, act: act as never, ok: false, title: '', text: '', cash: 0, d: {} };
   n.cash -= opt.cost || 0;
   if (act === 'bribe') {
@@ -483,7 +493,7 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
     r.ally = true; r.heat = 0; r.power = clampN(r.power + 6, 5, 95); res.ok = true; res.d.s = 2;
     res.title = `Союз із ${r.name}`; res.text = `${kid.first} ${kid.g === 'f' ? 'увійшла' : 'увійшов'} до їхнього дому. Весілля вийшло гучним, а ворожнеча — тихою. Тепер ${r.name} щороку знижує ваш ризик.`;
   }
-  c.last = res;
+  c.last = res; (c.today ||= []).push(res);
   if (res.d.i) n.threat += res.d.i;
   if (res.d.s) n.system = clamp100(n.system + res.d.s);
   return n;
