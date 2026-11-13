@@ -336,22 +336,32 @@ function TodayMark({ res }: { res: Last }) {
 }
 
 /** the moment of stamping: the stamp slams onto the desk, says what happened, and lifts away */
-function StampFlash({ res, onDone }: { res: Last; onDone: () => void }) {
-  useEffect(() => { const t = setTimeout(onDone, 2600); return () => clearTimeout(t); }, [onDone]);
+/** the stamp lands on the result slip; the slip stays on the desk until it is read and put away */
+function StampFlash({ res, onDone, s }: { res: Last; onDone: () => void; s: GameState }) {
   const tone = res.ok ? T.clean : T.risk;
+  const spent = res.spent || 0, got = res.cash || 0;
   return (
-    <div onClick={onDone} style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,6,2,0.45)', animation: 'sf-bg 2.6s ease forwards', cursor: 'pointer' }}>
-      <style>{`@keyframes sf-bg{0%{opacity:0}8%{opacity:1}82%{opacity:1}100%{opacity:0}}@keyframes sf-slam{0%{transform:rotate(-4deg) scale(2.6);opacity:0}14%{transform:rotate(-9deg) scale(.94);opacity:1}20%{transform:rotate(-8deg) scale(1)}100%{transform:rotate(-8deg) scale(1)}}`}</style>
-      <div className="tx-paper" style={{ width: 300, padding: '16px 16px 12px', background: '#F5EDD7', boxShadow: '0 16px 30px rgba(0,0,0,0.7)', textAlign: 'center', transform: 'rotate(1deg)' }}>
-        <div style={{ display: 'inline-block', padding: '4px 16px', border: `4px double ${tone.ink}`, color: tone.ink, fontFamily: "'Ruslan Display', serif", fontSize: 34, letterSpacing: 3, mixBlendMode: 'multiply', animation: 'sf-slam .9s cubic-bezier(.5,0,.75,0) both' }}>{res.ok ? 'ВДАЛОСЯ' : 'ПРОВАЛ'}</div>
-        <div style={{ fontSize: 18, fontWeight: 700, marginTop: 8, lineHeight: 1.15 }}>{res.title}</div>
-        <div style={{ fontSize: 14, lineHeight: 1.3, marginTop: 4, color: MUTE }}>{res.text}</div>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>{deltas(res).map(([l, tn]) => <span key={l} style={{ padding: '1px 8px', fontSize: 12, fontWeight: 700, background: tn.note, color: tn.ink, border: `1px solid ${tn.pen}` }}>{l}</span>)}</div>
+    <div className="m-fade" style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(10,6,2,0.55)' }}>
+      <style>{'@keyframes sf-slam{0%{transform:rotate(-4deg) scale(2.6);opacity:0}40%{transform:rotate(-9deg) scale(.94);opacity:1}60%{transform:rotate(-8deg) scale(1)}100%{transform:rotate(-8deg) scale(1)}}'}</style>
+      <div role="dialog" aria-label={res.title} className="tx-paper m-pop" style={{ width: '100%', maxWidth: 340, padding: '16px 16px 16px', background: '#F5EDD7', boxShadow: '0 16px 30px rgba(0,0,0,0.7)', textAlign: 'center', transform: 'rotate(.6deg)' }}>
+        <div style={{ display: 'inline-block', padding: '4px 16px', border: `4px double ${tone.ink}`, color: tone.ink, fontFamily: "'Ruslan Display', serif", fontSize: 28, letterSpacing: 3, mixBlendMode: 'multiply', animation: 'sf-slam .5s cubic-bezier(.5,0,.75,0) both' }}>{res.ok ? 'ВДАЛОСЯ' : 'ПРОВАЛ'}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12, lineHeight: 1.15 }}>{res.title}</div>
+        <div style={{ fontSize: 14, lineHeight: 1.35, marginTop: 4, color: MUTE }}>{res.text}</div>
+        {deltas(res).length > 0 && <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 4, marginTop: 12 }}>{deltas(res).map(([l, tn]) => <span key={l} style={{ padding: '2px 8px', fontSize: 12, fontWeight: 700, background: tn.note, color: tn.ink, border: `1px solid ${tn.pen}` }}>{l}</span>)}</div>}
+        {/* the purse after this move: what went out, what came in, what is left */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, padding: '8px 12px', border: `1px dashed ${MUTE}`, fontSize: 14, textAlign: 'left' }}>
+          <span style={{ flex: 1 }}>
+            {spent > 0 && <span style={{ display: 'block', color: T.risk.ink, fontWeight: 700 }}>−{G.fmt(spent)} кр. {res.spentClean ? 'чистими' : 'брудними'}</span>}
+            {got > 0 && <span style={{ display: 'block', color: T.clean.ink, fontWeight: 700 }}>+{G.fmt(got)} кр. брудними</span>}
+            {!spent && !got && <span style={{ display: 'block', color: MUTE }}>Гроші не рухалися</span>}
+          </span>
+          <span style={{ textAlign: 'right' }}><span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: MUTE }}>ЗАЛИШОК</span><b>{G.fmt(s.cash)}</b> брудних · <b>{G.fmt(s.clean)}</b> чистих</span>
+        </div>
+        <DeskBtn kind="brass" style={{ width: '100%', marginTop: 16 }} onClick={onDone}>Прочитано</DeskBtn>
       </div>
     </div>
   );
 }
-
 
 const MiniPin = ({ col, ring, badge, roof }: { col: string; ring?: string; badge?: { n: string; c: string; at: 'tr' | 'tl' }; roof?: boolean }) => (
   <svg viewBox="-7 -7 14 14" width="38" height="38" aria-hidden="true">
@@ -602,7 +612,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
 
   return (
     <div ref={root} className="tx-wood" style={{ position: 'absolute', inset: 0, zIndex: 70, background: '#1A120A', display: 'flex', flexDirection: 'column', fontFamily: SERIF, color: INK }}>
-      {flash && last && <StampFlash res={last} onDone={() => setFlash(false)} />}
+      {flash && last && <StampFlash res={last} s={s} onDone={() => setFlash(false)} />}
       {/* the whole plan; it shrinks only while a card is open */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
         <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
@@ -610,8 +620,19 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         </div>
         {/* floating furniture: title plaque, close, zoom, legend */}
         <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '4px 8px', pointerEvents: 'none' }}>
-          <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 18, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Карта Порт-Аурума</span>
-          {made > 0 && <span style={{ flexShrink: 0, fontSize: 10, letterSpacing: 1.2, fontWeight: 700, padding: '2px 8px', background: T.clean.note, color: T.clean.ink, whiteSpace: 'nowrap' }}>ХОДІВ: {made}</span>}
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontFamily: "'Ruslan Display', serif", fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Порт-Аурум</span>
+            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{made > 0 ? `ХОДІВ СЬОГОДНІ: ${made}` : 'ПО ХОДУ НА КОЖНОГО'}</span>
+          </span>
+          {/* the purse: dirty pays for most moves, clean for charity */}
+          <span key={`${s.cash}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
+            {([['БРУДНІ', s.cash, '#E3B866'], ['ЧИСТІ', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
+              <span key={l} style={{ textAlign: 'center', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(240,215,140,0.35)', borderRadius: 2 }}>
+                <span style={{ display: 'block', fontSize: 10, letterSpacing: 1, color: '#CDBB8E' }}>{l}</span>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>{G.fmt(v)}</span>
+              </span>
+            ))}
+          </span>
         </div>
         <button onClick={onClose} aria-label="Згорнути план" style={{ position: 'absolute', right: 10, top: 10, width: 40, height: 40, ...plaque, fontSize: 22, fontWeight: 700, cursor: 'pointer', borderRadius: 4 }}>✕</button>
         {panel === null && <div style={{ position: 'absolute', left: 10, bottom: 12 }}><NotebookBtn rivals={c.rivals} hostile={hostile} onClick={() => setPanel('riv')} /></div>}

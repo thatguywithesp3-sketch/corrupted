@@ -81,7 +81,7 @@ export interface Econ { treasury: number; grain: number; trade: number; crown: n
 
 export interface CityNews { kind: 'open' | 'rumor' | 'flavor' | 'complaint' | 'closed' | 'roof' | 'rival' | 'attack'; head: string; text: string; biz?: string; rival?: string }
 
-export interface ActResult { biz: string; rival?: string; act: BizAct | InstAct; ok: boolean; title: string; text: string; cash: number; d: { p?: number; n?: number; s?: number; i?: number } }
+export interface ActResult { biz: string; rival?: string; act: BizAct | InstAct; ok: boolean; title: string; text: string; cash: number; /** what the move cost, and from which purse */ spent?: number; spentClean?: boolean; d: { p?: number; n?: number; s?: number; i?: number } }
 
 export interface CityState {
   v?: number;
@@ -357,7 +357,7 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
       c.news.unshift({ kind: 'closed', biz: b.id, head: `Зачинено: ${b.kind} «${b.name}»`, text: `Після «перевірки» ${b.owner} не відкрив двері. Сусіди кажуть, справа не в порушеннях.` });
     }
   } else if (act === 'outbid' && holder) {
-    n.cash -= opt.cost || 0; res.d.i = opt.risk;
+    n.cash -= opt.cost || 0; res.spent = opt.cost || 0; res.d.i = opt.risk;
     holder.heat = Math.min(10, holder.heat + 2);
     if (crand(c) < q) {
       res.ok = true; b.rival = null; b.status = 'roof'; b.tribute = r10(b.wealth * 0.25); b.grudge = 0; holder.power = Math.max(5, holder.power - 4);
@@ -497,7 +497,7 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
   if (!opt || !opt.can) return n;
   markDone(c, r.id);
   const K = CITY_RULES, res: ActResult = { biz: '', rival: r.id, act: act as never, ok: false, title: '', text: '', cash: 0, d: {} };
-  n.cash -= opt.cost || 0;
+  n.cash -= opt.cost || 0; res.spent = opt.cost || 0;
   if (act === 'bribe') {
     if (crand(c) < opt.odds) { r.heat = Math.max(0, r.heat - K.bribeDrop); res.ok = true; res.title = `${r.name} ${sx(r, 'прийняв', 'прийняла')} дарунок`; res.text = 'Подяка тривала довше, ніж слід було б. Зате полювання вщухло.'; }
     else { res.title = `${r.name} ${sx(r, 'взяв', 'взяла')} гроші й нічого не ${sx(r, 'обіцяв', 'обіцяла')}`; res.text = 'Дарунок прийнято, а злість лишилась. Таке трапляється.'; res.d.i = 1; }
@@ -572,6 +572,7 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
   const F = CITY_RULES.fame, fm = (c.fame ||= {});
   const res: ActResult = { biz: uid, act, ok: true, title: '', text: '', cash: 0, d: {} };
   if (opt.clean) n.clean -= opt.cost || 0; else n.cash -= opt.cost || 0;
+  res.spent = opt.cost || 0; res.spentClean = !!opt.clean;
   const calm = (k: number) => { const was = n.threat; n.threat = Math.max(0, n.threat - k); res.d.i = n.threat - was; };
   if (act === 'donate') { calm(F.donate.calm); n.people = clamp100(n.people + F.donate.people); res.d.n = F.donate.people; res.title = 'Сиротинець дякує благодійнику'; res.text = 'Ігуменя згадала вас у недільній проповіді. На ринку кажуть: «Не такий уже він і поганий».'; }
   else if (act === 'fund') { fm.fund = true; res.title = `Фонд «${n.surname} — дітям» відкрито`; res.text = 'Табличка на воротах сиротинця, щорічний бал і фотографія в газеті. Добре ім’я тепер працює саме.'; }

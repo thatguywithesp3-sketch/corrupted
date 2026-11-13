@@ -4,6 +4,31 @@ import { memo } from 'react';
 import * as G from '../../engine';
 
 const INK = '#2A2014', PAPER = '#E8DBB8', ROAD = '#F0E6C6';
+
+// Ordinary houses, precomputed once into a handful of paths (thousands of houses, so no per-house elements):
+// the wall is the footprint pushed down-right (light from the upper left), the roof is hipped, its sunlit
+// slope a touch lighter. Three muted roof tones: warm tile, faded tile, slate.
+const ROOF_TONES = ['#D9C39C', '#D0B58E', '#C8C0A8'];
+const HOUSES = (() => {
+  const plan = G.getPlan();
+  const wall: string[] = [], roofs: string[][] = [[], [], []], ridge: string[] = [], lit: string[] = [];
+  const f = (n: number) => n.toFixed(2);
+  plan.bldgs.forEach((b, i) => {
+    const a = (b.r * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
+    const P = (u: number, v: number, dx = 0, dy = 0) => `${f(b.x + u * ca - v * sa + dx)} ${f(b.y + u * sa + v * ca + dy)}`;
+    const hw = b.w / 2, hh = b.h / 2, dx = 0.28, dy = 0.62;
+    wall.push(`M${P(-hw, -hh, dx, dy)}L${P(hw, -hh, dx, dy)}L${P(hw, hh, dx, dy)}L${P(-hw, hh, dx, dy)}Z`);
+    roofs[(i * 7 + (b.k || 0)) % 3].push(`M${P(-hw, -hh)}L${P(hw, -hh)}L${P(hw, hh)}L${P(-hw, hh)}Z`);
+    // hipped roof: a ridge along the long side, hips down to the corners
+    const long = b.w >= b.h, L = long ? hw : hh, S = long ? hh : hw, r = Math.max(0, L - S);
+    const R1 = long ? P(-r, 0) : P(0, -r), R2 = long ? P(r, 0) : P(0, r);
+    const c = long ? [P(-hw, -hh), P(-hw, hh), P(hw, -hh), P(hw, hh)] : [P(-hw, -hh), P(hw, -hh), P(-hw, hh), P(hw, hh)];
+    ridge.push(`M${R1}L${R2}M${c[0]}L${R1}L${c[1]}M${c[2]}L${R2}L${c[3]}`);
+    // the slope facing the lamp-light (upper side) catches a little light
+    lit.push(long ? `M${P(-hw, -hh)}L${P(hw, -hh)}L${R2}L${R1}Z` : `M${P(-hw, -hh)}L${P(-hw, hh)}L${R2}L${R1}Z`);
+  });
+  return { wall: wall.join(''), roofs: roofs.map((r) => r.join('')), ridge: ridge.join(''), lit: lit.join('') };
+})();
 const SHIP = (x: number, y: number, s = 1, flip = false) => (
   <g transform={`translate(${x} ${y}) scale(${flip ? -s : s} ${s})`} stroke={INK} strokeWidth=".25" strokeLinejoin="round">
     <path d="M-4 0 L4 0 L3 1.6 L-3 1.6 Z" fill="#6B5A3C" />
@@ -18,7 +43,6 @@ const Label = ({ x, y, t, size = 2.1, italic = true, rot = 0 }: { x: number; y: 
 );
 
 function PlanArtInner() {
-  const plan = G.getPlan();
   const polyD = (p: G.Pt[]) => 'M' + p.map((q) => q.join(' ')).join(' L') + ' Z';
   const oldRing = polyD(G.DISTRICTS.old.poly);
   // the ordinary city is one quiet wash: only the places that matter to us are painted (see CityMap landmarks)
@@ -64,13 +88,11 @@ function PlanArtInner() {
       <ellipse cx="116" cy="22" rx="3.2" ry="3" fill="url(#pa-park)" />
       <path d="M62 34 q4 -3 8 1 q1 6 -4 8 q-6 -1 -4 -9z" fill="url(#pa-park)" stroke="#4A6A38" strokeWidth=".2" />
 
-      {/* the houses */}
-      <g opacity=".9">
-        {plan.bldgs.map((b, i) => (
-          <rect key={i} x={b.x - b.w / 2} y={b.y - b.h / 2} width={b.w} height={b.h} transform={`rotate(${b.r} ${b.x} ${b.y})`}
-            fill={b.k === 2 ? '#CDBE9C' : '#D8CAA8'} stroke="#9A8A68" strokeWidth=".14" />
-        ))}
-      </g>
+      {/* the houses: quiet, but solid: a shaded wall under a hipped roof with its ridge, in muted tones */}
+      <path d={HOUSES.wall} fill="#9A8460" fillOpacity=".8" />
+      {HOUSES.roofs.map((d, i) => <path key={i} d={d} fill={ROOF_TONES[i]} stroke="#8A7854" strokeWidth=".13" strokeLinejoin="round" />)}
+      <path d={HOUSES.ridge} fill="none" stroke="#8A7854" strokeWidth=".12" strokeOpacity=".9" />
+      <path d={HOUSES.lit} fill="#FFF8E4" fillOpacity=".28" />
 
       {/* rails to the harbour */}
       <path d="M144 18 L145 112" stroke={INK} strokeWidth=".35" fill="none" /><path d="M144.9 18 L145.9 112" stroke={INK} strokeWidth=".35" fill="none" />
