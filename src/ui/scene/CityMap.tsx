@@ -20,17 +20,7 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 // Only what matters to us is painted, like the monuments on a pictorial city map: the places where the family
 // name is washed, the magnates' houses, our own house, the shops we can touch. The rest of the city stays a
 // quiet engraved wash underneath. Sprites are hand-tinted engravings (public/art/map), anchored by their base.
-const ASPECT: Record<string, number> = { ratusha: 1.33, gendarm: 0.9, orphanage: 0.88, press: 0.94, weisman: 0.96, berg: 1.88, graf: 1.0, grabs: 1.04, market: 0.66, station: 0.83, univ: 0.86, cathedral: 1.18, shop1: 1.27, shop2: 1.29, shop3: 1.28, shop4: 1.33, opera: 0.87, customs: 0.92, foundry: 0.81, lighthouse: 1.06 };
-type Place = { art: string; x: number; y: number; w: number; t?: string; inst?: G.InstId; rival?: string; home?: boolean };
-const DECOR: Place[] = [
-  { art: 'cathedral', x: 117, y: 27, w: 15, t: 'Собор' }, { art: 'ratusha', x: 104, y: 41, w: 15, t: 'Ратуша' }, { art: 'opera', x: 93, y: 58, w: 16, t: 'Опера' },
-  { art: 'customs', x: 156, y: 64, w: 17, t: 'Митниця' }, { art: 'lighthouse', x: 193, y: 101, w: 11 }, { art: 'station', x: 106, y: 153, w: 24, t: 'Вокзал' },
-  { art: 'univ', x: 107, y: 201, w: 21, t: 'Університет' }, { art: 'foundry', x: 157, y: 156, w: 19, t: 'Ливарня' }
-];
-const HOMES: Record<string, { x: number; y: number; art: string }> = { r1: { x: 166, y: 34, art: 'weisman' }, r2: { x: 136, y: 32, art: 'berg' }, r3: { x: 44, y: 48, art: 'graf' } };
-const OUR_HOME = { x: 88, y: 26, art: 'grabs' };
-const shopArt = (id: string) => 'shop' + (1 + ([...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 4));
-const spriteH = (art: string, w: number) => w * (ASPECT[art] || 1);
+import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops } from './mapLayout';
 
 /** a painted building standing on a little clearing; its base sits on (x, y) */
 function Sprite({ art, x, y, w, dim }: { art: string; x: number; y: number; w: number; dim?: boolean }) {
@@ -67,9 +57,9 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival 
   type Item = { y: number; el: React.ReactNode };
   const items: Item[] = [];
   DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} x={p.x} y={p.y} w={p.w} />{p.t && <Plaque x={p.x} y={p.y + 2.6} t={p.t} />}</g> }));
-  items.push({ y: OUR_HOME.y, el: <g key="home" style={{ pointerEvents: 'none' }}><Sprite art={OUR_HOME.art} x={OUR_HOME.x} y={OUR_HOME.y} w={13} /><Plaque x={OUR_HOME.x} y={OUR_HOME.y + 2.6} t="Ваш дім" color="#3F8A5A" /></g> });
+  items.push({ y: OUR_HOME.y, el: <g key="home" style={{ pointerEvents: 'none' }}><Sprite art={OUR_HOME.art} x={OUR_HOME.x} y={OUR_HOME.y} w={HOME_W.grabs} /><Plaque x={OUR_HOME.x} y={OUR_HOME.y + 2.6} t="Ваш дім" color="#3F8A5A" /></g> });
   G.INSTS.forEach((p) => {
-    const on = selInst === p.id, mk = markOf('i:' + p.id), w = { charity: 18, press: 13, whisper: 22, okhrana: 21 }[p.id];
+    const on = selInst === p.id, mk = markOf('i:' + p.id), w = INST_W[p.id];
     items.push({ y: p.y, el: (
       <g key={p.id} onClick={() => onInst(p.id)} style={{ cursor: 'pointer' }}>
         {on && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.66} ry={w * 0.26} fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
@@ -84,13 +74,15 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival 
     const h = HOMES[r.id]; if (!h) return;
     items.push({ y: h.y, el: (
       <g key={r.id} onClick={() => onRival(r.id)} style={{ cursor: 'pointer' }}>
-        <Sprite art={h.art} x={h.x} y={h.y} w={h.art === 'berg' ? 9 : 16} />
+        <Sprite art={h.art} x={h.x} y={h.y} w={HOME_W[h.art]} />
         <Plaque x={h.x} y={h.y + 2.8} t={r.name.replace('Граф ', '')} color={r.color} />
         <rect x={h.x - 8} y={h.y - 17} width="16" height="21" fill="transparent" />
       </g>
     ) });
   });
-  [...biz].forEach((b) => {
+  const at = layoutShops(biz);
+  [...biz].forEach((b0) => {
+    const b = { ...b0, ...at[b0.id] };
     const on = b.id === sel, closed = b.status === 'closed', roof = b.status === 'roof';
     const col = pinColor(b), rc = colOf(b.rival), mk = markOf(b.id);
     items.push({ y: b.y + (on ? 50 : 0), el: (
@@ -575,7 +567,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
     const sc = sheet.current; if (!sc) return;
     const tm = setTimeout(() => {
       const w = sc.scrollWidth, h = sc.scrollHeight;
-      const px = b && panel === 'biz' ? b.x : inst ? inst.x : 100, py = b && panel === 'biz' ? b.y : inst ? inst.y - 6 : 110;
+      const bp = b ? layoutShops(c.biz)[b.id] || b : null;
+      const px = bp && panel === 'biz' ? bp.x : inst ? inst.x : 100, py = bp && panel === 'biz' ? bp.y : inst ? inst.y - 6 : 110;
       sc.scrollTo({ left: ((px + 4) / 208) * w - sc.clientWidth / 2, top: ((py + 4) / 228) * h - sc.clientHeight / 2, behavior: 'smooth' });
     }, 60);
     return () => clearTimeout(tm);
