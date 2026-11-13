@@ -6,6 +6,7 @@ import * as G from '../../engine';
 import type { GameState, Kin, Meter } from '../../engine';
 import { T } from './Ledger';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
+import { kinPortrait } from '../people';
 
 const KEYS: Meter[] = ['patron', 'people', 'system', 'threat'];
 const split = (t: string) => t.replace(/\.$/, '').split(/,\s*|;\s*/).map((x) => x.trim()).filter(Boolean).map((x) => x[0].toUpperCase() + x.slice(1));
@@ -140,17 +141,18 @@ const Backdrop = ({ children, onClose }: { children: ReactNode; onClose: () => v
 
 // ============================================================ the family album
 
-function Photo({ k, size = 92 }: { k: Kin; size?: number }) {
-  const f = k.g === 'f';
+function Photo({ k, size = 92, era }: { k: Kin; size?: number; era: number }) {
+  const f = k.g === 'f', photo = kinPortrait(era, k);
   const corner = (pos: CSSProperties, r: number) => <span aria-hidden="true" style={{ position: 'absolute', ...pos, width: 15, height: 15, background: '#2A1D12', clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: `rotate(${r}deg)` }} />;
   return (
     <span style={{ position: 'relative', width: size, height: size * 1.25, flexShrink: 0, padding: 4, background: '#FBF6E8', boxShadow: '1px 3px 6px rgba(0,0,0,0.35)', transform: `rotate(${f ? -2 : 2}deg)` }}>
       <span style={{ display: 'block', width: '100%', height: '100%', borderRadius: '50% / 46%', overflow: 'hidden', position: 'relative', background: k.gone ? 'radial-gradient(circle at 50% 35%, #A49A88, #5E574C)' : 'radial-gradient(circle at 50% 30%, #E7D3A6, #9C7A48 70%, #5E4424)', filter: k.gone ? 'grayscale(1)' : 'sepia(0.35)' }}>
+        {photo ? <img src={photo} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 15%', filter: k.gone ? 'grayscale(1) contrast(.9)' : 'none' }} /> :
         <svg viewBox="0 0 60 75" width="100%" height="100%" aria-hidden="true" style={{ position: 'absolute', inset: 0 }}>
           <circle cx="30" cy="28" r={k.age < 12 ? 10 : 12} fill="#3A2A18" opacity=".85" />
           {f && <path d="M17 31 C15 14 45 14 43 31 C46 38 44 44 40 46 C38 36 22 36 20 46 C16 44 14 38 17 31 Z" fill="#3A2A18" opacity=".6" />}
           <path d={`M${k.age < 12 ? 14 : 8} 75 C${k.age < 12 ? 14 : 8} 50 ${k.age < 12 ? 46 : 52} 50 ${k.age < 12 ? 46 : 52} 75 Z`} fill="#3A2A18" opacity=".85" />
-        </svg>
+        </svg>}
       </span>
       {corner({ top: 0, left: 0 }, 0)}{corner({ top: 0, right: 0 }, 90)}{corner({ bottom: 0, right: 0 }, 180)}{corner({ bottom: 0, left: 0 }, 270)}
     </span>
@@ -182,7 +184,7 @@ function KidPage({ s, k, i }: { s: GameState; k: Kin; i: number }) {
   return (
     <div style={{ position: 'relative', display: 'flex', gap: 12, padding: '12px 8px 12px 8px', borderBottom: '1px dashed rgba(90,70,48,0.4)', opacity: k.gone ? 0.65 : 1 }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <Photo k={k} />
+        <Photo k={k} era={s.era} />
         <span style={{ fontFamily: HAND, fontSize: 18, lineHeight: 1, color: MUTE }}>{k.age} р.</span>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -226,7 +228,7 @@ export function FamilyAlbum({ s, onClose }: { s: GameState; onClose: () => void 
             <div style={{ marginTop: 8, fontSize: 10, letterSpacing: 1.8, fontWeight: 700, color: MUTE }}>БРАТИ Й СЕСТРИ</div>
             {s.sibs.map((k) => (
               <div key={k.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px dashed rgba(90,70,48,0.35)', opacity: k.gone ? 0.6 : 1 }}>
-                <Photo k={k} size={44} />
+                <Photo k={k} size={44} era={s.era} />
                 <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: 'block', fontFamily: HAND, fontSize: 22, lineHeight: 1 }}>{k.first}</span><span style={{ fontSize: 12, color: MUTE }}>{k.gone ? k.why : `${k.g === 'f' ? 'сестра' : 'брат'} · ${k.age} р.`}</span></span>
                 {!k.gone && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 14, fontWeight: 700, color: k.l <= 30 ? T.risk.ink : INK }}><Ic k="heart" size={14} color={k.l <= 30 ? T.risk.ink : INK} />{k.l}</span>}
               </div>

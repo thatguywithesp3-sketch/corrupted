@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as G from '../../engine';
 import type { Delta, GameState, Kin } from '../../engine';
+import { kinPortrait, npcPortrait } from '../people';
 
 export interface UiState {
   pend: string | null;
@@ -274,7 +275,7 @@ export function buildView(ctx: Ctx): any {
   v.isScheme = cur.kind === 'scheme'; v.isChoice = cur.kind === 'choice';
   v.isDialog = cur.kind === 'choice' && !!cur.who; v.notDialog = !v.isDialog; v.dlgOpts = [];
   const dlgW: any = C.words.dialog;
-  v.dg = { bg: '#3D3328', sil: '#1F1A14', name: '', role: '', kindLabel: '', mood: '', moodBg: '#E6D9BC', pills: [], hasBadge: false, badge: '', badgeBg: '#8E2A1F', isLetter: false, isCall: false, isChat: false, hatOn: false, hatH: '0px', say: '', gist: '', sign: '', initial: '', place: '', device: '', timer: '', glow: '#1D2A3A', accent: '#4F8BE0', status: '', app: '', chatNote: '', time1: '', time2: '', screenBg: '#0D1117', optsBg: '#0D1117', optsLabelC: '#9AA6B2', optsFont: 'inherit', replyLabel: '' };
+  v.dg = { photo: '', photoOn: false, silOn: true, ovalFilter: 'sepia(0.7)', bg: '#3D3328', sil: '#1F1A14', name: '', role: '', kindLabel: '', mood: '', moodBg: '#E6D9BC', pills: [], hasBadge: false, badge: '', badgeBg: '#8E2A1F', isLetter: false, isCall: false, isChat: false, hatOn: false, hatH: '0px', say: '', gist: '', sign: '', initial: '', place: '', device: '', timer: '', glow: '#1D2A3A', accent: '#4F8BE0', status: '', app: '', chatNote: '', time1: '', time2: '', screenBg: '#0D1117', optsBg: '#0D1117', optsLabelC: '#9AA6B2', optsFont: 'inherit', replyLabel: '' };
   if (cur.kind === 'choice' && cur.who) {
     const w = cur.who, dc = cur.choice;
     let kd = '';
@@ -292,6 +293,9 @@ export function buildView(ctx: Ctx): any {
       kd = 'boss';
       Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 60 ? 'Прихильний' : 'Незадоволений', moodBg: s.patron >= 60 ? '#9CDDB5' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
+    // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
+    const photo = w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
+    if (photo) Object.assign(v.dg, { photo, photoOn: true, silOn: false, ovalFilter: 'none' });
     const says: Record<string, string> = { kid: 'Нам треба поговорити.', acc: 'Треба поговорити. Без свідків.', journo: 'Кілька запитань для завтрашнього номера. Коментар дасте?', boss: 'Маю до вас делікатне прохання.' };
     const g = dc.gist || dc.q.replace(/^[^«]*«/, '').replace(/»\.?$/, '');
     const hh = 20 + (s.served % 3), mm = 10 + ((s.served * 7) % 49), md = dlgW.medium;

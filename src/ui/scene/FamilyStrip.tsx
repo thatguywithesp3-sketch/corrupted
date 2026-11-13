@@ -4,20 +4,21 @@
 import * as G from '../../engine';
 import type { GameState, Kin } from '../../engine';
 import { HAND, SERIF } from './parts';
+import { kinPortrait } from '../people';
 
 const ring = (k: Kin) => (k.l <= 30 ? '#E8603F' : k.l <= 50 ? '#D9A441' : '#66BC8E');
 
-function Cameo({ k, sib }: { k: Kin; sib?: boolean }) {
-  const f = k.g === 'f';
+function Cameo({ k, sib, era }: { k: Kin; sib?: boolean; era: number }) {
+  const f = k.g === 'f', photo = kinPortrait(era, k, !!sib);
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
       <span style={{ position: 'relative', width: 22, height: 27, flexShrink: 0, borderRadius: '50%', padding: 2, background: 'linear-gradient(160deg, #F2DCA0, #9A7430 60%, #5E4416)', boxShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
         <span style={{ position: 'absolute', inset: 2, borderRadius: '50%', overflow: 'hidden', background: f ? 'radial-gradient(circle at 50% 30%, #E9D2B8, #B8957A)' : 'radial-gradient(circle at 50% 30%, #DCD2BE, #9E927A)', boxShadow: `inset 0 0 0 1.5px ${ring(k)}` }}>
-          {/* silhouette in profile, as in a cut-paper cameo */}
+          {photo ? <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 15%', display: 'block' }} /> : <>{/* silhouette in profile, as in a cut-paper cameo */}
           <svg viewBox="0 0 20 24" width="100%" height="100%" aria-hidden="true">
             <path d={f ? 'M10 4 C14 4 15 7 14.5 9 C16 10 15.5 12 14 12.5 C13.5 14 12.5 15 11.5 15.5 L12 18 C15 18.5 18 20 19 24 H1 C2 20 5 18.5 8 18 L8.5 15.5 C6 14.5 5 12 5.2 9 C5.5 5.5 7.5 4 10 4 Z M6 6 C4 7 3.5 11 5 14 C4 10 5 8 6 6 Z'
               : 'M10 5 C13.5 5 14.5 7.5 14.2 9.5 C15.6 10.4 15.2 12.2 13.8 12.6 C13.2 14.4 12 15.6 11 16 L11.4 18.2 C15 18.8 18 20.5 19 24 H1 C2 20.5 5 18.8 8.6 18.2 L9 16 C6.8 15 5.6 12.8 5.8 9.8 C6 6.8 7.8 5 10 5 Z'} fill={sib ? '#4A3A2A' : '#2A1E14'} opacity=".85" />
-          </svg>
+          </svg></>}
         </span>
       </span>
       <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, minWidth: 0 }}>
@@ -73,8 +74,8 @@ function FamilyRail({ s, onOpen }: { s: GameState; onOpen: () => void }) {
         <span style={{ fontSize: 10, color: '#3A2A10', whiteSpace: 'nowrap' }}>{s.surname}</span>
       </span>
       <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-        {kids.map((k) => <Cameo key={k.id} k={k} />)}
-        {sibs.slice(0, Math.max(0, 3 - kids.length)).map((k) => <Cameo key={k.id} k={k} sib />)}
+        {kids.map((k) => <Cameo key={k.id} k={k} era={s.era} />)}
+        {sibs.slice(0, Math.max(0, 3 - kids.length)).map((k) => <Cameo key={k.id} k={k} sib era={s.era} />)}
         {Array.from({ length: kids.length + sibs.length ? Math.min(empty, 1) : empty || 1 }, (_, i) => (
           <span key={'e' + i} style={{ width: 22, height: 27, borderRadius: '50%', border: '1.5px dashed rgba(242,223,168,0.35)', flexShrink: 0 }} />
         ))}
