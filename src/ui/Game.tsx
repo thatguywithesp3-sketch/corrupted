@@ -75,17 +75,32 @@ function withSlots(root: DcNode): DcNode {
     n.ch.forEach(tex);
   };
   tex(r);
-  // the year block on the brass plaque is the way to the family folio (pause menu); a red silk bookmark hangs from it
+  // the family folio (pause menu) is its own object at the head of the HUD: a leather-bound book with brass
+  // corners, set apart from the brass plaque so a thumb on the portrait or the money never opens it by mistake.
+  // The year moves from the plaque into the generation line.
   const yr = (n: DcNode): boolean => n.t === 'e' && n.ch.some((c) => c.t === 'e' && c.ch.some((x) => x.t === 'x' && x.v === 'РІК'));
-  const menuize = (n: DcNode) => {
-    if (n.t === 'x') return;
-    if (yr(n) && n.t === 'e') {
-      n.a.onClick = '{{openMenu}}'; n.a.role = 'button'; n.a['aria-label'] = 'Меню · справи роду';
-      n.a.class = ((n.a.class || '') + ' b3d').trim();
-      n.a.style = (n.a.style || '') + '; position: relative; cursor: pointer';
-      return;
+  const E = (n: string, style: string, ch: DcNode[] = [], a: Record<string, string> = {}): DcNode => ({ t: 'e', n, a: { style, ...a }, ch });
+  const line = (top: number) => E('span', `position: absolute; left: 13px; right: 13px; top: ${top}px; height: 2.5px; border-radius: 2px; background: linear-gradient(180deg, #F2D98E, #9A7630); box-shadow: 0 1px 0 rgba(0,0,0,0.6)`);
+  const corner = (pos: string, clip: string) => E('span', `position: absolute; ${pos}; width: 10px; height: 10px; background: linear-gradient(135deg, #F0D78C, #B8913C 55%, #7A5A1E); clip-path: ${clip}`);
+  const folio = E('button', 'position: relative; flex-shrink: 0; width: 54px; align-self: stretch; min-height: 48px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; cursor: pointer; font-family: inherit; color: #F0D78C; background: radial-gradient(120% 120% at 30% 0%, #6B4429 0%, #4A2D1A 55%, #2E1B0D 100%); border: 1.5px solid #1A0F07; border-radius: 4px; box-shadow: 0 3px 0 #120A04, 0 5px 9px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,220,160,0.25)', [
+    E('span', 'position: absolute; inset: 3px; border: 1px dashed rgba(240,215,140,0.4); border-radius: 2px; pointer-events: none'),
+    corner('top: -1px; left: -1px', 'polygon(0 0,100% 0,0 100%)'), corner('top: -1px; right: -1px', 'polygon(0 0,100% 0,100% 100%)'),
+    corner('bottom: -1px; left: -1px', 'polygon(0 0,0 100%,100% 100%)'), corner('bottom: -1px; right: -1px', 'polygon(100% 0,0 100%,100% 100%)'),
+    line(10), line(17), line(24),
+    E('span', 'position: relative; padding-bottom: 6px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-shadow: 0 -1px 0 rgba(0,0,0,0.8)', [{ t: 'x', v: 'МЕНЮ' }])
+  ], { onClick: '{{openMenu}}', 'aria-label': 'Меню · справи роду', class: 'b3d' });
+  const menuize = (n: DcNode): boolean => {
+    if (n.t === 'x') return false;
+    const i = n.ch.findIndex((c) => c.t === 'e' && c.ch.some(yr));
+    if (i >= 0) {
+      const plaque = n.ch[i] as Extract<DcNode, { t: 'e' }>;
+      plaque.ch = plaque.ch.filter((c) => !yr(c));
+      const gen = (m: DcNode) => { if (m.t === 'x') { if (m.v === 'Покоління {{genLabel}}') m.v = '{{yearLabel}} р. · Покоління {{genLabel}}'; return; } m.ch.forEach(gen); };
+      gen(plaque);
+      n.ch.splice(i, 0, folio);
+      return true;
     }
-    n.ch.forEach(menuize);
+    return n.ch.some(menuize);
   };
   menuize(r);
   // effect pills become little enamel tokens: domed, rimmed, with a lit top edge
@@ -201,12 +216,6 @@ export function Game() {
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
         {mode === 'play' && scenes && <MeterPops s={s} on={s.screen === 'office' && !ui.hudOpen} />}
         {mode === 'play' && mapOpen && s.city && <div style={{ position: 'absolute', inset: 0, zIndex: 86 }}><CityMap s={s} run={run} focus={null} onClose={() => setMapOpen(false)} /></div>}
-        {/* a red silk bookmark hangs from the year on the plaque: the way into the family folio */}
-        {mode === 'play' && scenes && s.screen !== 'form' && !pano && !mapOpen && !paused && (
-          <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)}
-            style={{ position: 'absolute', left: 29, top: 62, zIndex: 79, width: 36, height: 23, padding: '4px 0 0', border: 'none', cursor: 'pointer', fontFamily: "'Old Standard TT', serif", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#F6E3D0', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
-              background: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px), linear-gradient(90deg, #6A140C, #B8361F 40%, #D14A32 55%, #8E1F12)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%)', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.6))' }}>МЕНЮ</button>
-        )}
         {mode === 'play' && paused && <PauseFolio s={s} onClose={() => setPaused(false)} onExit={() => { setPaused(false); setMode('menu'); }} />}
         {mode === 'play' && pano && <Panorama key={pano + s.year} s={s} kind={pano} onDone={() => setPano(null)} />}
         <div id="overlay-root" style={{ position: 'absolute', inset: 0, zIndex: 85, pointerEvents: 'none' }} />
