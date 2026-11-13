@@ -18,6 +18,7 @@ import { Panorama, type PanoKind } from './scene/Panorama';
 import { MeterPops } from './scene/MeterPops';
 import { DeskProps } from './scene/DeskProps';
 import { CityMap } from './scene/CityMap';
+import { PauseFolio } from './scene/PauseFolio';
 
 const MAP_SCREENS = new Set(['morning', 'office', 'evening']);
 injectTextures();
@@ -74,6 +75,19 @@ function withSlots(root: DcNode): DcNode {
     n.ch.forEach(tex);
   };
   tex(r);
+  // the year block on the brass plaque is the way to the family folio (pause menu); a red silk bookmark hangs from it
+  const yr = (n: DcNode): boolean => n.t === 'e' && n.ch.some((c) => c.t === 'e' && c.ch.some((x) => x.t === 'x' && x.v === 'РІК'));
+  const menuize = (n: DcNode) => {
+    if (n.t === 'x') return;
+    if (yr(n) && n.t === 'e') {
+      n.a.onClick = '{{openMenu}}'; n.a.role = 'button'; n.a['aria-label'] = 'Меню · справи роду';
+      n.a.class = ((n.a.class || '') + ' b3d').trim();
+      n.a.style = (n.a.style || '') + '; position: relative; cursor: pointer';
+      return;
+    }
+    n.ch.forEach(menuize);
+  };
+  menuize(r);
   // effect pills become little enamel tokens: domed, rimmed, with a lit top edge
   const tok = (n: DcNode) => { if (n.t === 'x') return; if (n.t === 'e' && /border-radius: 11px; background: \{\{/.test(n.a.style || '')) n.a.class = ((n.a.class || '') + ' tok').trim(); n.ch.forEach(tok); };
   tok(r);
@@ -147,6 +161,7 @@ export function Game() {
   // the city between parts of the day: a panorama before the paper and before the dark ledger
   const [pano, setPano] = useState<PanoKind | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
+  const [paused, setPaused] = useState(false);
   const prevScreen = useRef<string | null>(null);
   useEffect(() => {
     if (mode !== 'play') { prevScreen.current = null; return; }
@@ -157,6 +172,7 @@ export function Game() {
   }, [s.screen, mode]);
   const view = useMemo(() => {
     const v = buildView({ s, ui, run, setUi });
+    v.openMenu = () => setPaused(true);
     if (scenes) v.slots = {
       morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} fresh={!pano} /> : null,
       evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} fresh={!pano} /> : null,
@@ -179,13 +195,19 @@ export function Game() {
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
             {scenes && s.screen === 'office' && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
-            <button aria-label="Головне меню" title="Головне меню" onClick={() => setMode('menu')}
-              style={{ position: 'absolute', left: 2, top: 2, zIndex: 80, width: 22, height: 22, padding: 0, border: '1px solid rgba(217,184,112,0.6)', borderRadius: 4, background: 'rgba(20,14,8,0.75)', color: '#D9B870', fontSize: 13, lineHeight: '20px', cursor: 'pointer' }}>≡</button>
+            {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 10px', fontSize: 11, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
         )}
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
         {mode === 'play' && scenes && <MeterPops s={s} on={s.screen === 'office' && !ui.hudOpen} />}
         {mode === 'play' && mapOpen && s.city && <div style={{ position: 'absolute', inset: 0, zIndex: 86 }}><CityMap s={s} run={run} focus={null} onClose={() => setMapOpen(false)} /></div>}
+        {/* a red silk bookmark hangs from the year on the plaque: the way into the family folio */}
+        {mode === 'play' && scenes && s.screen !== 'form' && !pano && !mapOpen && !paused && (
+          <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)}
+            style={{ position: 'absolute', left: 29, top: 62, zIndex: 79, width: 36, height: 23, padding: '4px 0 0', border: 'none', cursor: 'pointer', fontFamily: "'Old Standard TT', serif", fontSize: 8, fontWeight: 700, letterSpacing: 1, color: '#F6E3D0', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
+              background: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px), linear-gradient(90deg, #6A140C, #B8361F 40%, #D14A32 55%, #8E1F12)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%)', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.6))' }}>МЕНЮ</button>
+        )}
+        {mode === 'play' && paused && <PauseFolio s={s} onClose={() => setPaused(false)} onExit={() => { setPaused(false); setMode('menu'); }} />}
         {mode === 'play' && pano && <Panorama key={pano + s.year} s={s} kind={pano} onDone={() => setPano(null)} />}
         <div id="overlay-root" style={{ position: 'absolute', inset: 0, zIndex: 85, pointerEvents: 'none' }} />
         <div className="room-light" />
