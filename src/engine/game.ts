@@ -141,21 +141,23 @@ function kidDoc(s: GameState, kd: Kin): Choice {
   if (st === 'child') return {
     from: kd.first, say: S(s, 'kid.child.say', v, s.gender), gist: S(s, 'kid.child.gist', v), q: S(s, 'kid.child.q', v),
     opts: [
-      { t: S(s, 'kid.child.o1.t'), d: { s: -5 }, fam: { id, l: 15 }, h: S(s, 'kid.child.o1.h', v), b: S(s, 'kid.child.o1.b') },
-      { t: S(s, 'kid.child.o2.t'), d: { cash: -200 }, fam: { id, l: 4 }, h: S(s, 'kid.child.o2.h'), b: S(s, 'kid.child.o2.b') },
-      { t: S(s, 'kid.child.o3.t'), dark: true, d: { s: 4 }, fam: { id, l: -18 }, h: S(s, 'kid.child.o3.h'), b: S(s, 'kid.child.o3.b', v, g) }
+      { t: S(s, 'kid.child.o1.t'), why: ['Вірність +15'], d: { s: -5 }, fam: { id, l: 15 }, h: S(s, 'kid.child.o1.h', v), b: S(s, 'kid.child.o1.b') },
+      { t: S(s, 'kid.child.o2.t'), why: ['Вірність +4'], d: { cash: -200 }, fam: { id, l: 4 }, h: S(s, 'kid.child.o2.h'), b: S(s, 'kid.child.o2.b') },
+      { t: S(s, 'kid.child.o3.t'), why: ['Вірність −18'], dark: true, d: { s: 4 }, fam: { id, l: -18 }, h: S(s, 'kid.child.o3.h'), b: S(s, 'kid.child.o3.b', v, g) }
     ]
   };
   if (st === 'teen' && kd.trait === null) {
-    const W = getEra(s.era).words.upbringing;
+    const W = getEra(s.era).words.upbringing, TR = getEra(s.era).traits;
+    // each path becomes the heir's trait: spell out what it brings if this child takes over the family
+    const heir = (i: number) => `Спадкоємцем: ${TR[i].fx}`;
     const third: ChoiceOption = s.era >= RULES.family.stashFromEra
-      ? { t: S(s, 'kid.teen.biz.t', v, g), dark: true, d: { cash: -1500 }, fam: { id, trait: 3, prep: 15, assets: 1500, k: 15 }, h: S(s, 'kid.teen.biz.h'), b: S(s, 'kid.teen.biz.b', v) }
-      : { t: S(s, 'kid.teen.god.t'), d: { p: -6 }, fam: { id, trait: 2, prep: 15, l: 5 }, h: S(s, 'kid.teen.god.h', v), b: S(s, 'kid.teen.god.b') };
+      ? { t: S(s, 'kid.teen.biz.t', v, g), why: [heir(3), 'Готовність +15, знає +15'], dark: true, d: { cash: -1500 }, fam: { id, trait: 3, prep: 15, assets: 1500, k: 15 }, h: S(s, 'kid.teen.biz.h'), b: S(s, 'kid.teen.biz.b', v) }
+      : { t: S(s, 'kid.teen.god.t'), why: [heir(2), 'Готовність +15, вірність +5'], d: { p: -6 }, fam: { id, trait: 2, prep: 15, l: 5 }, h: S(s, 'kid.teen.god.h', v), b: S(s, 'kid.teen.god.b') };
     return {
       from: kd.first, say: S(s, 'kid.teen.say', v, g), gist: S(s, 'kid.teen.gist', v), q: S(s, 'kid.teen.q', v),
       opts: [
-        { t: W.eduOpt, d: { cash: -600 }, fam: { id, trait: 0, prep: 25 }, h: S(s, 'kid.teen.edu.h', { ...v, opt: W.eduOpt.toLowerCase() }), b: W.eduB },
-        { t: W.linksOpt, d: { cash: -400, n: 3 }, fam: { id, trait: 1, prep: 15, l: 5 }, h: W.linksH + kd.first + ' ' + s.surname, b: S(s, 'kid.teen.links.b', v) },
+        { t: W.eduOpt, why: [heir(0), 'Готовність +25'], d: { cash: -600 }, fam: { id, trait: 0, prep: 25 }, h: S(s, 'kid.teen.edu.h', { ...v, opt: W.eduOpt.toLowerCase() }), b: W.eduB },
+        { t: W.linksOpt, why: [heir(1), 'Готовність +15, вірність +5'], d: { cash: -400, n: 3 }, fam: { id, trait: 1, prep: 15, l: 5 }, h: W.linksH + kd.first + ' ' + s.surname, b: S(s, 'kid.teen.links.b', v) },
         third
       ]
     };

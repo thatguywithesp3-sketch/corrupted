@@ -42,6 +42,8 @@ export interface FamFx { id: string; l?: number; k?: number; prep?: number; trai
 
 export interface ChoiceOption {
   t: string;
+  /** what this leads to, in one or two short lines (shown under the option) */
+  why?: string[];
   d: Delta;
   al?: Partial<Record<AccKey, { l?: number; k?: number }>>;
   fam?: FamFx;

@@ -324,7 +324,7 @@ export function buildView(ctx: Ctx): any {
   } else {
     const dc = cur.choice, en = G.enabledOptions(s, dc.opts);
     v.q = dc.q;
-    v.opts = dc.opts.map((o, i) => optView('o' + i, o.t, o.d, i, !!o.dark, () => run((x) => G.pickOption(x, i)), en[i]));
+    v.opts = dc.opts.map((o, i) => ({ ...optView('o' + i, o.t, o.d, i, !!o.dark, () => run((x) => G.pickOption(x, i)), en[i]), why: (o.why || []).map((w) => ({ w })), hasWhy: !!(o.why && o.why.length) }));
     if (v.isDialog) {
       const md = dlgW.medium;
       v.dlgOpts = v.opts.map((o: any, i: number) => {
