@@ -49,11 +49,11 @@ const S = {
   frameBg: { position: 'absolute', left: 116, top: 280, width: 162, height: 186, background: 'radial-gradient(ellipse at 50% 45%, #2A1410, #0E0705 75%)', boxShadow: 'inset 0 0 26px rgba(0,0,0,0.9)' },
   seal: { position: 'absolute', left: 112, top: 290, width: 170, filter: 'drop-shadow(0 8px 10px rgba(0,0,0,0.7))', pointerEvents: 'none' },
   wordmark: { position: 'absolute', left: 30, top: 508, width: 330, filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.9)) drop-shadow(0 4px 14px rgba(0,0,0,0.95)) drop-shadow(0 0 30px rgba(0,0,0,0.8))', pointerEvents: 'none' },
-  word: { fontFamily: "'Ruslan Display', 'Old Standard TT', serif", fontSize: 29, lineHeight: 1, color: '#E8C978', textShadow: '0 2px 0 #3A2408, 0 0 18px rgba(232,201,120,0.25)', letterSpacing: 0.5 },
-  sub: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#D9B870' },
+  word: { fontFamily: "'Ruslan Display', 'Old Standard TT', serif", fontSize: 28, lineHeight: 1, color: '#E8C978', textShadow: '0 2px 0 #3A2408, 0 0 18px rgba(232,201,120,0.25)', letterSpacing: 0.5 },
+  sub: { fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: '#D9B870' },
   dates: { fontSize: 12, fontStyle: 'italic', color: '#BFAE86' },
   menu: { position: 'absolute', left: 28, right: 28, bottom: 34, display: 'flex', flexDirection: 'column', gap: 12 },
-  plaque: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', gap: 2, width: '100%', minHeight: 58, padding: '9px 14px', border: '1px solid #6E531E', borderRadius: 3, cursor: 'pointer', background: 'linear-gradient(180deg, #E9CF86 0%, #C29A45 48%, #9C7631 100%)', boxShadow: '0 3px 0 #4A3812, 0 8px 18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,244,214,0.7), inset 0 0 0 3px rgba(110,83,30,0.35)', color: '#2A1B08', fontFamily: 'inherit' },
+  plaque: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', gap: 2, width: '100%', minHeight: 58, padding: '8px 12px', border: '1px solid #6E531E', borderRadius: 3, cursor: 'pointer', background: 'linear-gradient(180deg, #E9CF86 0%, #C29A45 48%, #9C7631 100%)', boxShadow: '0 3px 0 #4A3812, 0 8px 18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,244,214,0.7), inset 0 0 0 3px rgba(110,83,30,0.35)', color: '#2A1B08', fontFamily: 'inherit' },
   plaqueQuiet: { background: 'linear-gradient(180deg, #3A2A1A, #241A10)', color: '#E6D9BC', border: '1px solid #6E531E', boxShadow: '0 3px 0 #120c06, inset 0 0 0 3px rgba(176,141,60,0.25)' },
   pTitle: { fontSize: 18, lineHeight: 1.2, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' },
   pSub: { fontSize: 12, fontStyle: 'italic', opacity: 0.85 }
@@ -103,8 +103,8 @@ export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
       )}
 
       {panel === 'confirm' && (
-        <div style={{ ...S.menu, gap: 10 }}>
-          <div style={{ textAlign: 'center', fontSize: 15, lineHeight: 1.35, padding: '0 6px' }}>Почати нову династію? Поточний рід ({where}) буде стерто з галереї.</div>
+        <div style={{ ...S.menu, gap: 8 }}>
+          <div style={{ textAlign: 'center', fontSize: 16, lineHeight: 1.35, padding: '0 4px' }}>Почати нову династію? Поточний рід ({where}) буде стерто з галереї.</div>
           <Plaque title="Так, з нуля" onClick={() => { setPanel('none'); onNew(); }} />
           <Plaque title="Ні, назад" onClick={() => setPanel('none')} quiet />
         </div>

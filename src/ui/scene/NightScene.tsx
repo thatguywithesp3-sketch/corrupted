@@ -132,9 +132,9 @@ function Scale({ m, v, was, dz, label }: { m: Meter; v: number; was: number | nu
   const tone: Tone = danger ? 'risk' : 'neu';
   const moved = was !== null && Math.round(dv) !== 0;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '3px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
       <Ic k={m} size={16} color={danger ? T.risk.ink : MUTE} />
-      <span style={{ width: 96, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, color: danger ? T.risk.ink : INK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+      <span style={{ width: 96, fontSize: 10, fontWeight: 700, letterSpacing: 0.4, color: danger ? T.risk.ink : INK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
       <span style={{ position: 'relative', flex: 1, height: 12, border: `1.2px solid ${INK}`, background: 'rgba(255,255,255,0.35)' }}>
         {/* danger zones */}
         {isT ? <span style={{ position: 'absolute', left: '60%', right: 0, top: 0, bottom: 0, background: hatch(`${T.risk.pen}88`) }} />
@@ -147,8 +147,8 @@ function Scale({ m, v, was, dz, label }: { m: Meter; v: number; was: number | nu
           <span style={{ position: 'absolute', left: -1.5, top: -4, bottom: -4, width: 3, background: danger ? T.risk.ink : INK }} />
         </span>
       </span>
-      <span style={{ width: 28, textAlign: 'right' }}><span style={{ fontFamily: HAND, fontSize: 19, color: T[tone].ink }}>{Math.round(v)}</span></span>
-      <span style={{ width: 40, textAlign: 'center', fontSize: 11, fontWeight: 700, padding: '1px 0', borderRadius: 2,
+      <span style={{ width: 28, textAlign: 'right' }}><span style={{ fontFamily: HAND, fontSize: 18, color: T[tone].ink }}>{Math.round(v)}</span></span>
+      <span style={{ width: 40, textAlign: 'center', fontSize: 12, fontWeight: 700, padding: '1px 0', borderRadius: 2,
         background: dv === 0 ? 'transparent' : better ? `${T.clean.pen}40` : `${T.risk.pen}40`, color: dv === 0 ? MUTE : better ? T.clean.ink : T.risk.ink }}>{dv === 0 ? '—' : (dv > 0 ? '▲' : '▼') + Math.abs(Math.round(dv))}</span>
     </div>
   );
@@ -160,7 +160,7 @@ function Lines({ lines }: { lines: ReportLine[] }) {
       {lines.map((r, i) => {
         const lt = LINE_TONE[r.tone];
         return (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '3px 0', fontSize: 12.5, lineHeight: 1.3, fontWeight: r.strong ? 700 : 400 }}>
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '2px 0', fontSize: 12, lineHeight: 1.3, fontWeight: r.strong ? 700 : 400 }}>
             <span style={{ width: 20, height: 20, borderRadius: 3, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: lt === 'neu' ? 'transparent' : `${T[lt].pen}33`, boxShadow: `inset 0 0 0 1px ${T[lt].pen}88` }}><Ic k={r.icon || 'threat'} size={13} color={T[lt].ink} /></span>
             <span style={{ color: lt === 'risk' ? T.risk.ink : INK }}>{r.t}</span>
           </div>
@@ -188,33 +188,33 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
   const sg = (v: number) => (v > 0 ? '+' : v < 0 ? '−' : '') + G.fk(Math.abs(v));
 
   return (
-    <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: 18, fontFamily: SERIF, color: INK, opacity: dawn ? 0 : 1, transition: 'opacity 1.3s ease' }}>
+    <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: 16, fontFamily: SERIF, color: INK, opacity: dawn ? 0 : 1, transition: 'opacity 1.3s ease' }}>
 
       {/* the report sheet on the desk */}
-      <div className="tx-paper m-paper-in" style={{ position: 'relative', flex: 1, minHeight: 0, margin: '0 4px 10px', padding: '11px 14px 8px', background: '#F1E8CF', transform: 'rotate(0.5deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', zIndex: 2 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, letterSpacing: 2, color: MUTE }}><span>КОПІЮВАЛЬНА КНИГА</span><span>ЗВІТ ЗА РІК</span></div>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+      <div className="tx-paper m-paper-in" style={{ position: 'relative', flex: 1, minHeight: 0, margin: '0 4px 8px', padding: '12px 12px 8px', background: '#F1E8CF', transform: 'rotate(0.5deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', zIndex: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, letterSpacing: 2, color: MUTE }}><span>КОПІЮВАЛЬНА КНИГА</span><span>ЗВІТ ЗА РІК</span></div>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 28, lineHeight: 1 }}>РІК {closedYear}</span>
-          <span style={{ fontSize: 11.5, fontStyle: 'italic', color: MUTE, lineHeight: 1.2 }}>{s.served}-й рік<br />на службі</span>
-          <span aria-hidden="true" style={{ position: 'absolute', right: 0, top: 6, padding: '3px 9px', border: `3px double ${RED}`, color: RED, fontFamily: "'Ruslan Display', serif", fontSize: 16, letterSpacing: 2,
+          <span style={{ fontSize: 12, fontStyle: 'italic', color: MUTE, lineHeight: 1.2 }}>{s.served}-й рік<br />на службі</span>
+          <span aria-hidden="true" style={{ position: 'absolute', right: 0, top: 6, padding: '2px 8px', border: `3px double ${RED}`, color: RED, fontFamily: "'Ruslan Display', serif", fontSize: 16, letterSpacing: 2,
             transform: stamped ? 'rotate(-10deg) scale(1)' : 'rotate(-4deg) scale(2.4)', opacity: stamped ? 0.82 : 0, transition: 'transform .28s cubic-bezier(.5,0,.75,0), opacity .2s', mixBlendMode: 'multiply' }}>ЗАКРИТО</span>
         </div>
-        <div style={{ borderTop: `3px double ${INK}`, margin: '6px 0 0' }} />
+        <div style={{ borderTop: `3px double ${INK}`, margin: '4px 0 0' }} />
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', margin: '0 -6px', padding: '0 6px 4px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', margin: '0 -4px', padding: '0 4px 4px' }}>
           {/* the headline of the night, as a big taped note */}
           {lead && (
-            <div style={{ position: 'relative', margin: '12px 2px 4px', padding: '9px 10px 8px 10px', display: 'flex', gap: 10, alignItems: 'center', background: T[leadTone].note, borderLeft: `5px solid ${T[leadTone].pen}`, transform: 'rotate(-0.6deg)', boxShadow: '0 1px 1px rgba(40,25,8,0.35), 2px 4px 6px rgba(40,25,8,0.22)' }}>
+            <div style={{ position: 'relative', margin: '12px 2px 4px', padding: '8px 8px 8px 8px', display: 'flex', gap: 8, alignItems: 'center', background: T[leadTone].note, borderLeft: `5px solid ${T[leadTone].pen}`, transform: 'rotate(-0.6deg)', boxShadow: '0 1px 1px rgba(40,25,8,0.35), 2px 4px 6px rgba(40,25,8,0.22)' }}>
               <span style={{ position: 'absolute', left: '50%', top: -9, width: 40, height: 13, marginLeft: -20, background: 'rgba(250,244,222,0.62)', boxShadow: '0 0 1px rgba(0,0,0,0.25)', transform: 'rotate(3deg)' }} />
               <span style={{ width: 36, height: 36, borderRadius: '50%', background: T[leadTone].pen, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `inset 0 0 0 2px ${T[leadTone].ink}55` }}><Ic k={lead.icon || 'threat'} size={20} color="#FFF8E8" /></span>
               <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.4, color: T[leadTone].ink }}>ГОЛОВНЕ ЗА НІЧ</span>
-                <span style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.25, color: T[leadTone].ink }}>{lead.t}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, color: T[leadTone].ink }}>ГОЛОВНЕ ЗА НІЧ</span>
+                <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.25, color: T[leadTone].ink }}>{lead.t}</span>
               </span>
             </div>
           )}
 
-          <Sec title="ШКАЛИ ЗА РІК" tone="neu" right={<span style={{ fontSize: 9.5, color: MUTE }}>▮ зараз · ┃ торік</span>}>
+          <Sec title="ШКАЛИ ЗА РІК" tone="neu" right={<span style={{ fontSize: 10, color: MUTE }}>▮ зараз · ┃ торік</span>}>
             {METERS.map((m) => <Scale key={m} m={m} v={s[m]} was={b ? b[m] : null} dz={G.dangerZone(s)} label={C.meters[m].name.split(' ')[0].toUpperCase()} />)}
           </Sec>
 
@@ -232,9 +232,9 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
           {s.offers.length > 0 && (
             <Sec title="ПРОПОЗИЦІЇ НА РАНОК" tone="clean">
               {s.offers.map((o) => (
-                <div key={o.id} style={{ margin: '4px 0', padding: '7px 9px', borderLeft: `4px solid ${o.id === 'flee' ? T.hide.pen : o.id === 'retire' ? T.clean.pen : T.out.pen}`, background: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontSize: 13.5 }}>{o.t}</b><span style={{ display: 'block', fontSize: 11, fontStyle: 'italic', color: MUTE }}>{o.sub}</span></span>
-                  <DeskBtn kind="ink" style={{ minHeight: 34, fontSize: 12, padding: '0 10px' }} onClick={() => run((x) => G.acceptOffer(x, o.id))}>{o.btn}</DeskBtn>
+                <div key={o.id} style={{ margin: '4px 0', padding: '8px 8px', borderLeft: `4px solid ${o.id === 'flee' ? T.hide.pen : o.id === 'retire' ? T.clean.pen : T.out.pen}`, background: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontSize: 14 }}>{o.t}</b><span style={{ display: 'block', fontSize: 12, fontStyle: 'italic', color: MUTE }}>{o.sub}</span></span>
+                  <DeskBtn kind="ink" style={{ minHeight: 34, fontSize: 12, padding: '0 8px' }} onClick={() => run((x) => G.acceptOffer(x, o.id))}>{o.btn}</DeskBtn>
                 </div>
               ))}
             </Sec>
@@ -242,7 +242,7 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
         </div>
       </div>
 
-      <DeskBtn kind="ink" style={{ flexShrink: 0, minHeight: 56, fontSize: 17 }} onClick={next}>
+      <DeskBtn kind="ink" style={{ flexShrink: 0, minHeight: 56, fontSize: 18 }} onClick={next}>
         {dawn ? 'Світає…' : <>Наступний рік: {s.year} →</>}
       </DeskBtn>
       {/* dawn wash over the whole room before the morning paper */}

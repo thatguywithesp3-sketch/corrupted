@@ -142,7 +142,7 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           {[[30, 12, 0, 16, 0.8], [36, 16, 1.2, 18, 0.7], [44, 10, 2.1, 15, 0.9], [56, 14, 0.6, 20, 0.6], [20, 22, 3, 11, 1.4], [62, 28, 5, 12, 1.2], [8, 6, 7, 9, 1.8], [70, 20, 9, 22, 0.5], [74, 24, 9.6, 22, 0.5], [50, 34, 4, 14, 1]].map(([x, y, d, dur, k], i) => <Gull key={i} x={x} y={y} d={d} dur={dur} k={k} />)}
           {GLINTS.map(([x, y, d, k], i) => <Glint key={i} x={x} y={y} d={d} k={k} />)}
           {[[6.5, 8, 0], [11.4, 7.2, 1.3], [14.6, 9.5, 2.4], [16.8, 11, 3.1], [29.2, 4, 1.9]].map(([x, y, d], i) => (
-            <svg key={i} aria-hidden="true" width="26" height="26" viewBox="-13 -13 26 26" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, marginLeft: -13, marginTop: -13, mixBlendMode: 'screen', animation: `pano-sparkle 3.4s ease-in-out ${d}s infinite` }}>
+            <svg key={i} aria-hidden="true" width="26" height="26" viewBox="-13 -13 26 26" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, marginLeft: -12, marginTop: -12, mixBlendMode: 'screen', animation: `pano-sparkle 3.4s ease-in-out ${d}s infinite` }}>
               <path d="M0 -12 L1.4 -1.4 L12 0 L1.4 1.4 L0 12 L-1.4 1.4 L-12 0 L-1.4 -1.4 Z" fill="#FFF4D0" />
             </svg>
           ))}
@@ -166,7 +166,7 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           <span aria-hidden="true" style={{ position: 'absolute', left: '58%', top: '57%', width: 9, height: 9, borderRadius: '50%', background: 'radial-gradient(circle, #FFE3A0, transparent 70%)', boxShadow: '0 0 10px 3px rgba(255,200,110,.55)', animation: 'pano-cab 19s linear 8s infinite' }} />
           {/* ships' riding lights: red, green and the masthead white */}
           {[[87.5, 47, '#FF5A4A', 0], [90.5, 48, '#5AF08A', 0.7], [89, 32, '#FFF4D8', 1.4], [97, 36, '#FFF4D8', 2.1], [80, 30, '#FF5A4A', 2.8]].map(([x, y, c, d], i) => (
-            <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 7, height: 7, marginLeft: -3.5, borderRadius: '50%', background: c as string, boxShadow: `0 0 10px 3px ${c}`, animation: `pano-blink ${3 + i * 0.6}s ease-in-out ${d}s infinite` }} />
+            <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 7, height: 7, marginLeft: -4, borderRadius: '50%', background: c as string, boxShadow: `0 0 10px 3px ${c}`, animation: `pano-blink ${3 + i * 0.6}s ease-in-out ${d}s infinite` }} />
           ))}
           {GLINTS.slice(0, 26).map(([x, y, d, k], i) => <Glint key={i} x={x} y={y + 2} d={d + 2} k={k * 0.8} />)}
           <span aria-hidden="true" style={{ position: 'absolute', left: '50%', right: 0, top: '52%', height: 90, background: 'linear-gradient(180deg, transparent, rgba(170,180,210,.35), transparent)', filter: 'blur(10px)', animation: 'pano-mist 16s ease-in-out infinite' }} />
@@ -194,22 +194,22 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
       {/* cinema bars and the title */}
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: night ? 'linear-gradient(180deg, rgba(4,6,16,.85) 0%, rgba(4,6,16,.2) 30%, rgba(4,6,16,0) 50%, rgba(4,6,16,.55) 72%, rgba(4,6,16,.92) 100%)' : 'linear-gradient(180deg, rgba(30,14,4,.7) 0%, rgba(30,14,4,.1) 30%, rgba(30,14,4,0) 50%, rgba(20,10,4,.5) 72%, rgba(14,8,4,.9) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, top: 54, textAlign: 'center', color: ink, textShadow: '0 2px 10px rgba(0,0,0,.8)', fontFamily: "'Old Standard TT', serif" }}>
-        <div style={{ fontSize: 11, letterSpacing: 4, fontWeight: 700, opacity: 0.85, animation: 'pano-in 1.2s ease-out .2s both' }}>{s.era === 1 ? 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ · РОМЕЙСЬКА ІМПЕРІЯ' : 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ'}</div>
-        <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 66, lineHeight: 1, marginTop: 10, animation: 'pano-in 1.4s ease-out .5s both' }}>{night ? 'Вечір' : 'Ранок'}</div>
+        <div style={{ fontSize: 12, letterSpacing: 4, fontWeight: 700, opacity: 0.85, animation: 'pano-in 1.2s ease-out .2s both' }}>{s.era === 1 ? 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ · РОМЕЙСЬКА ІМПЕРІЯ' : 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ'}</div>
+        <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 66, lineHeight: 1, marginTop: 8, animation: 'pano-in 1.4s ease-out .5s both' }}>{night ? 'Вечір' : 'Ранок'}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 8, animation: 'pano-in 1.4s ease-out .9s both' }}>
           <span style={{ width: 40, height: 1, background: ink, opacity: 0.6 }} />
-          <span style={{ fontFamily: "'Abril Fatface', serif", fontSize: 30, letterSpacing: 2 }}>{s.year}</span>
+          <span style={{ fontFamily: "'Abril Fatface', serif", fontSize: 28, letterSpacing: 2 }}>{s.year}</span>
           <span style={{ width: 40, height: 1, background: ink, opacity: 0.6 }} />
         </div>
-        <div style={{ fontSize: 14, fontStyle: 'italic', marginTop: 6, opacity: 0.9, animation: 'pano-in 1.4s ease-out 1.2s both' }}>{s.served}-й рік на службі · {s.first} {s.surname}</div>
+        <div style={{ fontSize: 14, fontStyle: 'italic', marginTop: 4, opacity: 0.9, animation: 'pano-in 1.4s ease-out 1.2s both' }}>{s.served}-й рік на службі · {s.first} {s.surname}</div>
       </div>
 
       {/* what the city is saying today */}
-      <div style={{ position: 'absolute', left: 22, right: 22, bottom: 86, display: 'flex', flexDirection: 'column', gap: 9, fontFamily: "'Old Standard TT', serif" }}>
+      <div style={{ position: 'absolute', left: 22, right: 22, bottom: 86, display: 'flex', flexDirection: 'column', gap: 8, fontFamily: "'Old Standard TT', serif" }}>
         <div style={{ fontSize: 10, letterSpacing: 3, fontWeight: 700, color: ink, opacity: 0.7, animation: 'pano-line .8s ease-out 1.8s both' }}>{night ? 'МІСТО ЗАСИНАЄ. ГОВОРЯТЬ:' : 'МІСТО ПРОКИДАЄТЬСЯ. ГОВОРЯТЬ:'}</div>
         {lines.map((l, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 15.5, lineHeight: 1.25, color: ink, textShadow: '0 1px 6px rgba(0,0,0,.9)', animation: `pano-line .8s ease-out ${2.3 + i * 0.9}s both` }}>
-            <span style={{ flexShrink: 0, width: 8, height: 8, marginTop: 6, transform: 'rotate(45deg)', background: l.tone === 'good' ? '#6FCB92' : l.tone === 'bad' ? '#F07A5A' : '#D9C79B' }} />
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 16, lineHeight: 1.25, color: ink, textShadow: '0 1px 6px rgba(0,0,0,.9)', animation: `pano-line .8s ease-out ${2.3 + i * 0.9}s both` }}>
+            <span style={{ flexShrink: 0, width: 8, height: 8, marginTop: 4, transform: 'rotate(45deg)', background: l.tone === 'good' ? '#6FCB92' : l.tone === 'bad' ? '#F07A5A' : '#D9C79B' }} />
             <span>{l.t}</span>
           </div>
         ))}

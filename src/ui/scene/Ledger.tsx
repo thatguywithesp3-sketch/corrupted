@@ -42,7 +42,7 @@ const rot = (seed: number) => ((seed * 37) % 7 - 3) * 0.35;
 export function Block({ v, tone, size = 19, sign = '', unit = 'кр.', seed = 1, dim }: { v: number | string; tone: Tone; size?: number; sign?: string; unit?: string; seed?: number; dim?: boolean }) {
   const t = T[tone];
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3, padding: '2px 8px 1px', borderRadius: 2, whiteSpace: 'nowrap', flexShrink: 0, opacity: dim ? 0.4 : 1,
+    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2, padding: '2px 8px 1px', borderRadius: 2, whiteSpace: 'nowrap', flexShrink: 0, opacity: dim ? 0.4 : 1,
       background: `repeating-linear-gradient(-62deg, ${t.pen}66 0 1.3px, transparent 1.3px 3px), ${t.pen}26`, boxShadow: `inset 0 0 0 1px ${t.pen}80`, transform: `rotate(${rot(seed)}deg)` }}>
       <span style={{ fontFamily: HAND, fontSize: size, lineHeight: 1, color: t.ink }}>{sign}{typeof v === 'number' ? G.fmt(v) : v}</span>
       {unit && <span style={{ fontFamily: HAND, fontSize: size * 0.58, color: t.ink, opacity: 0.8 }}>{unit}</span>}
@@ -54,11 +54,11 @@ export function Block({ v, tone, size = 19, sign = '', unit = 'кр.', seed = 1,
 export function Sticker({ label, children, tone, sub, seed = 1 }: { label: string; children: ReactNode; tone: Tone; sub?: ReactNode; seed?: number }) {
   const t = T[tone];
   return (
-    <div style={{ position: 'relative', flex: 1, minWidth: 0, padding: '9px 8px 6px', background: t.note, transform: `rotate(${rot(seed) * 1.6}deg)`,
+    <div style={{ position: 'relative', flex: 1, minWidth: 0, padding: '8px 8px 4px', background: t.note, transform: `rotate(${rot(seed) * 1.6}deg)`,
       boxShadow: '0 1px 1px rgba(40,25,8,0.35), 2px 4px 6px rgba(40,25,8,0.22)', borderTop: `3px solid ${t.pen}` }}>
-      <span style={{ position: 'absolute', left: '50%', top: -9, width: 34, height: 13, marginLeft: -17, background: 'rgba(250,244,222,0.62)', boxShadow: '0 0 1px rgba(0,0,0,0.25)', transform: `rotate(${-rot(seed) * 3}deg)` }} />
-      <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1, color: t.ink, lineHeight: 1.15 }}>{label}</div>
-      <div style={{ fontFamily: HAND, fontSize: 26, lineHeight: 1.05, color: t.ink, whiteSpace: 'nowrap' }}>{children}</div>
+      <span style={{ position: 'absolute', left: '50%', top: -9, width: 34, height: 13, marginLeft: -16, background: 'rgba(250,244,222,0.62)', boxShadow: '0 0 1px rgba(0,0,0,0.25)', transform: `rotate(${-rot(seed) * 3}deg)` }} />
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: t.ink, lineHeight: 1.15 }}>{label}</div>
+      <div style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1.05, color: t.ink, whiteSpace: 'nowrap' }}>{children}</div>
       {sub && <div style={{ fontSize: 10, fontStyle: 'italic', color: t.ink, opacity: 0.8, lineHeight: 1.2 }}>{sub}</div>}
     </div>
   );
@@ -70,10 +70,10 @@ export function Sec({ title, tone = 'neu', right, children }: { title: string; t
   const t = T[tone];
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 3, marginBottom: 4,
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 2, marginBottom: 4,
         backgroundImage: `repeating-linear-gradient(-62deg, ${t.pen}aa 0 1.2px, transparent 1.2px 2.6px)`, backgroundSize: '100% 3px', backgroundRepeat: 'no-repeat', backgroundPosition: 'bottom left' }}>
         <span style={{ width: 8, height: 8, background: t.pen, transform: 'rotate(45deg)', flexShrink: 0 }} />
-        <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 1.6, color: t.ink }}>{title}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.6, color: t.ink }}>{title}</span>
         <span style={{ flex: 1 }} />{right}
       </div>
       {children}
@@ -84,20 +84,20 @@ export function Sec({ title, tone = 'neu', right, children }: { title: string; t
 /** printed label · dotted leader · value */
 function Line({ label, children, note, strong }: { label: ReactNode; children: ReactNode; note?: ReactNode; strong?: boolean }) {
   return (
-    <div style={{ padding: '3px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div style={{ padding: '2px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <span style={{ fontSize: strong ? 14.5 : 13.5, fontWeight: strong ? 700 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{label}</span>
         <span style={{ flex: 1, minWidth: 8, borderBottom: '1.5px dotted rgba(31,26,20,0.3)', transform: 'translateY(4px)' }} />
         {children}
       </div>
-      {note && <div style={{ fontSize: 11, fontStyle: 'italic', color: MUTE, marginTop: 1 }}>{note}</div>}
+      {note && <div style={{ fontSize: 12, fontStyle: 'italic', color: MUTE, marginTop: 1 }}>{note}</div>}
     </div>
   );
 }
 
 /** loyalty / knows as small pencilled marks */
 const Mark = ({ k, v, warn }: { k: 'heart' | 'ear'; v: number; warn: boolean }) => (
-  <span title={k === 'heart' ? 'вірність' : 'знає'} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 5px', borderRadius: 2,
+  <span title={k === 'heart' ? 'вірність' : 'знає'} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 4px', borderRadius: 2,
     background: warn ? `${T.risk.pen}2e` : 'transparent', boxShadow: warn ? `inset 0 0 0 1px ${T.risk.pen}88` : 'none' }}>
     <Ic k={k} size={13} color={warn ? T.risk.ink : MUTE} /><span style={{ fontFamily: HAND, fontSize: 16, color: warn ? T.risk.ink : INK }}>{v}</span>
   </span>
@@ -114,9 +114,9 @@ function Flow({ segs }: { segs: { label: string; v: number; tone: Tone }[] }) {
             background: `repeating-linear-gradient(-62deg, ${T[x.tone].pen} 0 1.6px, transparent 1.6px 3px), ${T[x.tone].pen}55` }} />
         ))}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 10px', marginTop: 4 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 8px', marginTop: 4 }}>
         {live.map((x, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, color: T[x.tone].ink, whiteSpace: 'nowrap' }}>
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: T[x.tone].ink, whiteSpace: 'nowrap' }}>
             <span style={{ width: 9, height: 9, background: T[x.tone].pen, boxShadow: `inset 0 0 0 1px ${T[x.tone].ink}55` }} />{x.label} <b>{G.fk(x.v)}</b>
           </span>
         ))}
@@ -128,7 +128,7 @@ function Flow({ segs }: { segs: { label: string; v: number; tone: Tone }[] }) {
 /** − / + keys: round keys of a brass adding machine, the sign engraved and inked */
 const Key = ({ children, onClick, label }: { children: ReactNode; onClick: () => void; label: string }) => (
   <button className="b3d lk-key" onClick={onClick} aria-label={label}
-    style={{ position: 'relative', width: 34, height: 34, padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer', fontFamily: SERIF, fontSize: 20, fontWeight: 700, lineHeight: 1,
+    style={{ position: 'relative', width: 34, height: 34, padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer', fontFamily: SERIF, fontSize: 22, fontWeight: 700, lineHeight: 1,
       color: '#2A1B08', textShadow: '0 1px 0 rgba(255,244,214,0.7)',
       background: 'radial-gradient(circle at 35% 28%, #FFF2C2 0%, #E2C374 22%, #B8913C 55%, #7A5A1E 100%)', border: '1.5px solid #4A3812',
       boxShadow: 'inset 0 1px 1px rgba(255,248,220,0.9), inset 0 -2px 3px rgba(60,36,8,0.6), 0 0 0 2px #2A1C10, 0 3px 0 2px #1A1008' }}>
@@ -139,9 +139,9 @@ const Key = ({ children, onClick, label }: { children: ReactNode; onClick: () =>
 /** "all in": a brass lever-plate with an enamel inlay in the colour of the stash */
 const AllIn = ({ onClick, tone }: { onClick: () => void; tone: Tone }) => (
   <button className="b3d" onClick={onClick} aria-label="Усе сюди"
-    style={{ position: 'relative', height: 34, padding: '3px', flexShrink: 0, display: 'flex', alignItems: 'stretch', borderRadius: 4, cursor: 'pointer', fontFamily: SERIF,
+    style={{ position: 'relative', height: 34, padding: '2px', flexShrink: 0, display: 'flex', alignItems: 'stretch', borderRadius: 4, cursor: 'pointer', fontFamily: SERIF,
       background: 'linear-gradient(180deg, #F2D98C, #B8913C 55%, #7A5A1E)', border: '1.5px solid #4A3812', boxShadow: 'inset 0 1px 0 rgba(255,248,220,0.8), 0 3px 0 #2A1C10, 0 5px 6px rgba(0,0,0,0.35)' }}>
-    <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', borderRadius: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, whiteSpace: 'nowrap', color: '#F6EEDA', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
+    <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', borderRadius: 2, fontSize: 12, fontWeight: 700, letterSpacing: 0.8, whiteSpace: 'nowrap', color: '#F6EEDA', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
       background: `linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 45%), ${T[tone].ink}`, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.55)' }}>УСЕ СЮДИ</span>
   </button>
 );
@@ -201,16 +201,16 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
         const after = Math.max(0, Math.min(100, x.l + (owed ? (pay ? G.RULES.accPaidLoyalty : G.RULES.accUnpaidLoyalty) : 0)));
         return (
           <Sec key={k} title={x.n.toUpperCase()} tone={danger ? 'risk' : owed ? 'out' : 'neu'} right={<><Mark k="heart" v={x.l} warn={x.l <= 30} /><Mark k="ear" v={x.k} warn={x.k >= 40} /></>}>
-            <div style={{ fontSize: 11.5, fontStyle: 'italic', color: MUTE, marginTop: -2 }}>{x.r}</div>
+            <div style={{ fontSize: 12, fontStyle: 'italic', color: MUTE, marginTop: -2 }}>{x.r}</div>
             {owed > 0 ? (
-              <button onClick={() => run((y) => G.togglePay(y, k))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0 2px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SERIF, color: INK, textAlign: 'left' }}>
+              <button onClick={() => run((y) => G.togglePay(y, k))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 2px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SERIF, color: INK, textAlign: 'left' }}>
                 <Tick on={pay} color={pay ? T.clean.ink : T.risk.ink} />
-                <span style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.2 }}>{pay ? 'Віддаю частку' : 'Затримую частку'}
-                  <span style={{ display: 'block', fontSize: 11, color: pay ? T.clean.ink : T.risk.ink }}>вірність {x.l} → <b>{after}</b></span></span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.2 }}>{pay ? 'Віддаю частку' : 'Затримую частку'}
+                  <span style={{ display: 'block', fontSize: 12, color: pay ? T.clean.ink : T.risk.ink }}>вірність {x.l} → <b>{after}</b></span></span>
                 <Block v={owed} tone="out" dim={!pay} seed={i + 7} />
               </button>
-            ) : <div style={{ fontSize: 12, color: MUTE, padding: '3px 0' }}>Сьогодні нічого не винні.</div>}
-            {danger && <div style={{ fontSize: 11.5, fontWeight: 700, color: T.risk.ink }}>Ображений і знає забагато — може здати вас ревізору.</div>}
+            ) : <div style={{ fontSize: 12, color: MUTE, padding: '2px 0' }}>Сьогодні нічого не винні.</div>}
+            {danger && <div style={{ fontSize: 12, fontWeight: 700, color: T.risk.ink }}>Ображений і знає забагато — може здати вас ревізору.</div>}
           </Sec>
         );
       })}
@@ -228,10 +228,10 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
         const role = ({ child: kd.g === 'f' ? 'донька' : 'син', teen: kd.g === 'f' ? 'підлітка' : 'підліток', adult: kd.g === 'f' ? 'доросла донька' : 'дорослий син' })[st];
         return (
           <Sec key={kd.id} title={kd.first.toUpperCase() + ' · ' + role.toUpperCase() + ', ' + kd.age + ' Р.'} tone={kd.l <= 30 ? 'risk' : 'clean'} right={<Mark k="heart" v={kd.l} warn={kd.l <= 30} />}>
-            <button onClick={() => run((y) => G.toggleKidPay(y, kd.id))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SERIF, color: INK, textAlign: 'left' }}>
+            <button onClick={() => run((y) => G.toggleKidPay(y, kd.id))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: SERIF, color: INK, textAlign: 'left' }}>
               <Tick on={pay} color={pay ? T.clean.ink : T.risk.ink} />
-              <span style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.2 }}>{pay ? 'Утримую' : 'Без утримання'}
-                <span style={{ display: 'block', fontSize: 11, color: pay ? T.clean.ink : T.risk.ink }}>вірність {kd.l} → <b>{after}</b>{pay ? ` · підготовка +${G.RULES.family.allowancePrep[st]}` : ''}</span></span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 1.2 }}>{pay ? 'Утримую' : 'Без утримання'}
+                <span style={{ display: 'block', fontSize: 12, color: pay ? T.clean.ink : T.risk.ink }}>вірність {kd.l} → <b>{after}</b>{pay ? ` · підготовка +${G.RULES.family.allowancePrep[st]}` : ''}</span></span>
               <Block v={G.allowance(kd)} tone="clean" dim={!pay} seed={i + 3} />
             </button>
           </Sec>
@@ -244,7 +244,7 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
     </>
   ) : (
     <Sec title="ДІТЕЙ ПОКИ НЕМАЄ" tone="clean">
-      <div style={{ fontSize: 13, fontStyle: 'italic', color: MUTE, lineHeight: 1.45 }}>Коли з’являться, тут буде їхнє утримання. Діти без утримання ображаються, а ображені й обізнані можуть свідчити проти роду.</div>
+      <div style={{ fontSize: 14, fontStyle: 'italic', color: MUTE, lineHeight: 1.45 }}>Коли з’являться, тут буде їхнє утримання. Діти без утримання ображаються, а ображені й обізнані можуть свідчити проти роду.</div>
     </Sec>
   );
   if (page === 3) {
@@ -263,10 +263,10 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
         <Flow segs={flow} />
         {rows.map((r, i) => (
           <Sec key={r.key} title={r.name.toUpperCase()} tone={r.tone} right={r.key !== 'laun' ? <span style={{ fontSize: 10, color: MUTE }}>там уже {G.fk(r.held)}</span> : undefined}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 1.25, color: r.tone === 'risk' ? T.risk.ink : MUTE }}>{r.note}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12, lineHeight: 1.25, color: r.tone === 'risk' ? T.risk.ink : MUTE }}>{r.note}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
               <Key label="Менше" onClick={() => run((y) => G.adjustAlloc(y, r.key, -100))}>−</Key>
               <span style={{ flex: 1, display: 'flex', justifyContent: 'center' }}><Block v={a[r.key] || 0} tone={r.tone === 'risk' ? 'risk' : r.tone} size={20} seed={i + 2} /></span>
               <Key label="Більше" onClick={() => run((y) => G.adjustAlloc(y, r.key, 100))}>+</Key>
@@ -303,7 +303,7 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
   );
 
   return (
-    <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 2px 0', fontFamily: SERIF, color: INK }}>
+    <div style={{ position: 'relative', zIndex: 3, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 2px 0', fontFamily: SERIF, color: INK }}>
       <div key={String(fresh)} className={'tx-paper' + (fresh ? ' m-paper-in' : '')} style={{ position: 'relative', flex: 1, minHeight: 0, marginRight: 12, display: 'flex', flexDirection: 'column', transform: 'rotate(-0.4deg)',
         background: '#F2E9D0', boxShadow: '0 14px 26px rgba(0,0,0,0.55), 0 2px 3px rgba(0,0,0,0.4), inset 0 0 34px rgba(150,110,50,0.22)' }}>
         {/* black leather spine at the top, stitched */}
@@ -311,17 +311,17 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
           <div style={{ position: 'absolute', left: 8, right: 8, top: 9, borderTop: '1.5px dashed rgba(200,170,110,0.5)' }} />
         </div>
         {/* ruled page: blue lines, red double margin */}
-        <div style={{ position: 'relative', flex: 1, minHeight: 0, padding: '10px 14px 12px 40px', display: 'flex', flexDirection: 'column', gap: 4,
+        <div style={{ position: 'relative', flex: 1, minHeight: 0, padding: '8px 12px 12px 40px', display: 'flex', flexDirection: 'column', gap: 4,
           backgroundImage: 'linear-gradient(90deg, transparent 29px, rgba(142,42,31,0.45) 29px 30px, transparent 30px 32px, rgba(142,42,31,0.45) 32px 33px, transparent 33px), repeating-linear-gradient(180deg, transparent 0 25px, rgba(60,90,150,0.15) 25px 26px)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 10, letterSpacing: 2, color: MUTE }}>
             <span>ЧОРНА КНИГА · ДЛЯ СЕБЕ</span><span style={{ fontFamily: HAND, fontSize: 18, letterSpacing: 0, color: BLUE }}>{s.year} р.</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 13, color: RED }}>{ROMAN[page]}.</span>
-            <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 21, lineHeight: 1.1 }}>{PAGES[page].t}</span>
+            <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 14, color: RED }}>{ROMAN[page]}.</span>
+            <span style={{ fontFamily: "'Ruslan Display', serif", fontSize: 22, lineHeight: 1.1 }}>{PAGES[page].t}</span>
           </div>
           <div style={{ fontSize: 12, fontStyle: 'italic', color: MUTE, lineHeight: 1.3 }}>{PAGES[page].sub}</div>
-          <div key={page} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', margin: '0 -4px', padding: '0 4px 6px', animation: 'pageIn .22s ease-out' }}>{body}</div>
+          <div key={page} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', margin: '0 -4px', padding: '0 4px 4px', animation: 'pageIn .22s ease-out' }}>{body}</div>
         </div>
         {/* index tabs on the fore-edge */}
         <div style={{ position: 'absolute', right: -14, top: 34, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -333,9 +333,9 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         {page === 0 && s.lastAlloc
-          ? <DeskBtn style={{ flex: 1, fontSize: 13, lineHeight: 1.1 }} onClick={() => { run(G.sameAsLast); setPage(last); }}>↺ Як торік</DeskBtn>
+          ? <DeskBtn style={{ flex: 1, fontSize: 14, lineHeight: 1.1 }} onClick={() => { run(G.sameAsLast); setPage(last); }}>↺ Як торік</DeskBtn>
           : <DeskBtn style={{ flex: 1 }} disabled={page === 0} onClick={() => setPage(Math.max(0, page - 1))}>← Назад</DeskBtn>}
         {page < last
           ? <DeskBtn kind="brass" style={{ flex: 1.6 }} onClick={() => setPage(page + 1)}>{PAGES[page + 1].t} →</DeskBtn>
@@ -361,9 +361,9 @@ function Banker({ s, run }: { s: GameState; run: Run }) {
         const on = s.bank === d.id, can = on || free >= d.cost;
         return (
           <button key={d.id} onClick={() => can && run((y) => G.setBank(y, d.id))} disabled={!can}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 7, padding: '3px 0', background: 'none', border: 'none', cursor: can ? 'pointer' : 'default', opacity: can ? 1 : 0.45, fontFamily: SERIF, color: INK, textAlign: 'left' }}>
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0', background: 'none', border: 'none', cursor: can ? 'pointer' : 'default', opacity: can ? 1 : 0.45, fontFamily: SERIF, color: INK, textAlign: 'left' }}>
             <Tick on={on} color={T.laun.ink} />
-            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 1.2 }}>{d.t}<span style={{ display: 'block', fontSize: 10.5, color: T.risk.ink }}>ризик +{d.risk}</span></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12, lineHeight: 1.2 }}>{d.t}<span style={{ display: 'block', fontSize: 10, color: T.risk.ink }}>ризик +{d.risk}</span></span>
             <Block v={d.cost} tone="out" size={17} seed={i + 4} />
           </button>
         );

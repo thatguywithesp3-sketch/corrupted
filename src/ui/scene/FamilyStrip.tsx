@@ -22,7 +22,7 @@ function Cameo({ k, sib }: { k: Kin; sib?: boolean }) {
       </span>
       <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, minWidth: 0 }}>
         <span style={{ fontFamily: HAND, fontSize: 14, color: '#F2DFA8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 58 }}>{k.first}</span>
-        <span style={{ fontSize: 8.5, color: 'rgba(242,223,168,0.6)', whiteSpace: 'nowrap' }}>{sib ? (k.g === 'f' ? 'сестра' : 'брат') : k.age + ' р.'}</span>
+        <span style={{ fontSize: 10, color: 'rgba(242,223,168,0.6)', whiteSpace: 'nowrap' }}>{sib ? (k.g === 'f' ? 'сестра' : 'брат') : k.age + ' р.'}</span>
       </span>
     </span>
   );
@@ -33,7 +33,7 @@ function MapRoll({ s, onMap }: { s: GameState; onMap: () => void }) {
   const fresh = !!s.city && !s.city.acted;
   return (
     <button className="b3d" onClick={onMap} aria-label="Карта міста" title="Карта міста: заклади, суперники, ваш хід"
-      style={{ position: 'relative', flexShrink: 0, width: 64, minHeight: 38, marginTop: 6, padding: '2px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, cursor: 'pointer', fontFamily: SERIF,
+      style={{ position: 'relative', flexShrink: 0, width: 64, minHeight: 38, marginTop: 4, padding: '2px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, cursor: 'pointer', fontFamily: SERIF,
         background: 'linear-gradient(180deg, #5A2E1A, #3A1C0E)', border: '1px solid #1A0C05', borderRadius: 4, boxShadow: 'inset 0 1px 0 rgba(255,210,160,0.2), inset 0 0 0 2px rgba(176,141,60,0.35), 0 3px 5px rgba(0,0,0,0.5)' }}>
       <svg viewBox="0 0 30 22" width="30" height="22" aria-hidden="true" style={{ flexShrink: 0, filter: 'drop-shadow(1px 2px 1px rgba(0,0,0,0.6))' }}>
         {/* a folded city map: three panels, a road, the river and a red pin */}
@@ -44,15 +44,15 @@ function MapRoll({ s, onMap }: { s: GameState; onMap: () => void }) {
         <path d="M5 6 L24 16" stroke="#A88E5E" strokeWidth=".8" />
         <circle cx="17" cy="8" r="2.6" fill="#C93A26" stroke="#5A1008" strokeWidth=".7" /><circle cx="16.3" cy="7.3" r=".8" fill="#FFD9C8" />
       </svg>
-      <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1.2, color: '#F2DFA8', lineHeight: 1, marginTop: 1 }}>КАРТА</span>
-      {fresh && <span style={{ position: 'absolute', top: -6, right: -4, padding: '0 5px', fontSize: 9, fontWeight: 700, color: '#F6EEDA', background: '#9A2418', borderRadius: 7, border: '1px solid #1A0C05' }}>1 хід</span>}
+      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: '#F2DFA8', lineHeight: 1, marginTop: 1 }}>КАРТА</span>
+      {fresh && <span style={{ position: 'absolute', top: -6, right: -4, padding: '0 4px', fontSize: 10, fontWeight: 700, color: '#F6EEDA', background: '#9A2418', borderRadius: 7, border: '1px solid #1A0C05' }}>1 хід</span>}
     </button>
   );
 }
 
 export function FamilyStrip({ s, onOpen, onMap }: { s: GameState; onOpen: () => void; onMap?: () => void }) {
   return (
-    <div style={{ position: 'relative', zIndex: 5, display: 'flex', gap: 6 }}>
+    <div style={{ position: 'relative', zIndex: 5, display: 'flex', gap: 4 }}>
       <FamilyRail s={s} onOpen={onOpen} />
       {onMap && <MapRoll s={s} onMap={onMap} />}
     </div>
@@ -65,22 +65,22 @@ function FamilyRail({ s, onOpen }: { s: GameState; onOpen: () => void }) {
   const warn = kids.concat(sibs).some((k) => k.l <= 30);
   return (
     <button onClick={onOpen} aria-label="Родина · альбом" title="Родинний альбом"
-      className="b3d" style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0, minHeight: 38, padding: '4px 10px 4px 6px', marginTop: 6, cursor: 'pointer', fontFamily: SERIF, textAlign: 'left',
+      className="b3d" style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, minHeight: 38, padding: '4px 8px 4px 4px', marginTop: 4, cursor: 'pointer', fontFamily: SERIF, textAlign: 'left',
         background: 'linear-gradient(180deg, #5A2E1A, #3A1C0E)', border: '1px solid #1A0C05', borderRadius: 4,
         boxShadow: 'inset 0 1px 0 rgba(255,210,160,0.2), inset 0 0 0 2px rgba(176,141,60,0.35), 0 3px 5px rgba(0,0,0,0.5)' }}>
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '2px 7px', background: 'linear-gradient(180deg, #E2C374, #9A7630)', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,240,200,0.6)', flexShrink: 0 }}>
-        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 1.4, color: '#2A1C08' }}>РОДИНА</span>
-        <span style={{ fontSize: 8, color: '#3A2A10', whiteSpace: 'nowrap' }}>{s.surname}</span>
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '2px 8px', background: 'linear-gradient(180deg, #E2C374, #9A7630)', borderRadius: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,240,200,0.6)', flexShrink: 0 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, color: '#2A1C08' }}>РОДИНА</span>
+        <span style={{ fontSize: 10, color: '#3A2A10', whiteSpace: 'nowrap' }}>{s.surname}</span>
       </span>
-      <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
         {kids.map((k) => <Cameo key={k.id} k={k} />)}
         {sibs.slice(0, Math.max(0, 3 - kids.length)).map((k) => <Cameo key={k.id} k={k} sib />)}
         {Array.from({ length: kids.length + sibs.length ? Math.min(empty, 1) : empty || 1 }, (_, i) => (
           <span key={'e' + i} style={{ width: 22, height: 27, borderRadius: '50%', border: '1.5px dashed rgba(242,223,168,0.35)', flexShrink: 0 }} />
         ))}
-        {!kids.length && !sibs.length && <span style={{ fontSize: 10.5, fontStyle: 'italic', color: 'rgba(242,223,168,0.6)' }}>дітей поки немає</span>}
+        {!kids.length && !sibs.length && <span style={{ fontSize: 10, fontStyle: 'italic', color: 'rgba(242,223,168,0.6)' }}>дітей поки немає</span>}
       </span>
-      {warn && <span style={{ fontSize: 9, fontWeight: 700, color: '#F08A6E', letterSpacing: 0.5 }}>ОБРАЗА</span>}
+      {warn && <span style={{ fontSize: 10, fontWeight: 700, color: '#F08A6E', letterSpacing: 0.5 }}>ОБРАЗА</span>}
       <span style={{ color: '#D9B870', fontSize: 14 }}>›</span>
     </button>
   );

@@ -195,7 +195,7 @@ export function Game() {
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
             {scenes && s.screen === 'office' && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
-            {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 10px', fontSize: 11, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
+            {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
         )}
         {mode === 'play' && scenes && s.screen !== 'form' && <WindowLight phase={phaseOf(s.screen)} />}
@@ -204,7 +204,7 @@ export function Game() {
         {/* a red silk bookmark hangs from the year on the plaque: the way into the family folio */}
         {mode === 'play' && scenes && s.screen !== 'form' && !pano && !mapOpen && !paused && (
           <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)}
-            style={{ position: 'absolute', left: 29, top: 62, zIndex: 79, width: 36, height: 23, padding: '4px 0 0', border: 'none', cursor: 'pointer', fontFamily: "'Old Standard TT', serif", fontSize: 8, fontWeight: 700, letterSpacing: 1, color: '#F6E3D0', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
+            style={{ position: 'absolute', left: 29, top: 62, zIndex: 79, width: 36, height: 23, padding: '4px 0 0', border: 'none', cursor: 'pointer', fontFamily: "'Old Standard TT', serif", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#F6E3D0', textShadow: '0 -1px 0 rgba(0,0,0,0.5)',
               background: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px), linear-gradient(90deg, #6A140C, #B8361F 40%, #D14A32 55%, #8E1F12)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%)', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.6))' }}>МЕНЮ</button>
         )}
         {mode === 'play' && paused && <PauseFolio s={s} onClose={() => setPaused(false)} onExit={() => { setPaused(false); setMode('menu'); }} />}

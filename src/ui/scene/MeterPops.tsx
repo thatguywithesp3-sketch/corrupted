@@ -31,7 +31,7 @@ export function MeterPops({ s, on }: { s: GameState; on: boolean }) {
       {pops.map((p) => {
         const good = p.m === 'threat' ? p.d < 0 : p.d > 0;
         return (
-          <span key={p.id} className="mp-pop" style={{ position: 'absolute', left: AT[p.m], top: 112, fontFamily: "'Old Standard TT', serif", fontSize: 17, fontWeight: 700, color: good ? '#8FE3A8' : '#FF8A72', textShadow: '0 1px 0 #000, 0 0 8px rgba(0,0,0,0.9)', animation: 'mp-rise 1.2s cubic-bezier(0.23, 1, 0.32, 1) both' }}>
+          <span key={p.id} className="mp-pop" style={{ position: 'absolute', left: AT[p.m], top: 112, fontFamily: "'Old Standard TT', serif", fontSize: 18, fontWeight: 700, color: good ? '#8FE3A8' : '#FF8A72', textShadow: '0 1px 0 #000, 0 0 8px rgba(0,0,0,0.9)', animation: 'mp-rise 1.2s cubic-bezier(0.23, 1, 0.32, 1) both' }}>
             {p.d > 0 ? '+' : '−'}{Math.abs(p.d)}
           </span>
         );

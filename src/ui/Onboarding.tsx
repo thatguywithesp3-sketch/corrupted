@@ -21,7 +21,7 @@ const BLANKS: Blank[] = [
 ];
 
 const box = (on: boolean): CSSProperties => ({
-  display: 'flex', alignItems: 'center', gap: 10, width: '100%', boxSizing: 'border-box', padding: '10px 12px', textAlign: 'left', cursor: 'pointer',
+  display: 'flex', alignItems: 'center', gap: 8, width: '100%', boxSizing: 'border-box', padding: '8px 12px', textAlign: 'left', cursor: 'pointer',
   // opaque card so the cast shadow never doubles the text; the chosen card is lit by the lamp
   background: on ? 'radial-gradient(ellipse 90% 120% at 35% 30%, #FFF8DE 0%, #FBE9B4 60%, #F1D894 100%)' : CARD,
   boxShadow: on ? 'inset 0 0 0 1px rgba(255,255,255,0.7), inset 0 0 16px rgba(255,190,80,0.45), 0 0 12px rgba(255,190,90,0.45)' : 'inset 0 0 0 1px rgba(255,255,255,0.35)',
@@ -30,20 +30,20 @@ const box = (on: boolean): CSSProperties => ({
 const CARD = '#F6EEDA';
 /** effect line "Система +10 · Покровитель +5" → separate inked tags */
 const Tags = ({ text }: { text: string }) => (
-  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
     {text.split(' · ').map((t, i) => (
-      <span key={i} style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2, color: '#F6EEDA', background: BLUE, padding: '2px 7px', borderRadius: 2, boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.3)' }}>{t}</span>
+      <span key={i} style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2, color: '#F6EEDA', background: BLUE, padding: '2px 8px', borderRadius: 2, boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.3)' }}>{t}</span>
     ))}
   </span>
 );
 const Mark = ({ on }: { on: boolean }) => (
-  <span style={{ width: 20, height: 20, flexShrink: 0, border: `2px solid ${INK}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: HAND, fontSize: 24, lineHeight: 1, color: RED }}>{on ? 'x' : ''}</span>
+  <span style={{ width: 20, height: 20, flexShrink: 0, border: `2px solid ${INK}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: HAND, fontSize: 22, lineHeight: 1, color: RED }}>{on ? 'x' : ''}</span>
 );
 const Label = ({ children }: { children: ReactNode }) => <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: MUTE }}>{children}</div>;
 
 function NoteBox({ title, color, tint, children }: { title: string; color: string; tint: string; children: ReactNode }) {
   return (
-    <div style={{ padding: '7px 11px 9px', background: tint, borderLeft: `3px solid ${color}`, fontSize: 13, lineHeight: 1.35 }}>
+    <div style={{ padding: '8px 12px 8px', background: tint, borderLeft: `3px solid ${color}`, fontSize: 14, lineHeight: 1.35 }}>
       <div style={{ fontSize: 16, fontWeight: 700, color, letterSpacing: 0.3, marginBottom: 2 }}>{title}</div>
       {children}
     </div>
@@ -52,7 +52,7 @@ function NoteBox({ title, color, tint, children }: { title: string; color: strin
 
 function Note({ what, effect }: { what: string; effect: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <NoteBox title="Що це" color={BLUE} tint="rgba(42,58,106,0.09)">{what}</NoteBox>
       <NoteBox title="У грі" color={RED} tint="rgba(150,40,20,0.08)">{effect}</NoteBox>
     </div>
@@ -64,7 +64,7 @@ function Note({ what, effect }: { what: string; effect: string }) {
 const Field = ({ label, value, big }: { label: string; value: string; big?: boolean }) => (
   <div>
     <div style={{ fontFamily: HAND, fontSize: big ? 26 : 19, lineHeight: 1.05, color: BLUE, borderBottom: `1px solid ${INK}`, padding: '0 4px 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transform: 'rotate(-0.6deg)' }}>{value}</div>
-    <div style={{ fontSize: 8.5, letterSpacing: 1.4, color: MUTE, marginTop: 2, textTransform: 'uppercase' }}>{label}</div>
+    <div style={{ fontSize: 10, letterSpacing: 1.4, color: MUTE, marginTop: 2, textTransform: 'uppercase' }}>{label}</div>
   </div>
 );
 
@@ -106,7 +106,7 @@ const Paperclip = () => (
 
 /** the applicant's photo card, near the left edge of the blank, clipped to it */
 const ClippedPhoto = ({ src }: { src: string }) => (
-  <div style={{ position: 'relative', flexShrink: 0, marginLeft: -14, marginTop: 4 }}>
+  <div style={{ position: 'relative', flexShrink: 0, marginLeft: -12, marginTop: 4 }}>
     <div style={{ width: 82, height: 104, padding: '4px 4px 12px', background: '#FBF7EA', boxShadow: '0 1px 1px rgba(40,25,8,0.5), 3px 5px 8px rgba(40,25,8,0.35)', boxSizing: 'border-box', transform: 'rotate(-1.5deg)' }}>
       <div style={{ width: '100%', height: '100%', backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.15) contrast(1.02)', boxShadow: 'inset 0 0 6px rgba(60,40,10,0.35)' }} />
     </div>
@@ -128,13 +128,13 @@ export function Onboarding({ s, run }: Props) {
   if (step === 1) body = (
     <>
       <Label>II. ІМ’Я ТА ПРІЗВИЩЕ ЗАЯВНИКА</Label>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {([['first', 'Ім’я'], ['surname', 'Прізвище']] as const).map(([k, l]) => (
             <label key={k} style={{ display: 'flex', alignItems: 'baseline', gap: 8, borderBottom: `1px solid ${INK}` }}>
-              <span style={{ fontSize: 11, color: MUTE, width: 62 }}>{l}</span>
+              <span style={{ fontSize: 12, color: MUTE, width: 62 }}>{l}</span>
               <input aria-label={l} value={s[k]} maxLength={16} onChange={(e) => run((x) => G.setHero(x, { [k]: e.target.value }))}
-                style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: HAND, fontSize: 30, color: BLUE, padding: 0 }} />
+                style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: HAND, fontSize: 28, color: BLUE, padding: 0 }} />
             </label>
           ))}
         </div>
@@ -149,7 +149,7 @@ export function Onboarding({ s, run }: Props) {
       <Label>I. ЗАЯВНИК — ЦЕ</Label>
       <div style={{ display: 'flex', gap: 8 }}>
         {([['m', 'Пан'], ['f', 'Пані']] as const).map(([g, t]) => (
-          <button key={g} className="b3d" onClick={() => run((x) => G.setHero(x, { gender: g }))} style={{ ...box(s.gender === g), justifyContent: 'center', minHeight: 64, fontSize: 20 }}>
+          <button key={g} className="b3d" onClick={() => run((x) => G.setHero(x, { gender: g }))} style={{ ...box(s.gender === g), justifyContent: 'center', minHeight: 64, fontSize: 22 }}>
             <Mark on={s.gender === g} /> {t}
           </button>
         ))}
@@ -164,7 +164,7 @@ export function Onboarding({ s, run }: Props) {
       <div style={{ display: 'flex', gap: 8 }}>
         {[0, 1, 2].map((i) => (
           <button key={i} className="b3d" onClick={() => run((x) => G.setHero(x, { face: i }))} aria-label={'Фото ' + (i + 1)}
-            style={{ flex: 1, height: 214, padding: '4px 4px 14px', background: '#FFFDF6', cursor: 'pointer', border: s.face === i ? `3px solid ${RED}` : '1px solid #8C7E58', transform: `rotate(${[-2, 1, -1][i]}deg)`, boxShadow: '0 2px 5px rgba(0,0,0,0.3)' }}>
+            style={{ flex: 1, height: 214, padding: '4px 4px 12px', background: '#FFFDF6', cursor: 'pointer', border: s.face === i ? `3px solid ${RED}` : '1px solid #8C7E58', transform: `rotate(${[-2, 1, -1][i]}deg)`, boxShadow: '0 2px 5px rgba(0,0,0,0.3)' }}>
             <span style={{ display: 'block', width: '100%', height: '100%', backgroundImage: `url(art/heroes/${s.gender}${i + 1}.jpg)`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: s.face === i ? 'none' : 'grayscale(0.55)' }} />
           </button>
         ))}
@@ -182,7 +182,7 @@ export function Onboarding({ s, run }: Props) {
             <Mark on={s.origin === i} />
             <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <b style={{ fontSize: 16 }}>{s.gender === 'f' ? o.tf : o.t}</b>
-              <i style={{ fontSize: 13.5, color: '#3A2A18', lineHeight: 1.25 }}>{o.d}</i>
+              <i style={{ fontSize: 14, color: '#3A2A18', lineHeight: 1.25 }}>{o.d}</i>
               <Tags text={o.fx} />
             </span>
           </button>
@@ -198,9 +198,9 @@ export function Onboarding({ s, run }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {C.dreams.map((d, i) => (
           <button key={i} className="b3d" onClick={() => run((x) => G.setHero(x, { dream: i }))}
-            style={{ ...box(s.dream === i), flexDirection: 'column', alignItems: 'flex-start', gap: 3, minHeight: 74, background: s.dream === i ? INK : CARD, color: s.dream === i ? '#F3E9D2' : INK, border: s.dream === i ? `2px solid ${INK}` : '1px solid #8C7E58' }}>
+            style={{ ...box(s.dream === i), flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 4, minHeight: 74, background: s.dream === i ? INK : CARD, color: s.dream === i ? '#F3E9D2' : INK, border: s.dream === i ? `2px solid ${INK}` : '1px solid #8C7E58' }}>
             <b style={{ fontSize: 14, lineHeight: 1.15 }}>{d.t}</b>
-            <span style={{ fontSize: 11, color: s.dream === i ? '#D9B870' : MUTE }}>{d.g}</span>
+            <span style={{ fontSize: 12, color: s.dream === i ? '#D9B870' : MUTE }}>{d.g}</span>
           </button>
         ))}
       </div>
@@ -210,33 +210,33 @@ export function Onboarding({ s, run }: Props) {
   );
 
   return (
-    <div className="tx-wood" style={{ position: 'relative', width: 390, height: 844, boxSizing: 'border-box', padding: '8px 14px 14px', background: '#4A2618', display: 'flex', flexDirection: 'column', gap: 10, fontFamily: "'Old Standard TT', serif", color: INK, overflow: 'hidden' }}>
+    <div className="tx-wood" style={{ position: 'relative', width: 390, height: 844, boxSizing: 'border-box', padding: '8px 12px 12px', background: '#4A2618', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: "'Old Standard TT', serif", color: INK, overflow: 'hidden' }}>
       <EdisonBulbs count={BLANKS.length} step={step} />
 
-      <div className="tx-paper" key={step} style={{ position: 'relative', flex: 1, minHeight: 0, padding: '16px 16px 18px', background: b.paper, transform: `rotate(${b.tilt}deg)`, boxShadow: '0 12px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', gap: 12, animation: 'blankIn .28s ease-out' }}>
+      <div className="tx-paper" key={step} style={{ position: 'relative', flex: 1, minHeight: 0, padding: '16px 16px 16px', background: b.paper, transform: `rotate(${b.tilt}deg)`, boxShadow: '0 12px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.22)', display: 'flex', flexDirection: 'column', gap: 12, animation: 'blankIn .28s ease-out' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, letterSpacing: 2, color: MUTE }}>
           <span>МІСТО ПОРТ-АУРУМ</span><span>{b.form.toUpperCase()} · {s.year}</span>
         </div>
-        <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 23, textAlign: 'center', lineHeight: 1.15 }}>{b.title}</div>
+        <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 22, textAlign: 'center', lineHeight: 1.15 }}>{b.title}</div>
         <div style={{ borderTop: `3px double ${INK}` }} />
         {body}
         <div style={{ flex: 1 }} />
         {step === last && (
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '0 2px' }}>
             {face && <ClippedPhoto src={face} />}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7, paddingTop: 2 }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 2 }}>
               <Field label="Заявник" value={`${s.first} ${s.surname}`} big />
               <Field label="Походження" value={s.gender === 'f' ? origin.tf : origin.t} />
               <Field label="Мета життя" value={dream.t} />
             </div>
           </div>
         )}
-        {step !== last && <span style={{ position: 'absolute', right: 18, bottom: 26, padding: '3px 10px', border: `2px solid ${RED}`, color: RED, fontSize: 13, fontWeight: 700, letterSpacing: 2, transform: 'rotate(-8deg)', opacity: 0.6 }}>{b.stamp}</span>}
+        {step !== last && <span style={{ position: 'absolute', right: 18, bottom: 26, padding: '2px 8px', border: `2px solid ${RED}`, color: RED, fontSize: 14, fontWeight: 700, letterSpacing: 2, transform: 'rotate(-8deg)', opacity: 0.6 }}>{b.stamp}</span>}
       </div>
 
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
         <button className="b3d" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}
-          style={{ flex: 1, minHeight: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E9E1C2', color: INK, border: '2px solid #121216', borderRadius: 3, fontSize: 15, fontWeight: 700, cursor: step === 0 ? 'default' : 'pointer', opacity: step === 0 ? 0.4 : 1, boxShadow: '0 3px 0 #121216', fontFamily: 'inherit' }}>← Назад</button>
+          style={{ flex: 1, minHeight: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E9E1C2', color: INK, border: '2px solid #121216', borderRadius: 3, fontSize: 16, fontWeight: 700, cursor: step === 0 ? 'default' : 'pointer', opacity: step === 0 ? 0.4 : 1, boxShadow: '0 3px 0 #121216', fontFamily: 'inherit' }}>← Назад</button>
         <button className="b3d" onClick={next} disabled={!canNext}
           style={{ flex: 1.6, minHeight: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: step === last ? 'linear-gradient(180deg, #2E261C, #1F1A14)' : 'linear-gradient(180deg, #E2C374, #B8913C 55%, #9A7630)', color: step === last ? '#F3E9D2' : INK, border: '2px solid #6E531E', borderRadius: 3, fontSize: 16, fontWeight: 700, cursor: canNext ? 'pointer' : 'default', opacity: canNext ? 1 : 0.5, boxShadow: '0 3px 0 #4A3812', fontFamily: 'inherit' }}>
           {step === last ? <>Підписати й подати <img src="art/brand/seal.png" alt="" style={{ width: 30 }} /></> : 'Далі →'}

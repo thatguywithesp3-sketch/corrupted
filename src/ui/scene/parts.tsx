@@ -1,3 +1,4 @@
+import { BTN } from '../tokens';
 // Shared bits for the hand-built era-I scenes (ledger, night, family strip).
 import type { CSSProperties, ReactNode } from 'react';
 import * as G from '../../engine';
@@ -26,7 +27,7 @@ export function DeskBtn({ children, onClick, kind = 'paper', disabled, style }: 
   };
   return (
     <button className={'b3d ' + (kind === 'brass' ? 'tx-brass' : kind === 'ink' ? 'tx-leather' : 'tx-paper')} onClick={disabled ? undefined : onClick} disabled={disabled}
-      style={{ position: 'relative', minHeight: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 3, fontSize: 15, fontWeight: 700, fontFamily: SERIF, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.4 : 1, ...look[kind], ...style }}>
+      style={{ position: 'relative', minHeight: BTN.minHMain, padding: BTN.pad, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 8, borderRadius: 3, fontSize: 16, fontWeight: 700, fontFamily: SERIF, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.4 : 1, ...look[kind], ...style }}>
       {children}
     </button>
   );
@@ -39,5 +40,5 @@ export const Tick = ({ on, color = RED }: { on: boolean; color?: string }) => (
 
 /** amount written in ink */
 export const Amt = ({ v, color = BLUE, size = 22, sign = '' }: { v: number; color?: string; size?: number; sign?: string }) => (
-  <span style={{ fontFamily: HAND, fontSize: size, color, lineHeight: 1, whiteSpace: 'nowrap' }}>{sign}{G.fmt(v)}<span style={{ fontSize: size * 0.6, marginLeft: 3 }}>кр.</span></span>
+  <span style={{ fontFamily: HAND, fontSize: size, color, lineHeight: 1, whiteSpace: 'nowrap' }}>{sign}{G.fmt(v)}<span style={{ fontSize: size * 0.6, marginLeft: 2 }}>кр.</span></span>
 );
