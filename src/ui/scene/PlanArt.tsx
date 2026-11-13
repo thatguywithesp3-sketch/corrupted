@@ -21,7 +21,8 @@ function PlanArtInner() {
   const plan = G.getPlan();
   const polyD = (p: G.Pt[]) => 'M' + p.map((q) => q.join(' ')).join(' L') + ' Z';
   const oldRing = polyD(G.DISTRICTS.old.poly);
-  const wash: Record<string, string> = { hill: '#D9D3A6', old: '#E8D4A4', market: '#EAD9A8', podil: '#E1CDA0', port: '#D8D0B0', zar: '#DCC9A0', station: '#D6CCB0', univ: '#D9D6A8', sloboda: '#D2C8AC' };
+  // the ordinary city is one quiet wash: only the places that matter to us are painted (see CityMap landmarks)
+  const wash: Record<string, string> = { hill: '#DCD6B2', old: '#E6D7B6', market: '#E6D7B6', podil: '#E3D4B2', port: '#DED6BE', zar: '#E3D4B2', station: '#DED6BE', univ: '#E0D9B8', sloboda: '#DAD2BC' };
   return (
     <>
       <defs>
@@ -64,10 +65,10 @@ function PlanArtInner() {
       <path d="M62 34 q4 -3 8 1 q1 6 -4 8 q-6 -1 -4 -9z" fill="url(#pa-park)" stroke="#4A6A38" strokeWidth=".2" />
 
       {/* the houses */}
-      <g filter="url(#pa-bs)">
+      <g opacity=".9">
         {plan.bldgs.map((b, i) => (
           <rect key={i} x={b.x - b.w / 2} y={b.y - b.h / 2} width={b.w} height={b.h} transform={`rotate(${b.r} ${b.x} ${b.y})`}
-            fill={b.k === 2 ? '#8C7A56' : b.k === 1 ? 'url(#pa-roof)' : '#DDCDA0'} stroke="#4E3E24" strokeWidth=".14" />
+            fill={b.k === 2 ? '#CDBE9C' : '#D8CAA8'} stroke="#9A8A68" strokeWidth=".14" />
         ))}
       </g>
 
@@ -85,52 +86,11 @@ function PlanArtInner() {
       <ellipse cx="104" cy="37" rx="9" ry="7" fill="url(#pa-cobble)" />
       <ellipse cx="104" cy="92" rx="15" ry="8" fill={ROAD} stroke="#5A4A30" strokeWidth=".3" />
       <ellipse cx="104" cy="92" rx="15" ry="8" fill="url(#pa-cobble)" />
-      {Array.from({ length: 5 }, (_, r) => Array.from({ length: 9 }, (_, c) => <rect key={r + '-' + c} x={91 + c * 3.4} y={87.4 + r * 2.1} width="1.7" height="1.1" fill="#C9B98A" stroke="#5A4A30" strokeWidth=".1" />))}
 
       {/* squares of the south bank */}
       <ellipse cx="106" cy="151" rx="10" ry="4.5" fill={ROAD} stroke="#5A4A30" strokeWidth=".3" /><ellipse cx="106" cy="151" rx="10" ry="4.5" fill="url(#pa-cobble)" />
       <ellipse cx="107" cy="201" rx="13" ry="6" fill="url(#pa-park)" stroke="#4A6A38" strokeWidth=".25" />
       <ellipse cx="30" cy="171" rx="4.5" ry="4" fill={ROAD} stroke="#5A4A30" strokeWidth=".3" />
-      {/* landmarks */}
-      <g>{/* castle on the hill */}
-        <path d="M30 18.5 L36 22 L36 28 L30 31.5 L24 28 L24 22 Z" fill="#CDBB8C" stroke={INK} strokeWidth=".45" />
-        {[[30, 18.5], [36, 22], [36, 28], [30, 31.5], [24, 28], [24, 22]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="1.15" fill="#B8A678" stroke={INK} strokeWidth=".3" />)}
-        <rect x="28" y="23" width="4" height="4" fill="#8C7A56" stroke={INK} strokeWidth=".35" /><path d="M27.6 23 L30 20.6 L32.4 23 Z" fill="#6B4A2C" stroke={INK} strokeWidth=".3" />
-      </g>
-      <g>{/* monastery */}
-        <rect x="46" y="15" width="8" height="6" fill="#DDCDA0" stroke={INK} strokeWidth=".3" />
-        {[[48, 17.5], [50, 16.8], [52, 17.5]].map(([x, y], i) => <g key={i}><circle cx={x} cy={y} r="1.2" fill="#C99A38" stroke={INK} strokeWidth=".25" /><path d={`M${x} ${y - 1.2} v-1.2 M${x - .5} ${y - 1.9} h1`} stroke={INK} strokeWidth=".2" /></g>)}
-      </g>
-      <g>{/* town hall with a clock tower */}
-        <rect x="100" y="34.5" width="8" height="4.4" fill="#C9B98A" stroke={INK} strokeWidth=".4" />
-        <rect x="103" y="30.4" width="2.2" height="4.6" fill="#8C7A56" stroke={INK} strokeWidth=".35" /><path d="M102.6 30.4 L104.1 27.6 L105.6 30.4 Z" fill="#6B4A2C" stroke={INK} strokeWidth=".3" /><circle cx="104.1" cy="32.4" r=".7" fill="#F4ECD2" stroke={INK} strokeWidth=".18" />
-      </g>
-      <g>{/* cathedral, two spires */}
-        <path d="M112.5 21 h7 v2.4 h-2.2 v2.6 h-2.6 v-2.6 h-2.2z" fill="#B9A878" stroke={INK} strokeWidth=".3" />
-        <path d="M113.2 21 l.9 -3.4 l.9 3.4 M117 21 l.9 -3.4 l.9 3.4" fill="#6B4A2C" stroke={INK} strokeWidth=".25" />
-      </g>
-      <g>{/* opera */}
-        <rect x="88.6" y="50.4" width="7.6" height="3.4" fill="#D5C594" stroke={INK} strokeWidth=".35" /><path d="M90.4 50.4 a2 2 0 0 1 4 0z" fill="#9A7A3A" stroke={INK} strokeWidth=".3" />
-      </g>
-      <g>{/* customs house and the lighthouse */}
-        <rect x="150" y="58.5" width="8" height="3.2" fill="#C9B98A" stroke={INK} strokeWidth=".35" /><path d="M152 58.5 l2 -2 l2 2z" fill="#6B4A2C" stroke={INK} strokeWidth=".25" />
-        <g transform="translate(192 98)"><path d="M-.9 0 L.9 0 L.5 -5 L-.5 -5 Z" fill="#F4ECD2" stroke={INK} strokeWidth=".3" /><path d="M-.7 -5 L.7 -5 L0 -6.4 Z" fill="#8E2A1F" stroke={INK} strokeWidth=".2" /><path d="M1.6 -5.6 L5 -6.4 M1.6 -5 L5 -4.4" stroke="#C99A38" strokeWidth=".35" opacity=".8" /></g>
-      </g>
-      <g>{/* railway station: a long shed with a clock */}
-        <rect x="96" y="146.4" width="20" height="4" fill="#C9B98A" stroke={INK} strokeWidth=".4" /><path d="M96 146.4 Q106 141 116 146.4z" fill="#A89A70" stroke={INK} strokeWidth=".35" />
-        <rect x="104.6" y="141.6" width="2.8" height="4.8" fill="#8C7A56" stroke={INK} strokeWidth=".3" /><circle cx="106" cy="143.6" r=".8" fill="#F4ECD2" stroke={INK} strokeWidth=".18" />
-      </g>
-      <g>{/* university: colonnade and a dome */}
-        <rect x="98" y="194.6" width="18" height="4.4" fill="#D5C594" stroke={INK} strokeWidth=".35" />
-        {Array.from({ length: 7 }, (_, i) => <path key={i} d={`M${99.2 + i * 2.7} 194.8 v4`} stroke={INK} strokeWidth=".25" />)}
-        <path d="M104 194.6 a3 3 0 0 1 6 0z" fill="#9A7A3A" stroke={INK} strokeWidth=".3" />
-      </g>
-      <g>{/* the works: chimneys and smoke */}
-        {[[154, 158], [159, 162], [164, 158]].map(([x, y], i) => <g key={i}><rect x={x - 1.3} y={y} width="2.6" height="5" fill="#8C7A56" stroke={INK} strokeWidth=".3" /><rect x={x - .5} y={y - 6} width="1" height="6" fill="#2A2014" /><path d={`M${x} ${y - 6} c1 -1.4 2 -1 3 -2.4 c1 -1.2 2 -1 3 -2.4`} fill="none" stroke="#6A6A66" strokeWidth=".9" opacity=".45" strokeLinecap="round" /></g>)}
-      </g>
-      <g>{/* Zarichchia church */}
-        <rect x="27.6" y="168.6" width="4.8" height="4.6" fill="#DDCDA0" stroke={INK} strokeWidth=".3" /><path d="M27.2 168.6 L30 164.6 L32.8 168.6z" fill="#6B4A2C" stroke={INK} strokeWidth=".3" /><path d="M30 164.6 v-1.8 M29.4 163.4 h1.2" stroke={INK} strokeWidth=".25" />
-      </g>
       <g>{/* the stone bridge over the river */}
         <path d="M96 124.8 h16 l.4 2.6 h-16.8z" fill="#CDBD90" stroke={INK} strokeWidth=".4" />
         {[99, 104, 109].map((x) => <path key={x} d={`M${x - 1.6} 127.4 a1.6 1.6 0 0 1 3.2 0`} fill="none" stroke={INK} strokeWidth=".25" />)}
@@ -138,13 +98,10 @@ function PlanArtInner() {
 
       {/* labels */}
       {(Object.keys(G.DISTRICTS) as G.District[]).map((k) => <Label key={k} x={G.DISTRICTS[k].label[0]} y={G.DISTRICTS[k].label[1]} t={G.DISTRICTS[k].t.toUpperCase()} size={3.3} italic={false} />)}
-      <Label x={30} y={34.2} t="Замок" /><Label x={50} y={23.6} t="Монастир" /><Label x={104} y={44.6} t="Ратуша" size={2} />
-      <Label x={116} y={27.6} t="Собор" size={1.9} /><Label x={92} y={57.4} t="Опера" size={1.9} /><Label x={154} y={65} t="Митниця" size={1.9} />
-      <Label x={104} y={102.4} t="Торговий майдан" size={2} /><Label x={26} y={99.4} t="Сквер" size={1.9} /><Label x={104} y={133.4} t="Кам’яний міст" size={1.9} />
+      
+      <Label x={26} y={99.4} t="Сквер" size={1.9} /><Label x={104} y={133.4} t="Кам’яний міст" size={1.9} />
       <Label x={60} y={125.6} t="р. Аурумка" size={2.3} rot={-4} />
       <Label x={192} y={78} t="Гавань" size={2.6} rot={90} />
-      <Label x={106} y={156.2} t="Вокзал" size={1.9} /><Label x={107} y={207.6} t="Ботанічний сад" size={1.9} /><Label x={30} y={177.6} t="Церква" size={1.9} />
-      <Label x={160} y={176} t="Ливарня" size={1.9} />
       <Label x={192} y={178} t="Заводська пристань" size={2.2} rot={90} />
 
       {/* compass, scale, cartouche */}

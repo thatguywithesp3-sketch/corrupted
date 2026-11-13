@@ -18,7 +18,16 @@ export const CITY_RULES = {
   expandW: 3, huntBase: 1.1, huntPerHeat: 0.7, poachFrom: 3, restW: 0.8,
   smear: { threat: 3, people: 2 }, inform: { patron: 4, threat: 3 }, poachChance: 0.5, boycott: 150,
   allyShield: 1, // risk an allied house takes off us every year
-  bribeBase: 150, bribePerPower: 6, bribeDrop: 3, exposeDamage: 14, marryHeat: 4
+  bribeBase: 150, bribePerPower: 6, bribeDrop: 3, exposeDamage: 14, marryHeat: 4,
+  // the good name: what each lever costs and how much risk it takes off
+  fame: {
+    donate: { clean: 250, calm: 4, people: 2 },
+    fund: { clean: 1500, calmYr: 2, peopleYr: 1 },
+    article: { cost: 200, calm: 6, odds: 0.75 },
+    share: { cost: 1500, calmYr: 1, smearCut: 0.5 },
+    whisper: { cost: 120, calmYr: 2, peopleYr: 1 },
+    silence: { cost: 350, calm: 10, odds: 0.8, backfire: 4, people: 2 }
+  }
 };
 
 const initRivals = (): Rival[] => [
@@ -35,6 +44,9 @@ export const rivalOf = (c: CityState, id?: string | null) => c.rivals.find((r) =
 export type BizStatus = 'open' | 'roof' | 'closed';
 export type BizAct = 'inspect' | 'seal' | 'roof' | 'outbid';
 export type RivalAct = 'bribe' | 'expose' | 'marry';
+/** the four ways to whitewash a name: charity, the press, whisperers in the taverns, the gendarmerie */
+export type InstId = 'charity' | 'press' | 'whisper' | 'okhrana';
+export type InstAct = 'donate' | 'fund' | 'article' | 'share' | 'hire' | 'dismiss' | 'silence';
 export type RivalStyle = 'expander' | 'smear' | 'informer';
 
 /** A local magnate: wants the same shops and roofs we do, and hunts us when he is angry. */
@@ -69,7 +81,7 @@ export interface Econ { treasury: number; grain: number; trade: number; crown: n
 
 export interface CityNews { kind: 'open' | 'rumor' | 'flavor' | 'complaint' | 'closed' | 'roof' | 'rival' | 'attack'; head: string; text: string; biz?: string; rival?: string }
 
-export interface ActResult { biz: string; rival?: string; act: BizAct; ok: boolean; title: string; text: string; cash: number; d: { p?: number; n?: number; s?: number; i?: number } }
+export interface ActResult { biz: string; rival?: string; act: BizAct | InstAct; ok: boolean; title: string; text: string; cash: number; d: { p?: number; n?: number; s?: number; i?: number } }
 
 export interface CityState {
   v?: number;
@@ -85,6 +97,8 @@ export interface CityState {
   /** every result of this turn, so each card keeps its own stamp */
   today: ActResult[];
   last: ActResult | null;
+  /** standing arrangements that keep the family name clean (absent in old saves) */
+  fame?: { fund?: boolean; share?: boolean; whisper?: boolean };
   /** tribute that went into the drawer this evening */
   tribute: number;
 }
@@ -219,6 +233,11 @@ export function cityMorning(s: GameState, c: CityState) {
     }
   });
   rivalNight(s, c);
+  // the good name works on its own: the fund, the share in the paper and the whisperers
+  const F = CITY_RULES.fame, fm = c.fame || {};
+  if (fm.fund) { s.threat = Math.max(0, s.threat - F.fund.calmYr); s.people = clampN(s.people + F.fund.peopleYr, 0, 100); }
+  if (fm.share) s.threat = Math.max(0, s.threat - F.share.calmYr);
+  if (fm.whisper) { s.threat = Math.max(0, s.threat - F.whisper.calmYr); s.people = clampN(s.people + F.whisper.peopleYr, 0, 100); }
   // our "roofs": quiet money, but every roof is one more person who knows
   const roofs = c.biz.filter((b) => b.status === 'roof');
   if (roofs.length) s.threat += roofs.length;
@@ -247,6 +266,11 @@ export function cityEvening(s: GameState, c: CityState) {
   const t = c.biz.filter((b) => b.status === 'roof').reduce((a, b) => a + b.tribute, 0);
   c.tribute = r10((t * c.econ.trade) / 100);
   s.cash += c.tribute;
+  if (c.fame?.whisper) {
+    const w = CITY_RULES.fame.whisper.cost;
+    if (s.cash >= w) s.cash -= w;
+    else { c.fame.whisper = false; c.news.push({ kind: 'flavor', head: 'Шептуни розійшлися', text: 'Цього разу їм не заплатили, і в шинках про вас знову говорять що завгодно.' }); }
+  }
 }
 
 // ---------------------------------------------------------------- the morning move
@@ -259,7 +283,7 @@ export const movesMade = (c: CityState) => (c.done ? c.done.length : 0);
 export const resultFor = (c: CityState, id: string) => (c.today || []).find((r) => (r.rival || r.biz) === id) || null;
 const markDone = (c: CityState, id: string) => { (c.done ||= []).push(id); };
 
-export interface ActOption { act: BizAct | RivalAct; /** money it costs (dirty) */ cost?: number; /** text instead of the cash gain */ gainT?: string; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
+export interface ActOption { act: BizAct | RivalAct | InstAct; /** money it costs (dirty, or clean when `clean`) */ cost?: number; clean?: boolean; /** what it takes off the risk */ calm?: number; /** text instead of the cash gain */ gainT?: string; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
 
 /** Chance that a move works (the same numbers actOnBiz rolls against; pressure counts after the move). */
 export function bizOdds(b: Biz, act: BizAct, s?: GameState): number {
@@ -423,7 +447,7 @@ export function rivalNight(s: GameState, c: CityState) {
       c.news.push({ kind: 'rival', rival: r.id, biz: b.id, head: `${r.name} ${sx(r, 'узяв', 'узяла')} «${b.name}» під свою руку`, text: `${b.owner} тепер платить ${r.name}. Інспекторам радять туди не заходити, якщо не хочуть клопоту.` });
     } else if (pick === 1) {
       if (r.style === 'smear') {
-        s.threat += K.smear.threat * sev; s.people = clampN(s.people - K.smear.people * sev, 0, 100); r.last = sx(r, 'облив', 'облила') + ' брудом у пресі';
+        const cut = c.fame?.share ? K.fame.share.smearCut : 1; s.threat += Math.round(K.smear.threat * sev * cut); s.people = clampN(s.people - Math.round(K.smear.people * sev * cut), 0, 100); r.last = sx(r, 'облив', 'облила') + ' брудом у пресі';
         c.news.push({ kind: 'attack', rival: r.id, head: `Брудна преса: ${r.name}`, text: SMEAR[cint(c, SMEAR.length)] });
       } else if (r.style === 'informer') {
         s.patron = clampN(s.patron - K.inform.patron * sev, 0, 100); s.threat += K.inform.threat * sev; r.last = sx(r, 'поскаржився', 'поскаржилась') + ' губернатору';
@@ -496,5 +520,74 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
   c.last = res; (c.today ||= []).push(res);
   if (res.d.i) n.threat += res.d.i;
   if (res.d.s) n.system = clamp100(n.system + res.d.s);
+  return n;
+}
+
+// ---------------------------------------------------------------- the good name
+
+export interface Inst { id: InstId; t: string; place: string; sub: string; x: number; y: number; art: string }
+/** the four places in the city where a name is washed; positions are on the plan (same units as the shops) */
+export const INSTS: Inst[] = [
+  { id: 'charity', t: 'Сиротинець святої Анни', place: 'при монастирі', sub: 'Пожертви бачать усі. Добрі справи — найкраща відповідь на чутки.', x: 50, y: 17, art: 'orphanage' },
+  { id: 'press', t: 'Редакція «Вісника»', place: 'Старе місто', sub: 'Газета пише те, за що їй платять. Або те, чим володіє її пайовик.', x: 84, y: 44, art: 'press' },
+  { id: 'whisper', t: 'Ринкові шептуни', place: 'Торговий майдан', sub: 'Люди в шинках і на ринку щодня розповідають, який ви порядний чоловік.', x: 104, y: 98, art: 'market' },
+  { id: 'okhrana', t: 'Жандармське управління', place: 'Замок', sub: 'Ротмістр уміє зробити так, що критики раптом замовкають.', x: 30, y: 24, art: 'gendarm' }
+];
+export const instOf = (id: string) => INSTS.find((i) => 'i:' + i.id === id || i.id === id) || null;
+
+export function instActs(s: GameState, id: InstId): ActOption[] {
+  const F = CITY_RULES.fame, fm = s.city?.fame || {};
+  switch (id) {
+    case 'charity': return [
+      { act: 'donate', t: 'Пожертва сиротинцю', sub: `Публічний дар чистими: про вас говорять як про благодійника. Ризик −${F.donate.calm}, народ +${F.donate.people}.`, can: s.clean >= F.donate.clean, why: `Потрібно ${fmt(F.donate.clean)} кр. чистими`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.donate.calm}`, cost: F.donate.clean, clean: true, calm: F.donate.calm },
+      fm.fund
+        ? { act: 'fund', t: 'Фонд роду працює', sub: `Щороку: ризик −${F.fund.calmYr}, народ +${F.fund.peopleYr}.`, can: false, why: `Фонд уже заснований: щороку ризик −${F.fund.calmYr}`, risk: 0, odds: 1, gain: 0 }
+        : { act: 'fund', t: 'Заснувати фонд роду', sub: `Фонд «${s.surname} — дітям»: разовий внесок, а далі щороку ризик −${F.fund.calmYr} і народ +${F.fund.peopleYr}.`, can: s.clean >= F.fund.clean, why: `Потрібно ${fmt(F.fund.clean)} кр. чистими`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.fund.calmYr} щороку`, cost: F.fund.clean, clean: true, perYear: true }
+    ];
+    case 'press': return [
+      { act: 'article', t: 'Замовна стаття', sub: `Нарис про вашу чесну службу. Редактор може й злякатися: тоді гроші пропали.`, can: s.cash >= F.article.cost, why: `Бракує брудних: потрібно ${fmt(F.article.cost)} кр.`, risk: 0, odds: F.article.odds, gain: 0, gainT: `ризик −${F.article.calm}`, cost: F.article.cost, calm: F.article.calm },
+      fm.share
+        ? { act: 'share', t: 'Пай у «Віснику» ваш', sub: '', can: false, why: `Щороку ризик −${F.share.calmYr}, брудна преса б’є вдвічі слабше`, risk: 0, odds: 1, gain: 0 }
+        : { act: 'share', t: 'Купити пай у газеті', sub: `Через підставну особу. Щороку ризик −${F.share.calmYr}, а нападки «Голосу Порту» б’ють вдвічі слабше.`, can: s.cash >= F.share.cost, why: `Бракує брудних: потрібно ${fmt(F.share.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.share.calmYr} щороку`, cost: F.share.cost, perYear: true }
+    ];
+    case 'whisper': return fm.whisper
+      ? [{ act: 'dismiss', t: 'Розпустити шептунів', sub: `Заощадите ${fmt(F.whisper.cost)} кр. на рік, але чутки підуть без нагляду.`, can: true, risk: 0, odds: 1, gain: 0, gainT: `−${fmt(F.whisper.cost)} кр. витрат` }]
+      : [{ act: 'hire', t: 'Найняти шептунів', sub: `${fmt(F.whisper.cost)} кр. щороку брудними. Щороку ризик −${F.whisper.calmYr}, народ +${F.whisper.peopleYr}.`, can: s.cash >= F.whisper.cost, why: `Бракує брудних: потрібно ${fmt(F.whisper.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.whisper.calmYr} щороку`, cost: F.whisper.cost, perYear: true }];
+    case 'okhrana': return [
+      { act: 'silence', t: 'Заткнути критиків', sub: `Ротмістр «поговорить» із тими, хто скаржиться. Образи власників зникнуть, але місто це відчує. Якщо ротмістр передумає — ризик +${F.silence.backfire}.`, can: s.cash >= F.silence.cost, why: `Бракує брудних: потрібно ${fmt(F.silence.cost)} кр.`, risk: 0, odds: F.silence.odds, gain: 0, gainT: `ризик −${F.silence.calm}`, cost: F.silence.cost, calm: F.silence.calm }
+    ];
+  }
+}
+
+/** One move per institution per turn. */
+export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
+  if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
+  const n = structuredClone(s);
+  const c = n.city || (n.city = initCity(n));
+  const uid = 'i:' + id;
+  if (didAct(c, uid)) return n;
+  const opt = instActs(n, id).find((o) => o.act === act);
+  if (!opt || !opt.can) return n;
+  markDone(c, uid);
+  const F = CITY_RULES.fame, fm = (c.fame ||= {});
+  const res: ActResult = { biz: uid, act, ok: true, title: '', text: '', cash: 0, d: {} };
+  if (opt.clean) n.clean -= opt.cost || 0; else n.cash -= opt.cost || 0;
+  const calm = (k: number) => { const was = n.threat; n.threat = Math.max(0, n.threat - k); res.d.i = n.threat - was; };
+  if (act === 'donate') { calm(F.donate.calm); n.people = clamp100(n.people + F.donate.people); res.d.n = F.donate.people; res.title = 'Сиротинець дякує благодійнику'; res.text = 'Ігуменя згадала вас у недільній проповіді. На ринку кажуть: «Не такий уже він і поганий».'; }
+  else if (act === 'fund') { fm.fund = true; res.title = `Фонд «${n.surname} — дітям» відкрито`; res.text = 'Табличка на воротах сиротинця, щорічний бал і фотографія в газеті. Добре ім’я тепер працює саме.'; }
+  else if (act === 'share') { fm.share = true; res.title = 'Пай у «Віснику» записано на шурина'; res.text = 'Редактор тепер двічі перечитує все, що стосується вашої родини.'; }
+  else if (act === 'hire') { fm.whisper = true; res.title = 'Шептуни взялися до роботи'; res.text = 'Візник, двоє прикажчиків і вдова з рибного ряду щодня згадують, як ви комусь допомогли.'; }
+  else if (act === 'dismiss') { fm.whisper = false; res.title = 'Шептунів розпущено'; res.text = 'Гроші залишилися в шухляді, а чутки — без нагляду.'; }
+  else if (act === 'article') {
+    if (crand(c) < F.article.odds) { calm(F.article.calm); res.title = 'Нарис про чесного чиновника'; res.text = '«Вісник» на другій шпальті розповів, як ви навели лад у справах міста. Сусіди читали вголос.'; }
+    else { res.ok = false; res.title = 'Статтю зарізали'; res.text = 'Редактор узяв гроші, але цензор у Ратуші статтю не пропустив. Гроші не повертають.'; }
+  } else if (act === 'silence') {
+    if (crand(c) < F.silence.odds) {
+      calm(F.silence.calm); n.people = clamp100(n.people - F.silence.people); res.d.n = -F.silence.people;
+      c.biz.forEach((b) => { b.grudge = 0; });
+      res.title = 'Критики замовкли'; res.text = 'Двоє крамарів забрали скарги, автор листа до газети раптом поїхав до родичів. Місто стало тихішим — і трохи наляканим.';
+    } else { res.ok = false; n.threat += F.silence.backfire; res.d.i = F.silence.backfire; res.title = 'Ротмістр узяв гроші й записав вас'; res.text = 'Конверт зник у шухляді, а ваше прізвище — у його записнику. Тепер він знає про вас більше.'; }
+  }
+  c.last = res; (c.today ||= []).push(res);
   return n;
 }

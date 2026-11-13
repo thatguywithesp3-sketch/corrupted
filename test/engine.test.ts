@@ -135,6 +135,15 @@ describe('city', () => {
     const s2 = G.actOnBiz(s1, b.id, 'inspect');
     expect(s2.city!.biz.find((x) => x.id === b.id)!.pressure).toBe(1);
   });
+  it('washes the name: a donation calms the risk once per turn, whisperers work every year', () => {
+    let s0 = morning(); s0 = { ...s0, threat: 40, clean: 5000, cash: 5000 };
+    const s1 = G.actOnInst(s0, 'charity', 'donate');
+    expect(s1.threat).toBe(36);
+    expect(G.actOnInst(s1, 'charity', 'donate').threat).toBe(36);
+    const s2 = G.actOnInst(s1, 'whisper', 'hire');
+    expect(s2.city!.fame!.whisper).toBe(true);
+    expect(G.movesMade(s2.city!)).toBe(2);
+  });
   it('does not touch the core RNG', () => {
     const s0 = morning(), b = s0.city!.biz[0];
     expect(G.actOnBiz(s0, b.id, 'inspect').rng).toBe(s0.rng);
