@@ -29,7 +29,7 @@ export const RULES = {
   offers: { patronMin: 55, retireAfter: 12, fleeCleanMin: 4000 },
   presidentFee: 2000,
   /** the estate on Castle Hill: bought once with clean money; fulfils the "estate" dream and stays with the family */
-  estate: { on: true, price: 5000, offerFrom: 0.8 },
+  estate: { on: true, price: 5000, offerFrom: 1 },
   /** city moves a year: base + one per rank */
   cityMoves: { base: 3, perRank: 1 },
   endings: {
