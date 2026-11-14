@@ -19,6 +19,7 @@ import { MeterPops } from './scene/MeterPops';
 import { DeskProps } from './scene/DeskProps';
 import { CityMap } from './scene/CityMap';
 import { PauseFolio } from './scene/PauseFolio';
+import { LOCAL_FONT_ERAS } from './fonts';
 
 const MAP_SCREENS = new Set(['morning', 'office', 'evening']);
 injectTextures();
@@ -153,7 +154,7 @@ function useEraAssets(era: number) {
     document.getElementById(id)?.remove();
     const box = document.createElement('div');
     box.id = id;
-    V.fonts.forEach((href) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; box.appendChild(l); });
+    if (!LOCAL_FONT_ERAS.has(era)) V.fonts.forEach((href) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; box.appendChild(l); });
     const st = document.createElement('style'); st.textContent = V.css; box.appendChild(st);
     document.head.appendChild(box);
   }, [era]);
