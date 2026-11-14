@@ -406,7 +406,7 @@ export function buildView(ctx: Ctx): any {
   if (s.camp) {
     const c = s.camp, W = C.words.campaign, total = G.totalMoney(s), others = Math.max(0, 100 - c.me - c.rival);
     v.camp = { round: Math.min(4, c.round), chest: fk(total), fraudW: c.fraud + '%', fraudText: (c.fraud < 30 ? 'низька · ' : c.fraud < 60 ? 'помітна · ' : 'висока · ') + c.fraud + '%', fraudC: c.fraud < 30 ? '#2F7A50' : c.fraud < 60 ? '#C08A1A' : '#B8331E', fraudBd: c.fraud >= 60 ? '#E8603F' : '#8C7E58', hasLog: !!c.log, log: c.log };
-    v.poll = [{ name: s.first.charAt(0) + '. ' + s.surname, val: c.me + '%', w: c.me + '%', color: '#D9A441' }, { name: W.rival, val: c.rival + '%', w: c.rival + '%', color: '#7FAEE3' }, { name: 'Інші / не визначились', val: others + '%', w: others + '%', color: '#A89C84' }];
+    v.poll = [{ name: s.first.charAt(0) + '. ' + s.surname, val: c.me + '%', w: c.me + '%', color: '#D9A441' }, { name: W.rival, val: c.rival + '%', w: c.rival + '%', color: '#7FAEE3' }, { name: 'Не визначились', val: others + '%', w: others + '%', color: '#A89C84' }];
     v.campActs = G.campaignActs(s).map((a) => {
       const can = total >= a.cost, pills: any[] = [];
       if (a.cost) pills.push(pill('dirty', '−' + fk(a.cost), 'warn'));

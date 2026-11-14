@@ -2,7 +2,7 @@
 // Both get the same random stream and the same decisions; we compare state after every step.
 import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CITY_RULES, currentDoc, newGame, withPrototypeBalance } from '../src/engine';
+import { CITY_RULES, currentDoc, kinFor, newGame, withPrototypeBalance } from '../src/engine';
 import type { GameState } from '../src/engine';
 import { botRng, botStep, STYLES } from '../src/sim/bot';
 
@@ -27,12 +27,16 @@ const REWORD: [string, string][] = [
   ['Газета хвалить щедрого урядовця.', 'Газета хвалить щедрого урядовця. Гімназії вистачить на дах.'],
   // Era I is a city-state: the top of the career is the Doge of Port-Aurum, not a president
   ['Наша газета вітає нового радника й бажає йому довгої та чесної служби на благо Порт-Аурума.', 'Наша газета вітає нового радника міської ради й бажає йому довгої та чесної служби на благо Порт-Аурума.'],
-  ['Штаб кандидата не коментує. Суперник уже приймає вітання.', 'Палац дожів мовчить. Суперник уже приймає вітання від гільдій.']
+  ['Штаб кандидата не коментує. Суперник уже приймає вітання.', 'Палац дожів мовчить. Суперник уже приймає вітання від гільдій.'],
+  // neutral wording, so it reads right for a heroine too
+  ['Захист батька закінчився. Покровитель знову може падати.', 'Тінь дожа розвіялася. Покровитель знову може падати.']
 ];
 const REWORD_RE: [RegExp, string][] = [
   [/^Захист батька-президента діє ще (\d+) р\.$/, 'Тінь дожа ще захищає вас: $1 р.'],
   [/^Вибори програно: (\d+)% голосів\. /, 'Велика рада проголосувала проти: $1% голосів. '],
-  [/ (програв|програла) президентські вибори$/, ' $1 вибори дожа']
+  [/ (програв|програла) президентські вибори$/, ' $1 вибори дожа'],
+  [/^(Нащадок роду .+) свідчить проти батька$/, '$1 свідчить проти власної родини'],
+  [/^(\S+) посадовця (.+) свідчить проти нього$/, '$1 з роду $2 свідчить проти родини']
 ];
 const fixProto = (t: string) => {
   let x = (t || '').replace(/заснувла/g, 'заснула').replace(/грюкнувла/g, 'грюкнула').replace(/пішовла/g, 'пішла');
@@ -90,7 +94,7 @@ describe('parity with HTML prototype (Era I)', () => {
             }
             s = next;
             if (diverged) break;
-            expect({ ...pickFields(p.state), headline: fixProto(p.state.headline), body: fixProto(p.state.body) }, `seed ${seed} step ${step} (${before.screen})`).toEqual(pickFields(s));
+            expect({ ...pickFields(p.state), headline: kinFor(fixProto(p.state.headline), s.gender), body: kinFor(fixProto(p.state.body), s.gender) }, `seed ${seed} step ${step} (${before.screen})`).toEqual(pickFields(s));
             compared++;
           }
         }

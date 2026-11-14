@@ -246,3 +246,35 @@ describe('Era I mechanics fixes (QA 14.11)', () => {
     expect(G.actOnRival(used, used.city.rivals[0].id, 'bribe')).toBe(used);
   });
 });
+
+describe('Era I texts and lore (QA 14.11)', () => {
+  it('a heroine\'s Otto is her дівер, in every form', () => {
+    expect(G.kinFor('Ваш шурин Отто', 'f')).toBe('Ваш дівер Отто');
+    expect(G.kinFor('Склад шурина Отто', 'f')).toBe('Склад дівера Отто');
+    expect(G.kinFor('Шурин урядовця', 'f')).toBe('Дівер урядовця');
+    expect(G.kinFor('Ваш шурин Отто', 'm')).toBe('Ваш шурин Отто');
+    let s = G.signForm(G.setHero(G.newGame(5), { gender: 'f' }));
+    expect(s.acc.otto.r).toBe('дівер');
+    for (let i = 0; i < 6; i++) { expect(JSON.stringify(G.docsFor({ ...s, served: i }))).not.toMatch(/[Шш]урин/); }
+  });
+
+  it('shop owners keep their gender and magnates their case', () => {
+    const s = G.signForm(G.newGame(9));
+    const c = s.city!;
+    const shop = c.biz.find((b) => b.status === 'open' && !b.rival)!;
+    shop.owner = 'Пані Мельник';
+    const n = G.actOnBiz(s, shop.id, 'inspect');
+    const r = n.city!.today[0];
+    expect(r.title).toMatch(/Пані Мельник («віддячила»|не зрозуміла натяку)/);
+    const held = { ...shop, id: 'bx', rival: 'r1', pressure: 0, status: 'open' as const };
+    const acts = G.bizActs({ ...s, city: { ...c, biz: [...c.biz, held] } }, held);
+    expect(acts[0].sub).toContain('під рукою Пана Вайсмана');
+    expect(acts[1].sub).toContain('ніж платить Пану Вайсману');
+    expect(G.rivalCase(c.rivals[2], 'ins')).toBe('Графом Ґжеґожевським');
+  });
+
+  it('no president or mayor is left in Era I strings', () => {
+    const all = Object.values(getEra(1).strings).join('\n');
+    expect(all).not.toMatch(/президент|\bмер\b|меру\b/i);
+  });
+});

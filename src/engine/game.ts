@@ -2,7 +2,7 @@ import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
 import { CITY_V, cityEvening, cityMorning, initCity } from './city';
-import { clamp100, fmt, fk } from './text';
+import { clamp100, fmt, fk, kinFor, mapText } from './text';
 import type {
   BankDeal,
   AccKey, Alloc, Choice, ChoiceOption, Delta, Doc, EndKind, GameState, Gender, Heir, Kin, Offer, ReportLine, Who, YearMark
@@ -121,8 +121,11 @@ export function docsFor(s: GameState): Doc[] {
     const kd = [...LK].sort((a, b) => b.age - a.age)[s.served % LK.length];
     list.splice(1, 0, { kind: 'choice', choice: kidDoc(s, kd), who: { kind: 'fam', id: kd.id } });
   }
-  return list;
+  return s.gender === 'f' ? list.map((d) => mapText(d, (t) => kinFor(t, 'f'))) : list;
 }
+
+/** accomplices' roles in the hero's words (a heroine's Otto is her дівер) */
+const nameKin = (n: GameState) => { ACCS.forEach((k) => { n.acc[k].r = kinFor(n.acc[k].r, n.gender); }); };
 
 export const currentDoc = (s: GameState): Doc => { const d = docsFor(s); return d[Math.min(s.doc, d.length - 1)]; };
 
@@ -358,6 +361,7 @@ export function signForm(s: GameState): GameState {
   n.headline = S(n, 'form.headline.' + n.gender, { title });
   n.body = S(n, 'form.body.' + n.gender, { title });
   startFamily(n);
+  nameKin(n);
   n.yearStart = yearMark(n);
   n.city = initCity(n);
   n.screen = 'morning';
@@ -737,6 +741,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   const child = S(n, h.g === 'f' ? 'word.daughter' : 'word.son');
   n.headline = S(n, `heir.${e.kind}.h`, { child, surname: s.surname });
   n.body = S(n, `heir.${e.kind}.b`, { surname: s.surname }) + (h.g === 'f' ? S(n, 'heir.femaleSuffix') : '');
+  nameKin(n);
   n.yearStart = yearMark(n);
   return n;
 }

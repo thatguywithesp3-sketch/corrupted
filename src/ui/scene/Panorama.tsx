@@ -201,7 +201,7 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           <span style={{ fontFamily: "'Abril Fatface', serif", fontSize: 28, letterSpacing: 2 }}>{s.year}</span>
           <span style={{ width: 40, height: 1, background: ink, opacity: 0.6 }} />
         </div>
-        <div style={{ fontSize: 14, fontStyle: 'italic', marginTop: 4, opacity: 0.9, animation: 'pano-in 1.4s ease-out 1.2s both' }}>{s.served}-й рік на службі · {s.first} {s.surname}</div>
+        <div style={{ fontSize: 14, fontStyle: 'italic', marginTop: 4, opacity: 0.9, animation: 'pano-in 1.4s ease-out 1.2s both' }}>{s.served + 1}-й рік на службі · {s.first} {s.surname}</div>
       </div>
 
       {/* what the city is saying today */}

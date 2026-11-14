@@ -590,7 +590,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const used = unit ? G.didAct(c, unit) : false;
   const left = G.movesLeft(s), most = G.movesMax(s);
   const marks = (c.today || []).filter((r) => !r.rival).map((r) => ({ biz: r.biz, ok: r.ok }));
-  const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} сьогодні вже говорили. Наступна розмова — завтра зранку.` : inst ? 'Тут сьогодні вже були. Знову — завтра зранку.' : 'Цей заклад сьогодні вже відвідували. Знову — завтра зранку.';
+  const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} цього року вже говорили. Наступна розмова — наступного року.` : inst ? 'Тут цього року вже були. Знову — наступного року.' : 'Цей заклад цього року вже відвідували. Знову — наступного року.';
   const doneNote = used ? <div style={{ fontSize: 14, fontStyle: 'italic', color: rivMode ? INK : '#E9E1C2', padding: '4px 2px' }}>{doneT}</div> : null;
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
     const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
