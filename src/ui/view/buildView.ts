@@ -260,7 +260,7 @@ export function buildView(ctx: Ctx): any {
   const st = s.lastStamp ? STAMP[s.lastStamp] : null;
   v.hasStamp = !!st; v.stampT = st ? (L.stampWords || {})[st.t] || st.t : ''; v.stampC = st ? st.c : '#8E2A1F';
   const last = R.length - 1;
-  const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
+  const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : s.estate ? 'маєток уже належить роду — збережіть його до кінця служби' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
   v.dreamText = C.dreams[s.dream].t + ': ' + dreamProg + '.';
   v.toOffice = () => run(G.toOffice);
 

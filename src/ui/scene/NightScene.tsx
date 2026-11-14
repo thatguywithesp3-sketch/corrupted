@@ -180,7 +180,8 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
   const rest = s.report.filter((r) => r !== lead);
   const groups: { t: string; tone: Tone; lines: ReportLine[] }[] = [];
   rest.forEach((r) => { const g = GROUP[r.icon] || { t: 'ІНШЕ', tone: 'neu' as Tone }; let x = groups.find((y) => y.t === g.t); if (!x) groups.push((x = { ...g, lines: [] })); x.lines.push(r); });
-  const b = before;
+  // compare with the start of the year (kept in the save); old saves fall back to this evening
+  const b: G.YearMark | null = s.yearStart || before;
   const hidden = s.floor + s.wh, hiddenWas = b ? b.floor + b.wh : null;
   const dClean = b ? s.clean - b.clean : 0, dHidden = hiddenWas === null ? 0 : hidden - hiddenWas;
   const next = () => { if (dawn) return; setDawn(true); setTimeout(() => run(G.sleep), 1500); };

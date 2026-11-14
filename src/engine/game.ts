@@ -5,7 +5,7 @@ import { CITY_V, cityEvening, cityMorning, initCity } from './city';
 import { clamp100, fmt, fk } from './text';
 import type {
   BankDeal,
-  AccKey, Alloc, Choice, ChoiceOption, Delta, Doc, EndKind, GameState, Gender, Heir, Kin, Offer, ReportLine, Who
+  AccKey, Alloc, Choice, ChoiceOption, Delta, Doc, EndKind, GameState, Gender, Heir, Kin, Offer, ReportLine, Who, YearMark
 } from './types';
 
 const ACCS: AccKey[] = ['pike', 'dobbs', 'otto'];
@@ -32,6 +32,10 @@ export function newGame(seed: number, era = 1): GameState {
 }
 
 const emptyAlloc = (): Alloc => ({ floor: 0, wh: 0, laun: 0, kid: 0 });
+
+/** remember where the year started: the night report compares against it */
+export const yearMark = (s: GameState): YearMark =>
+  ({ patron: s.patron, people: s.people, system: s.system, threat: s.threat, clean: s.clean, cash: s.cash, floor: s.floor, wh: s.wh });
 
 // ============================================================ selectors
 
@@ -275,7 +279,8 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
   if (kind === 'flee') { inherit = Math.round(n.clean * E.fleeKeepsClean); lost = stash + n.clean - inherit; }
   if (kind === 'summit') { inherit = n.clean + stash; lost = 0; }
   const last = getEra(n.era).ranks.length - 1;
-  const dream = (n.dream === 0 && (RULES.estate.on ? !!n.dreamDone : n.clean >= RULES.dreamCleanGoal)) || (n.dream === 1 && n.rank >= last)
+  // the estate dream: buy it, or — for an heir who inherited it — keep it (a collapse takes it away)
+  const dream = (n.dream === 0 && (RULES.estate.on ? !!n.dreamDone || (!!n.estate && kind !== 'collapse') : n.clean >= RULES.dreamCleanGoal)) || (n.dream === 1 && n.rank >= last)
     || (n.dream === 2 && kind === 'retire' && n.threat < RULES.dreamCleanThreat) || (n.dream === 3 && kind === 'summit');
   const dynastyOver = kind === 'collapse' && n.tavro;
   const eraOver = !dynastyOver && n.gen >= RULES.gensPerEra;
@@ -353,6 +358,7 @@ export function signForm(s: GameState): GameState {
   n.headline = S(n, 'form.headline.' + n.gender, { title });
   n.body = S(n, 'form.body.' + n.gender, { title });
   startFamily(n);
+  n.yearStart = yearMark(n);
   n.city = initCity(n);
   n.screen = 'morning';
   return n;
@@ -598,7 +604,9 @@ export function lockSafe(s: GameState): GameState {
 export function acceptOffer(s: GameState, id: Offer['id']): GameState {
   if (s.screen !== 'night') throw new Error('Not night');
   const n = clone(s);
-  if (id === 'retire') return finish(n, 'retire', S(n, 'end.retire.t'), S(n, 'end.retire.x', { n: n.served }));
+  // in Era I "the estate" is a real purchase: without it the official goes home, not to the estate
+  const home = RULES.estate.on && n.era === 1 && !n.estate;
+  if (id === 'retire') return finish(n, 'retire', S(n, 'end.retire.t'), S(n, home ? 'end.retire.xHome' : 'end.retire.x', { n: n.served }));
   if (id === 'flee') return finish(n, 'flee', S(n, 'end.flee.t'), S(n, 'end.flee.x'));
   if (id === 'estate') {
     const price = RULES.estate.price;
@@ -636,6 +644,7 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
 export function sleep(s: GameState): GameState {
   const n = clone(s);
   Object.assign(n, { screen: 'morning', doc: 0, ap: 1, last: {} });
+  n.yearStart = yearMark(n); // before the magnates' night: what they do belongs to the new year
   if (n.city && n.city.v === CITY_V) cityMorning(n, n.city); else n.city = initCity(n);
   return n;
 }
@@ -728,6 +737,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   const child = S(n, h.g === 'f' ? 'word.daughter' : 'word.son');
   n.headline = S(n, `heir.${e.kind}.h`, { child, surname: s.surname });
   n.body = S(n, `heir.${e.kind}.b`, { surname: s.surname }) + (h.g === 'f' ? S(n, 'heir.femaleSuffix') : '');
+  n.yearStart = yearMark(n);
   return n;
 }
 

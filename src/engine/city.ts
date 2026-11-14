@@ -251,8 +251,8 @@ export function cityMorning(s: GameState, c: CityState) {
     c.biz.push(b);
     c.news.unshift({ kind: 'open', biz: b.id, head: `Відкриття на ${street(c, b)}: ${b.kind} «${b.name}»`, text: `${b.owner} відкриває ${b.kind} «${b.name}». Кажуть, справи підуть добре: торгівля в порту ${e.trade >= 100 ? 'на підйомі' : 'хоч і повільна, та стабільна'}.` });
   }
-  // a rumour about somebody's good takings: a daily lead
-  const quiet = c.biz.filter((b) => b.status === 'open' && !c.news.some((x) => x.biz === b.id));
+  // a rumour about somebody's good takings: a daily lead (only shops nobody holds yet)
+  const quiet = c.biz.filter((b) => b.status === 'open' && !b.rival && !c.news.some((x) => x.biz === b.id));
   if (quiet.length) {
     const b = cpick(c, quiet), up = c.econ.trade >= 100;
     c.news.push({ kind: 'rumor', biz: b.id, head: `Кажуть, «${b.name}» ${up ? 'не встигає рахувати виторг' : 'тримається, попри кризу'}`, text: `${b.owner} (${b.kind}, ${DISTRICTS[b.district].t}) ${up ? 'замовив нову вивіску й найняв ще двох прикажчиків' : 'знизив ціни, але покупців не меншає'}.${b.pressure ? ' Після недавньої перевірки — помітно знервований.' : ''}` });
@@ -283,6 +283,9 @@ export const movesMade = (c: CityState) => (c.done ? c.done.length : 0);
 /** this turn's result for one unit, if it was moved */
 export const resultFor = (c: CityState, id: string) => (c.today || []).find((r) => (r.rival || r.biz) === id) || null;
 const markDone = (c: CityState, id: string) => { (c.done ||= []).push(id); };
+/** a move that could not be made: hand back the same state (callers and bots can tell nothing happened),
+ *  unless this call had to create the city for an old save */
+const noMove = (s: GameState, n: GameState) => (s.city ? s : n);
 /** all dirty money: the drawer, the floor and the relative's warehouse — city moves can be paid from any of it */
 export const dirtyTotal = (s: GameState) => s.cash + s.floor + s.wh;
 /** pay dirty money: the drawer first, then the floor, then the warehouse */
@@ -338,11 +341,11 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
   if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
-  if (didAct(c, id) || movesLeft(n) <= 0) return n;
+  if (didAct(c, id) || movesLeft(n) <= 0) return noMove(s, n);
   const b = c.biz.find((x) => x.id === id);
-  if (!b) return n;
+  if (!b) return noMove(s, n);
   const opt = bizActs(n, b).find((o) => o.act === act);
-  if (!opt || !opt.can) return n;
+  if (!opt || !opt.can) return noMove(s, n);
   markDone(c, b.id);
   const res: ActResult = { biz: b.id, act, ok: false, title: '', text: '', cash: 0, d: {} };
   const q = bizOdds(b, act, n);
@@ -508,11 +511,11 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
   if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
-  if (didAct(c, id) || movesLeft(n) <= 0) return n;
+  if (didAct(c, id) || movesLeft(n) <= 0) return noMove(s, n);
   const r = rivalOf(c, id);
-  if (!r) return n;
+  if (!r) return noMove(s, n);
   const opt = rivalActs(n, r).find((o) => o.act === act);
-  if (!opt || !opt.can) return n;
+  if (!opt || !opt.can) return noMove(s, n);
   markDone(c, r.id);
   const K = CITY_RULES, res: ActResult = { biz: '', rival: r.id, act: act as never, ok: false, title: '', text: '', cash: 0, d: {} };
   payDirty(n, opt.cost || 0); res.spent = opt.cost || 0;
@@ -584,9 +587,9 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
   const uid = 'i:' + id;
-  if (didAct(c, uid) || movesLeft(n) <= 0) return n;
+  if (didAct(c, uid) || movesLeft(n) <= 0) return noMove(s, n);
   const opt = instActs(n, id).find((o) => o.act === act);
-  if (!opt || !opt.can) return n;
+  if (!opt || !opt.can) return noMove(s, n);
   markDone(c, uid);
   const F = CITY_RULES.fame, fm = (c.fame ||= {});
   const res: ActResult = { biz: uid, act, ok: true, title: '', text: '', cash: 0, d: {} };

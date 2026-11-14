@@ -146,7 +146,9 @@ export interface Alloc { floor: number; wh: number; laun: number; kid: number }
 /** tonight's deal with the banker (evening only) */
 export type BankDeal = 'limit' | 'fee';
 
-export type StampKind = 'signed' | 'declined' | 'decided' | 'dark';
+export interface YearMark { patron: number; people: number; system: number; threat: number; clean: number; cash: number; floor: number; wh: number }
+
+export type StampKind ='signed' | 'declined' | 'decided' | 'dark';
 
 export interface GameState {
   v: 1;
@@ -181,6 +183,8 @@ export interface GameState {
   estate?: boolean;
   /** this life's dream is already fulfilled (the estate was bought) */
   dreamDone?: boolean;
+  /** meters and money at the start of the current year, for the year report (absent in old saves) */
+  yearStart?: YearMark;
   acc: Record<AccKey, Accomplice>;
   doc: number;
   ap: number; // appetite 0..2

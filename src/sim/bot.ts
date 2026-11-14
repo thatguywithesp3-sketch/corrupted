@@ -35,6 +35,10 @@ function score(s: GameState, d: Delta): number {
 /** One city move for the morning, or null when the bot makes none. */
 /** keepClean: clean money the bot will not spend on charity (it is saving it for something) */
 export function cityMove(s: GameState, policy: CityPolicy = 'none', keepClean = 0): GameState | null {
+  const n = cityMoveRaw(s, policy, keepClean);
+  return n === s ? null : n; // the move could not be made
+}
+function cityMoveRaw(s: GameState, policy: CityPolicy, keepClean: number): GameState | null {
   if (policy === 'none') return null;
   const c = s.city;
   if (!c) return null;
