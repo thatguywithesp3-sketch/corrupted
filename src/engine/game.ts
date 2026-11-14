@@ -91,6 +91,9 @@ export function offersFor(s: GameState): Offer[] {
     o.push({ id: 'promo', t: S(s, 'offer.promo.t', { rank: s.gender === 'f' ? r.tf : r.t }), sub: S(s, 'offer.promo.sub', { cost: fmt(r.cost) }), btn: S(s, 'offer.promo.btn', { cost: fmt(r.cost) }) });
   }
   if (s.rank === last && s.patron > O.patronMin) o.push({ id: 'pres', t: S(s, 'offer.pres.t'), sub: S(s, 'offer.pres.sub'), btn: S(s, 'offer.pres.btn') });
+  const E = RULES.estate;
+  if (E.on && s.era === 1 && !s.estate && s.clean >= E.price * E.offerFrom)
+    o.push({ id: 'estate', t: S(s, 'offer.estate.t'), sub: S(s, 'offer.estate.sub', { cost: fmt(E.price) }), btn: S(s, 'offer.estate.btn', { cost: fmt(E.price) }) });
   if (s.served >= O.retireAfter) o.push({ id: 'retire', t: S(s, 'offer.retire.t'), sub: S(s, 'offer.retire.sub'), btn: S(s, 'offer.retire.btn') });
   if (s.clean >= O.fleeCleanMin) o.push({ id: 'flee', t: S(s, 'offer.flee.t'), sub: S(s, 'offer.flee.sub'), btn: S(s, 'offer.flee.btn') });
   return o;
@@ -272,7 +275,7 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
   if (kind === 'flee') { inherit = Math.round(n.clean * E.fleeKeepsClean); lost = stash + n.clean - inherit; }
   if (kind === 'summit') { inherit = n.clean + stash; lost = 0; }
   const last = getEra(n.era).ranks.length - 1;
-  const dream = (n.dream === 0 && n.clean >= RULES.dreamCleanGoal) || (n.dream === 1 && n.rank >= last)
+  const dream = (n.dream === 0 && (RULES.estate.on ? !!n.dreamDone : n.clean >= RULES.dreamCleanGoal)) || (n.dream === 1 && n.rank >= last)
     || (n.dream === 2 && kind === 'retire' && n.threat < RULES.dreamCleanThreat) || (n.dream === 3 && kind === 'summit');
   const dynastyOver = kind === 'collapse' && n.tavro;
   const eraOver = !dynastyOver && n.gen >= RULES.gensPerEra;
@@ -344,7 +347,7 @@ export function signForm(s: GameState): GameState {
   n.first = n.first.trim() || C0.defaultHero.first;
   n.surname = n.surname.trim() || C0.defaultHero.surname;
   if (n.origin === 0) { n.system += 10; n.patron += 5; }
-  if (n.origin === 1) { n.people += 10; n.thrBase = 1; }
+  if (n.origin === 1) { n.people += 10; n.thrBase = RULES.threatPerYear - 1; } // the reporter's past: risk grows a point slower
   if (n.origin === 2) { n.clean += 800; n.launBonus = 200; }
   const title = rankName(n) + ' ' + n.first + ' ' + n.surname;
   n.headline = S(n, 'form.headline.' + n.gender, { title });
@@ -517,7 +520,7 @@ export function lockSafe(s: GameState): GameState {
   if (rand(n) * 100 < raidOdds(n)) {
     const found: string[] = [];
     if (n.cash > 0) { found.push(S(n, 'search.cash', { amt: fmt(n.cash) })); n.cash = 0; }
-    if (n.floor > 0 && rand(n) < RULES.floorFoundChance) { found.push(S(n, 'search.floor', { amt: fmt(n.floor) })); n.floor = 0; }
+    if (n.floor > 0 && rand(n) < RULES.floorFoundChance && !n.estate) { found.push(S(n, 'search.floor', { amt: fmt(n.floor) })); n.floor = 0; }
     if (n.wh > 0 && n.acc.otto.l < RULES.warehouseUnsafeLoyalty) { found.push(S(n, 'search.wh', { amt: fmt(n.wh) })); n.wh = 0; }
     if (found.length) {
       n.threat += 10 * found.length;
@@ -597,6 +600,16 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
   const n = clone(s);
   if (id === 'retire') return finish(n, 'retire', S(n, 'end.retire.t'), S(n, 'end.retire.x', { n: n.served }));
   if (id === 'flee') return finish(n, 'flee', S(n, 'end.flee.t'), S(n, 'end.flee.x'));
+  if (id === 'estate') {
+    const price = RULES.estate.price;
+    if (n.clean < price) { n.report.push(line(S(n, 'rep.noClean', { cost: fmt(price) }), 'bad', 'clean')); n.offers = n.offers.filter((x) => x.id !== id); return n; }
+    n.clean -= price; n.estate = true;
+    if (n.dream === 0) n.dreamDone = true;
+    n.report.push(line(S(n, 'rep.estate'), 'ok', 'floor', true));
+    n.headline = S(n, 'news.estate.h', { surname: n.surname }); n.body = S(n, 'news.estate.b');
+    n.offers = n.offers.filter((x) => x.id !== id);
+    return n;
+  }
   const R = getEra(n.era).ranks;
   const cost = id === 'pres' ? RULES.presidentFee : R[n.rank + 1].cost;
   if (n.cash + n.floor + n.wh + n.clean < cost) {
@@ -702,6 +715,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
     id: 's' + k.id, first: k.first, g: k.g, age: k.age + 1, trait: k.trait, prep: k.prep,
     l: Math.max(5, k.l - RULES.family.sibResentment), k: k.k, assets: k.assets, gone: false, why: ''
   }));
+  n.estate = !!s.estate && e.kind !== 'collapse';
   n.tavro = e.kind === 'collapse'; n.shadow = e.kind === 'summit' ? RULES.shadowYears : 0; n.rank = e.kind === 'summit' ? 1 : 0;
   n.threat = n.tavro ? 25 : 10;
   if (!e.eraOver) {

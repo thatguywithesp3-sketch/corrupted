@@ -232,7 +232,7 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
           {s.offers.length > 0 && (
             <Sec title="ПРОПОЗИЦІЇ НА РАНОК" tone="clean">
               {s.offers.map((o) => (
-                <div key={o.id} style={{ margin: '4px 0', padding: '8px 8px', borderLeft: `4px solid ${o.id === 'flee' ? T.hide.pen : o.id === 'retire' ? T.clean.pen : T.out.pen}`, background: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div key={o.id} style={{ margin: '4px 0', padding: '8px 8px', borderLeft: `4px solid ${o.id === 'flee' ? T.hide.pen : o.id === 'retire' || o.id === 'estate' ? T.clean.pen : T.out.pen}`, background: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontSize: 14 }}>{o.t}</b><span style={{ display: 'block', fontSize: 12, fontStyle: 'italic', color: MUTE }}>{o.sub}</span></span>
                   <DeskBtn kind="ink" style={{ minHeight: 34, fontSize: 12, padding: '0 8px' }} onClick={() => run((x) => G.acceptOffer(x, o.id))}>{o.btn}</DeskBtn>
                 </div>

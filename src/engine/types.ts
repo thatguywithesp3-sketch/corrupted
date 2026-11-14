@@ -120,7 +120,7 @@ export interface Heir extends Kin { nephew?: boolean; /** portrait preset index 
 
 export interface ReportLine { t: string; tone: 'ok' | 'warn' | 'bad' | 'neu'; icon: string; strong?: boolean }
 
-export interface Offer { id: 'promo' | 'pres' | 'retire' | 'flee'; t: string; sub: string; btn: string }
+export interface Offer { id: 'promo' | 'pres' | 'retire' | 'flee' | 'estate'; t: string; sub: string; btn: string }
 
 export type EndKind = 'collapse' | 'retire' | 'flee' | 'summit';
 
@@ -177,6 +177,10 @@ export interface GameState {
   floor: number; // hidden stash 1
   wh: number; // hidden stash 2 (relative's warehouse)
   clean: number;
+  /** the family owns the estate on Castle Hill (absent in old saves) */
+  estate?: boolean;
+  /** this life's dream is already fulfilled (the estate was bought) */
+  dreamDone?: boolean;
   acc: Record<AccKey, Accomplice>;
   doc: number;
   ap: number; // appetite 0..2

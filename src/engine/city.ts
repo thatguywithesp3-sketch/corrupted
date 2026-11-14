@@ -4,6 +4,7 @@
 // so the core game stays bit-identical to the prototype when the city is not touched.
 import { clamp100, fmt } from './text';
 import type { GameState } from './types';
+import { RULES } from './rules';
 import { DISTRICTS, getPlan, type District } from './cityplan';
 export { DISTRICTS, type District } from './cityplan';
 
@@ -282,6 +283,14 @@ export const movesMade = (c: CityState) => (c.done ? c.done.length : 0);
 /** this turn's result for one unit, if it was moved */
 export const resultFor = (c: CityState, id: string) => (c.today || []).find((r) => (r.rival || r.biz) === id) || null;
 const markDone = (c: CityState, id: string) => { (c.done ||= []).push(id); };
+/** moves allowed this year: a few, one more for every rank */
+export const movesMax = (s: GameState) => RULES.cityMoves.base + RULES.cityMoves.perRank * s.rank;
+/** moves still left this year */
+export const movesLeft = (s: GameState) => Math.max(0, movesMax(s) - (s.city ? movesMade(s.city) : 0));
+const OUT_OF_MOVES = 'Ходи на цей рік вичерпано';
+function capMoves<T extends ActOption>(s: GameState, opts: T[]): T[] {
+  return movesLeft(s) > 0 ? opts : opts.map((o) => (o.can ? { ...o, can: false, why: OUT_OF_MOVES } : o));
+}
 
 export interface ActOption { act: BizAct | RivalAct | InstAct; /** money it costs (dirty, or clean when `clean`) */ cost?: number; clean?: boolean; /** what it takes off the risk */ calm?: number; /** text instead of the cash gain */ gainT?: string; t: string; sub: string; can: boolean; why?: string; risk: number; /** chance of success, 0..1 */ odds: number; /** what success brings: cash now, or per year for a roof */ gain: number; perYear?: boolean }
 
@@ -298,7 +307,8 @@ export function bizOdds(b: Biz, act: BizAct, s?: GameState): number {
   return Math.max(0, Math.min(1, q));
 }
 
-export function bizActs(s: GameState, b: Biz): ActOption[] {
+export const bizActs = (s: GameState, b: Biz) => capMoves(s, bizActsRaw(s, b));
+function bizActsRaw(s: GameState, b: Biz): ActOption[] {
   const rv = s.city && b.rival ? rivalOf(s.city, b.rival) : null;
   if (rv) {
     const cost = r10(b.wealth * 0.35);
@@ -321,7 +331,7 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
   if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
-  if (didAct(c, id)) return n;
+  if (didAct(c, id) || movesLeft(n) <= 0) return n;
   const b = c.biz.find((x) => x.id === id);
   if (!b) return n;
   const opt = bizActs(n, b).find((o) => o.act === act);
@@ -476,7 +486,8 @@ const eligibleKid = (s: GameState) => [...s.kids].filter((k) => !k.gone && k.age
 export const marriageCost = (r: Rival) => r10(300 + r.power * 8);
 export const exposeOdds = (s: GameState, r: Rival) => clampN(0.5 + (s.patron - 50) / 150 - r.power / 250, 0.15, 0.85);
 
-export function rivalActs(s: GameState, r: Rival): RivalOption[] {
+export const rivalActs = (s: GameState, r: Rival) => capMoves(s, rivalActsRaw(s, r));
+function rivalActsRaw(s: GameState, r: Rival): RivalOption[] {
   const K = CITY_RULES, kid = eligibleKid(s), bribe = r10(K.bribeBase + r.power * K.bribePerPower), dowry = marriageCost(r);
   if (r.ally) return [];
   return [
@@ -490,7 +501,7 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
   if (!['morning', 'office', 'evening'].includes(s.screen)) throw new Error('Moves are made during the day');
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
-  if (didAct(c, id)) return n;
+  if (didAct(c, id) || movesLeft(n) <= 0) return n;
   const r = rivalOf(c, id);
   if (!r) return n;
   const opt = rivalActs(n, r).find((o) => o.act === act);
@@ -535,7 +546,8 @@ export const INSTS: Inst[] = [
 ];
 export const instOf = (id: string) => INSTS.find((i) => 'i:' + i.id === id || i.id === id) || null;
 
-export function instActs(s: GameState, id: InstId): ActOption[] {
+export const instActs = (s: GameState, id: InstId) => capMoves(s, instActsRaw(s, id));
+function instActsRaw(s: GameState, id: InstId): ActOption[] {
   const F = CITY_RULES.fame, fm = s.city?.fame || {};
   switch (id) {
     case 'charity': return [
@@ -565,7 +577,7 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
   const n = structuredClone(s);
   const c = n.city || (n.city = initCity(n));
   const uid = 'i:' + id;
-  if (didAct(c, uid)) return n;
+  if (didAct(c, uid) || movesLeft(n) <= 0) return n;
   const opt = instActs(n, id).find((o) => o.act === act);
   if (!opt || !opt.can) return n;
   markDone(c, uid);

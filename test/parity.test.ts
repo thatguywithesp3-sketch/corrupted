@@ -2,7 +2,7 @@
 // Both get the same random stream and the same decisions; we compare state after every step.
 import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CITY_RULES, currentDoc, newGame } from '../src/engine';
+import { CITY_RULES, currentDoc, newGame, withPrototypeBalance } from '../src/engine';
 import type { GameState } from '../src/engine';
 import { botRng, botStep, STYLES } from '../src/sim/bot';
 
@@ -40,7 +40,8 @@ const pickFields = (x: any) => ({
 });
 
 describe('parity with HTML prototype (Era I)', () => {
-  it('identical first lives for 150 seeds × 3 bot styles', () => {
+  // the prototype plays with its own balance (v52); the engine's current numbers live in rules.ts
+  it('identical first lives for 150 seeds × 3 bot styles', () => withPrototypeBalance(() => {
     const Proto = loadPrototype();
     const realRandom = Math.random;
     CITY_RULES.rivalsOn = false; // the prototype has no rival magnates
@@ -90,7 +91,7 @@ describe('parity with HTML prototype (Era I)', () => {
     console.log(`parity: ${compared} steps compared, ${skipped} lives stopped at negative money`);
     expect(compared).toBeGreaterThan(5000);
     expect(skipped).toBeLessThan(60);
-  });
+  }));
 });
 
 // --- helpers that recover the bot's decision from (before, next)

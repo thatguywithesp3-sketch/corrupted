@@ -588,7 +588,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   // one move per unit per turn: each shop and each magnate can be dealt with once a day
   const unit = rv ? rv.id : inst ? 'i:' + inst.id : panel === 'biz' && b ? b.id : null;
   const used = unit ? G.didAct(c, unit) : false;
-  const made = G.movesMade(c);
+  const left = G.movesLeft(s), most = G.movesMax(s);
   const marks = (c.today || []).filter((r) => !r.rival).map((r) => ({ biz: r.biz, ok: r.ok }));
   const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} сьогодні вже говорили. Наступна розмова — завтра зранку.` : inst ? 'Тут сьогодні вже були. Знову — завтра зранку.' : 'Цей заклад сьогодні вже відвідували. Знову — завтра зранку.';
   const doneNote = used ? <div style={{ fontSize: 14, fontStyle: 'italic', color: rivMode ? INK : '#E9E1C2', padding: '4px 2px' }}>{doneT}</div> : null;
@@ -615,7 +615,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '4px 8px', pointerEvents: 'none' }}>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontFamily: "'Ruslan Display', serif", fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Порт-Аурум</span>
-            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{made > 0 ? `ХОДІВ СЬОГОДНІ: ${made}` : 'ПО ХОДУ НА КОЖНОГО'}</span>
+            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{left > 0 ? `ХОДИ НА РІК: ${left} З ${most}` : 'ХОДИ НА РІК ВИЧЕРПАНО'}</span>
           </span>
           {/* the purse: dirty pays for most moves, clean for charity */}
           <span key={`${s.cash}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>

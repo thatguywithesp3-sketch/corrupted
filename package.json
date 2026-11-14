@@ -10,6 +10,7 @@
     "test": "vitest run",
     "sim": "tsx scripts/sim.ts",
     "sim:city": "tsx scripts/sim-city.ts",
+    "sim:goals": "tsx scripts/sim-goals.ts",
     "extract": "node scripts/extract-content.mjs && node scripts/extract-views.mjs"
   },
   "devDependencies": {
