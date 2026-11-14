@@ -25,4 +25,19 @@ export function fill(tpl: string, vars: Record<string, string | number> = {}, g:
   });
 }
 
-export const clamp100 = (v: number) => Math.max(0, Math.min(100, v));
+/** Era I's Otto is the hero's brother-in-law: for a man that is his wife's brother (шурин), for a woman
+ *  her husband's brother (дівер). Rewrites every form of the word for a heroine. */
+export function kinFor(t: string, g: Gender): string {
+  if (g !== 'f' || !/[Шш]урин/.test(t)) return t;
+  return t.replace(/([Шш])урин(ові|ом|а|у)?/g, (_m, c: string, end = '') => (c === 'Ш' ? 'Дівер' : 'дівер') + end);
+}
+
+/** a copy of a content object with every string passed through f */
+export function mapText<T>(o: T, f: (t: string) => string): T {
+  if (typeof o === 'string') return f(o) as unknown as T;
+  if (Array.isArray(o)) return o.map((x) => mapText(x, f)) as unknown as T;
+  if (o && typeof o === 'object') return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, mapText(v, f)])) as T;
+  return o;
+}
+
+export const clamp100 =(v: number) => Math.max(0, Math.min(100, v));

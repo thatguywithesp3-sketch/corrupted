@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES
+  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -33,18 +33,23 @@ function score(s: GameState, d: Delta): number {
 }
 
 /** One city move for the morning, or null when the bot makes none. */
-export function cityMove(s: GameState, policy: CityPolicy = 'none'): GameState | null {
+/** keepClean: clean money the bot will not spend on charity (it is saving it for something) */
+export function cityMove(s: GameState, policy: CityPolicy = 'none', keepClean = 0): GameState | null {
+  const n = cityMoveRaw(s, policy, keepClean);
+  return n === s ? null : n; // the move could not be made
+}
+function cityMoveRaw(s: GameState, policy: CityPolicy, keepClean: number): GameState | null {
   if (policy === 'none') return null;
   const c = s.city;
   if (!c) return null;
   // wash the name before it is too late: the cheap levers first, the gendarmerie when it is getting hot
   if (s.threat >= 30) {
     const F = CITY_RULES.fame, fm = c.fame || {}, free = (id: string) => !didAct(c, 'i:' + id);
-    if (!fm.whisper && free('whisper') && s.cash >= F.whisper.cost * 4) return actOnInst(s, 'whisper', 'hire');
-    if (free('press') && s.cash >= F.article.cost + 150) return actOnInst(s, 'press', 'article');
-    if (s.threat >= 50 && free('okhrana') && s.cash >= F.silence.cost) return actOnInst(s, 'okhrana', 'silence');
-    if (!fm.fund && free('charity') && s.clean >= F.fund.clean * 2) return actOnInst(s, 'charity', 'fund');
-    if (free('charity') && s.clean >= F.donate.clean * 3) return actOnInst(s, 'charity', 'donate');
+    if (!fm.whisper && free('whisper') && dirtyTotal(s) >= F.whisper.cost * 4) return actOnInst(s, 'whisper', 'hire');
+    if (free('press') && dirtyTotal(s) >= F.article.cost + 150) return actOnInst(s, 'press', 'article');
+    if (s.threat >= 50 && free('okhrana') && dirtyTotal(s) >= F.silence.cost) return actOnInst(s, 'okhrana', 'silence');
+    if (!fm.fund && free('charity') && s.clean - F.fund.clean >= Math.max(F.fund.clean, keepClean)) return actOnInst(s, 'charity', 'fund');
+    if (free('charity') && s.clean - F.donate.clean >= Math.max(F.donate.clean * 2, keepClean)) return actOnInst(s, 'charity', 'donate');
   }
   if (policy === 'wise') {
     const angry = [...c.rivals].filter((r) => !r.ally && r.heat >= 4.5).sort((a, b) => b.heat - a.heat);
@@ -159,3 +164,80 @@ export function playCampaign(seed: number, style: BotStyle = STYLES.average, max
 }
 
 export { restart };
+
+// ---------------------------------------------------------------- goal bots (npm run sim:goals)
+
+/** A careful player who chases one life dream: sees the previews, keeps the meters near the middle,
+ *  buys promotions when it can, and spends up to `cityMoves` city moves every morning. */
+export interface GoalBot { dream: 0 | 1 | 2 | 3; greed: number; cityMoves: number }
+
+function goalScore(s: GameState, d: Delta, g: GoalBot): number {
+  if (isFatal(s, d)) return 1e6;
+  const p = s.shadow > 0 ? s.patron : s.patron + (d.p || 0);
+  const m = [p, s.people + (d.n || 0), s.system + (d.s || 0)];
+  let edge = m.reduce((a, x) => a + Math.max(0, Math.abs(x - 50) - 20) ** 2, 0);
+  // careers need the patron's favour for every promotion offer
+  const career = g.dream === 1 || g.dream === 3 || (g.dream === 0 && !s.estate && s.rank < 2);
+  if (career) edge += Math.max(0, RULES.offers.patronMin + 11 - p) ** 2 * 0.5 + Math.max(0, p - 88) ** 2 * 3;
+  const t = Math.max(0, s.threat + (d.i || 0));
+  const money = (d.cash || 0) + (d.clean || 0);
+  return edge * 3 + t * (g.dream === 2 ? 3 : 1.5) + (t * t) / 40 - (money * g.greed) / 120;
+}
+
+export function goalStep(s: GameState, g: GoalBot): GameState {
+  switch (s.screen) {
+    case 'form': return signForm(setHero(s, { origin: g.dream === 0 ? 2 : g.dream === 2 ? 1 : 0, dream: g.dream }));
+    case 'morning': {
+      let n = s;
+      const keep = g.dream === 0 && !n.estate ? RULES.estate.price : g.dream === 1 || g.dream === 3 ? (getEra(n.era).ranks[n.rank + 1]?.cost ?? RULES.presidentFee) : 0;
+      for (let k = 0; k < g.cityMoves; k++) { const m = cityMove(n, 'wise', keep); if (!m || m === n) break; n = m; }
+      return toOffice(n);
+    }
+    case 'office': {
+      const d = currentDoc(s);
+      if (d.kind === 'scheme') {
+        let best = -1, bs = goalScore(s, d.scheme.no.d, g);
+        for (const ap of [0, 1, 2] as const) { const sc = goalScore(s, schemeDelta(s, ap), g); if (sc < bs) { bs = sc; best = ap; } }
+        return best < 0 ? declineScheme(s) : signScheme(setAppetite(s, best as 0 | 1 | 2));
+      }
+      let bi = 0, bs = Infinity;
+      const en = enabledOptions(s, d.choice.opts);
+      d.choice.opts.forEach((o, i) => { if (!en[i]) return; const sc = goalScore(s, o.d, g) + (o.fam?.gone ? 40 : 0) - (o.fam?.l || 0) / 3; if (sc < bs) { bs = sc; bi = i; } });
+      return pickOption(s, bi);
+    }
+    case 'evening': {
+      let n = allTo(s, 'laun');
+      n = allTo(n, s.acc.otto.l >= 45 ? 'wh' : 'floor');
+      return lockSafe(allTo(n, 'floor'));
+    }
+    case 'night': {
+      const ids = s.offers.map((o) => o.id), R = getEra(s.era).ranks, money = totalMoney(s);
+      const next = R[s.rank + 1];
+      if (ids.includes('estate') && (g.dream === 0 || s.clean > RULES.estate.price * 2)) return acceptOffer(s, 'estate');
+      if (g.dream === 3 && ids.includes('pres') && money >= RULES.presidentFee + 2000 && s.threat < 60) return acceptOffer(s, 'pres');
+      if ((g.dream === 1 || g.dream === 3) && ids.includes('promo') && money >= next.cost) return acceptOffer(s, 'promo');
+      if (g.dream === 0 && ids.includes('promo') && s.rank < 2 && money >= next.cost) return acceptOffer(s, 'promo');
+      if (g.dream === 2 && ids.includes('retire') && s.threat < RULES.dreamCleanThreat - 2) return acceptOffer(s, 'retire');
+      if (g.dream === 0 && ids.includes('retire') && s.dreamDone) return acceptOffer(s, 'retire');
+      if (ids.includes('retire') && s.threat >= 75) return acceptOffer(s, 'retire');
+      return sleep(s);
+    }
+    case 'campaign': {
+      for (const a of ['media', 'gift', 'rally', 'admin']) { const n = campaignAct(s, a); if (n !== s) return n; }
+      return s;
+    }
+    case 'elect': return electionNight(s, false);
+    default: return s;
+  }
+}
+
+/** One first life of Era I played by a goal bot; returns the final state (screen 'ending'). */
+export function playGoalLife(seed: number, g: GoalBot, maxSteps = 6000) {
+  let s = newGame(seed);
+  for (let i = 0; i < maxSteps && s.screen !== 'ending'; i++) {
+    const n = goalStep(s, g);
+    if (n === s) break;
+    s = n;
+  }
+  return s;
+}

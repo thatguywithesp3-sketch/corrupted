@@ -141,7 +141,7 @@ export function buildView(ctx: Ctx): any {
     hudOpen: ui.hudOpen, hudClosed: !ui.hudOpen, toggleHud: () => setUi({ hudOpen: !ui.hudOpen }),
     blotterTop: '112px', inkTop: '136px', hudTitle: 'СТАН СПРАВ', hudCloseText: 'Згорнути', threatLabel: 'Ризик викриття',
     tipOn: tipText !== '', tipText, yearLabel: String(s.year), nightYear: String(s.year - 1),
-    plateTop: 'Рік ' + s.year + ' · Покоління ' + s.gen + ' з 2', plateName: short, fullName: s.first + ' ' + s.surname, surname: s.surname, houseUpper: s.surname.toUpperCase(),
+    plateTop: 'Рік ' + s.year + ' · Покоління ' + s.gen + ' з 2', plateName: short, plateRank: G.rankName(s).toUpperCase(), plateWho: (s.first + ' ' + s.surname).length > 15 ? s.first.charAt(0) + '. ' + s.surname : s.first + ' ' + s.surname, fullName: s.first + ' ' + s.surname, surname: s.surname, houseUpper: s.surname.toUpperCase(),
     cleanLabel: fk(s.clean), dirtyLabel: fk(s.cash + s.floor + s.wh), icCr: icon('cr', 13), tavro: s.tavro,
     meters: [meter('patron', 'Покровит.', 'p'), meter('people', 'Народ', 'n'), meter('system', 'Система', 's')],
     threat: { w: tv + '%', valText: tv + ' / 100', hasD: td !== 0, dText: td ? delta(td) : '', border: tv >= 70 ? '2px solid #E8603F' : '1px solid #4A3E2E', ic: icon('threat', 28, true) },
@@ -260,14 +260,14 @@ export function buildView(ctx: Ctx): any {
   const st = s.lastStamp ? STAMP[s.lastStamp] : null;
   v.hasStamp = !!st; v.stampT = st ? (L.stampWords || {})[st.t] || st.t : ''; v.stampC = st ? st.c : '#8E2A1F';
   const last = R.length - 1;
-  const dreamProg = [fmt(s.clean) + ' з ' + fmt(G.RULES.dreamCleanGoal) + ' чистими', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше 30', 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — президентство'][s.dream];
+  const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : s.estate ? 'маєток уже належить роду — збережіть його до кінця служби' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
   v.dreamText = C.dreams[s.dream].t + ': ' + dreamProg + '.';
   v.toOffice = () => run(G.toOffice);
 
   // ---- office
   const docs = G.docsFor(s), cur = G.currentDoc(s);
   const dcFrom = cur.kind === 'scheme' ? cur.scheme.from : cur.choice.from;
-  v.docLabel = s.doc + 1 + ' З ' + docs.length;
+  v.docLabel = s.doc + 1 + ' / ' + docs.length; // «З» in the small-caps face reads as «3»
   v.pile = docs.slice(s.doc + 1).map((_, i) => ({ top: 6 + i * 5 + 'px', rot: (i % 2 ? 2.2 : -2.4) + 'deg' }));
   v.docFrom = dcFrom; v.docInitial = dcFrom.charAt(0);
   v.docHeadLine = String(L.docHead || '').replace('{from}', dcFrom).replace('{no}', String(214 + s.served * 3 + s.doc));
@@ -291,7 +291,7 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'хоче поставити вам кілька запитань', kindLabel: 'ЖУРНАЛІСТ', bg: 'linear-gradient(180deg, #7FAEE3, #2A3A6A)', sil: '#141C30', hasBadge: true, badge: 'ПРЕСА', badgeBg: '#8E2A1F', mood: tv >= 60 ? 'Має докази' : 'Шукає докази', moodBg: tv >= 60 ? '#F08A6E' : '#F2DFA8', pills: [pill('threat', 'ризик ' + tv, tv >= 60 ? 'bad' : 'neu')] });
     } else {
       kd = 'boss';
-      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 60 ? 'Прихильний' : 'Незадоволений', moodBg: s.patron >= 60 ? '#9CDDB5' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
+      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
     const photo = w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
@@ -406,7 +406,7 @@ export function buildView(ctx: Ctx): any {
   if (s.camp) {
     const c = s.camp, W = C.words.campaign, total = G.totalMoney(s), others = Math.max(0, 100 - c.me - c.rival);
     v.camp = { round: Math.min(4, c.round), chest: fk(total), fraudW: c.fraud + '%', fraudText: (c.fraud < 30 ? 'низька · ' : c.fraud < 60 ? 'помітна · ' : 'висока · ') + c.fraud + '%', fraudC: c.fraud < 30 ? '#2F7A50' : c.fraud < 60 ? '#C08A1A' : '#B8331E', fraudBd: c.fraud >= 60 ? '#E8603F' : '#8C7E58', hasLog: !!c.log, log: c.log };
-    v.poll = [{ name: s.first.charAt(0) + '. ' + s.surname, val: c.me + '%', w: c.me + '%', color: '#D9A441' }, { name: W.rival, val: c.rival + '%', w: c.rival + '%', color: '#7FAEE3' }, { name: 'Інші / не визначились', val: others + '%', w: others + '%', color: '#A89C84' }];
+    v.poll = [{ name: s.first.charAt(0) + '. ' + s.surname, val: c.me + '%', w: c.me + '%', color: '#D9A441' }, { name: W.rival, val: c.rival + '%', w: c.rival + '%', color: '#7FAEE3' }, { name: 'Не визначились', val: others + '%', w: others + '%', color: '#A89C84' }];
     v.campActs = G.campaignActs(s).map((a) => {
       const can = total >= a.cost, pills: any[] = [];
       if (a.cost) pills.push(pill('dirty', '−' + fk(a.cost), 'warn'));
@@ -419,8 +419,8 @@ export function buildView(ctx: Ctx): any {
     const share = Math.round((c.me / (c.me + c.rival)) * 100);
     v.elect = { title: share > 50 ? 'Ви попереду: ' + share + '% у другому турі' : 'Суперник попереду: ' + (100 - share) + '%', bars: [{ name: s.first + ' ' + s.surname, val: share + '%', w: share + '%', color: '#D9A441' }, { name: W.rival, val: 100 - share + '%', w: 100 - share + '%', color: '#7FAEE3' }] };
     v.electActs = [
-      { ...optView('e1', 'Чекати чесного підрахунку', {}, 0, false, () => run((x) => G.electionNight(x, false))), sub: 'Результат як є (±3%). Підозра не зростає.' },
-      { ...optView('e2', 'Вкинути бюлетені', { i: 10 }, 2, true, () => run((x) => G.electionNight(x, true))), sub: '+8% голосів, але підозра +30. Шанс викриття = 60% від підозри.' }
+      { ...optView('e1', 'Чекати чесного підрахунку', {}, 0, false, () => run((x) => G.electionNight(x, false))), sub: `Результат як є (±3%). Нової підозри не буде, але накопичена дає шанс викриття ${Math.round(c.fraud * G.RULES.campaign.exposeFactor)}%.` },
+      { ...optView('e2', 'Вкинути бюлетені', { i: 10 }, 2, true, () => run((x) => G.electionNight(x, true))), sub: `+${G.RULES.campaign.stuffVotes}% голосів, але підозра +${G.RULES.campaign.stuffFraud}: шанс викриття ${Math.round(Math.min(100, c.fraud + G.RULES.campaign.stuffFraud) * G.RULES.campaign.exposeFactor)}%.` }
     ];
   }
 
@@ -437,7 +437,7 @@ export function buildView(ctx: Ctx): any {
   v.endTiles = [
     { label: 'РОДУ ДІСТАНЕТЬСЯ', big: fmt(heirGets), unit: 'кр.', sub: e.dream ? 'разом із +1 000 за мрію' : 'чистими грошима', c: Gc.c, bg: Gc.bg, bd: Gc.c, flex: '1.35' },
     { label: e.kind === 'flee' ? 'КИНУТО ВДОМА' : 'ВТРАЧЕНО', big: fmt(e.lost), unit: 'кр.', sub: e.lost ? 'конфіскат і схованки' : 'нічого не забрали', c: e.lost ? Rr.c : Gr.c, bg: e.lost ? Rr.bg : Gr.bg, bd: e.lost ? Rr.c : Gr.c, flex: '1' },
-    { label: 'НА СЛУЖБІ', big: String(s.served), unit: 'р.', sub: e.kind === 'summit' ? 'Президент' : G.rankName(s), c: Bl.c, bg: Bl.bg, bd: Bl.c, flex: '0.9' }
+    { label: 'НА СЛУЖБІ', big: String(s.served), unit: 'р.', sub: e.kind === 'summit' ? (s.gender === 'f' ? 'Дожеса' : 'Дож') : G.rankName(s), c: Bl.c, bg: Bl.bg, bd: Bl.c, flex: '0.9' }
   ];
   const B: any[] = [];
   const head = (t: string, k: { c: string }) => B.push({ head: true, row: false, t, c: k.c, bg: '', mark: '', v: '' });
@@ -446,7 +446,7 @@ export function buildView(ctx: Ctx): any {
   row(C.dreams[s.dream].t, e.dream ? Au : Gr, e.dream ? '★' : '—', e.dream ? 'здійснено · +1 000' : 'не здійснено');
   head('СПАДКОЄМЕЦЬ ОТРИМУЄ', Bl);
   row('Чистий статок роду', Gc, '+', fmt(heirGets) + ' кр.');
-  if (e.kind === 'summit') row('Захист батька-президента: Покровитель стоїть на 70', Bl, '✦', '5 років');
+  if (e.kind === 'summit') row('Тінь дожа: Покровитель стоїть на 70', Bl, '✦', '5 років');
   if (e.kind === 'retire') row('Ім’я без плям — місто ставиться прихильно', Bl, '✓');
   if (e.kidAssets) row('Записано на дітей — конфіскація не торкнулась. Дістанеться тому, кого оберете', Gc, '✓', fmt(e.kidAssets) + ' кр.');
   if (e.kind === 'collapse' || e.kind === 'flee') {
@@ -464,7 +464,8 @@ export function buildView(ctx: Ctx): any {
     stars: stars(h.prep), hasAssets: h.assets > 0, assets: '+ ' + fmt(h.assets) + ' кр. на ' + (h.g === 'f' ? 'її' : 'його') + ' ім’я',
     minor: h.age < G.RULES.heir.minorAge, minorText: 'Неповнолітн' + (h.g === 'f' ? 'я' : 'ій') + ': до повноліття опікун забере 30% статку',
     l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => run((x) => G.pickHeir(x, h.id)),
-    ...(() => { const f = G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
+    // a child or a teenager is shown as they look now (the same face as in the family album), an adult as the future head
+    ...(() => { const kid = h.age < 18 && !h.nephew ? kinPortrait(s.era, h, false) : null; const f = kid || G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
   }));
   v.eraOver = e.eraOver; v.dynastyOver = e.dynastyOver;
   v.showRestart = e.dynastyOver || e.campaignOver;

@@ -2,7 +2,7 @@
 // Both get the same random stream and the same decisions; we compare state after every step.
 import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CITY_RULES, currentDoc, newGame } from '../src/engine';
+import { CITY_RULES, currentDoc, kinFor, newGame, withPrototypeBalance } from '../src/engine';
 import type { GameState } from '../src/engine';
 import { botRng, botStep, STYLES } from '../src/sim/bot';
 
@@ -24,11 +24,24 @@ const REWORD: [string, string][] = [
   ['Дами Верхнього міста їздять із комфортом. Губернатор проїхав першим.', 'Дами Верхнього міста їздять із комфортом. Губернатор проїхав першим і помахав капелюхом обома мовами.'],
   ['Ревізор поїхав задоволений. Доббс купив новий капелюх.', 'Ревізор поїхав задоволений і з подарунками для столиці. Доббс купив новий капелюх.'],
   ['Судновласники кажуть — зрада. Докери кажуть — нарешті.', 'Судновласники кажуть — зрада. Докери співають у порту вальдорською.'],
-  ['Газета хвалить щедрого урядовця.', 'Газета хвалить щедрого урядовця. Гімназії вистачить на дах.']
+  ['Газета хвалить щедрого урядовця.', 'Газета хвалить щедрого урядовця. Гімназії вистачить на дах.'],
+  // Era I is a city-state: the top of the career is the Doge of Port-Aurum, not a president
+  ['Наша газета вітає нового радника й бажає йому довгої та чесної служби на благо Порт-Аурума.', 'Наша газета вітає нового радника міської ради й бажає йому довгої та чесної служби на благо Порт-Аурума.'],
+  ['Штаб кандидата не коментує. Суперник уже приймає вітання.', 'Палац дожів мовчить. Суперник уже приймає вітання від гільдій.'],
+  // neutral wording, so it reads right for a heroine too
+  ['Захист батька закінчився. Покровитель знову може падати.', 'Тінь дожа розвіялася. Покровитель знову може падати.']
+];
+const REWORD_RE: [RegExp, string][] = [
+  [/^Захист батька-президента діє ще (\d+) р\.$/, 'Тінь дожа ще захищає вас: $1 р.'],
+  [/^Вибори програно: (\d+)% голосів\. /, 'Велика рада проголосувала проти: $1% голосів. '],
+  [/ (програв|програла) президентські вибори$/, ' $1 вибори дожа'],
+  [/^(Нащадок роду .+) свідчить проти батька$/, '$1 свідчить проти власної родини'],
+  [/^(\S+) посадовця (.+) свідчить проти нього$/, '$1 з роду $2 свідчить проти родини']
 ];
 const fixProto = (t: string) => {
   let x = (t || '').replace(/заснувла/g, 'заснула').replace(/грюкнувла/g, 'грюкнула').replace(/пішовла/g, 'пішла');
   for (const [a, b] of REWORD) if (x === a) x = b;
+  for (const [a, b] of REWORD_RE) x = x.replace(a, b);
   return x;
 };
 const pickFields = (x: any) => ({
@@ -36,11 +49,12 @@ const pickFields = (x: any) => ({
   cash: x.cash, floor: x.floor, wh: x.wh, clean: x.clean, headline: x.headline, body: x.body,
   acc: Object.fromEntries(Object.entries(x.acc).map(([k, a]: any) => [k, [a.l, a.k]])),
   kids: x.kids.map((k: any) => [k.first, k.g, k.age, k.l, k.k, k.prep, k.assets, k.gone, k.why, k.trait]),
-  report: (x.report || []).map((r: any) => r.t)
+  report: (x.report || []).map((r: any) => fixProto(r.t))
 });
 
 describe('parity with HTML prototype (Era I)', () => {
-  it('identical first lives for 150 seeds × 3 bot styles', () => {
+  // the prototype plays with its own balance (v52); the engine's current numbers live in rules.ts
+  it('identical first lives for 150 seeds × 3 bot styles', () => withPrototypeBalance(() => {
     const Proto = loadPrototype();
     const realRandom = Math.random;
     CITY_RULES.rivalsOn = false; // the prototype has no rival magnates
@@ -80,7 +94,7 @@ describe('parity with HTML prototype (Era I)', () => {
             }
             s = next;
             if (diverged) break;
-            expect({ ...pickFields(p.state), headline: fixProto(p.state.headline), body: fixProto(p.state.body) }, `seed ${seed} step ${step} (${before.screen})`).toEqual(pickFields(s));
+            expect({ ...pickFields(p.state), headline: kinFor(fixProto(p.state.headline), s.gender), body: kinFor(fixProto(p.state.body), s.gender) }, `seed ${seed} step ${step} (${before.screen})`).toEqual(pickFields(s));
             compared++;
           }
         }
@@ -90,7 +104,7 @@ describe('parity with HTML prototype (Era I)', () => {
     console.log(`parity: ${compared} steps compared, ${skipped} lives stopped at negative money`);
     expect(compared).toBeGreaterThan(5000);
     expect(skipped).toBeLessThan(60);
-  });
+  }));
 });
 
 // --- helpers that recover the bot's decision from (before, next)

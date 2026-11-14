@@ -224,7 +224,7 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
       <Seg title="ГОЛОВНЕ">
         <div style={{ display: 'flex', gap: 8 }}>
           <Fact label="ВАШ РИЗИК ЗАРАЗ" tone={s.threat >= 60 ? T.risk : undefined}><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{Math.round(s.threat)}<span style={{ fontSize: 14 }}>/100</span></span></Fact>
-          <Fact label="ГРОШІ"><span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>брудні {G.fk(s.cash)}<br />чисті {G.fk(s.clean)}</span></Fact>
+          <Fact label="ГРОШІ"><span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>брудні {G.fk(G.dirtyTotal(s))}<br />чисті {G.fk(s.clean)}</span></Fact>
         </div>
         {works.map((w) => <div key={w} style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: T.clean.ink, background: T.clean.note, padding: '2px 8px', border: `1px solid ${T.clean.pen}` }}>✓ {w}</div>)}
       </Seg>
@@ -317,7 +317,7 @@ function TodayMark({ res }: { res: Last }) {
   const tone = res.ok ? T.clean : T.risk;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '4px 8px', border: `1.5px dashed ${tone.pen}`, background: 'rgba(255,255,255,0.35)' }}>
-      <span style={{ flexShrink: 0, width: 58, height: 58, borderRadius: '50%', border: `3px double ${tone.ink}`, color: tone.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap', fontFamily: "'Ruslan Display', serif", fontSize: 10, lineHeight: 1.05, transform: 'rotate(-12deg)', mixBlendMode: 'multiply', opacity: 0.85 }}>{res.ok ? 'ВДА-\nЛОСЯ' : 'ПРО-\nВАЛ'}</span>
+      <span style={{ flexShrink: 0, width: 58, height: 58, borderRadius: '50%', border: `3px double ${tone.ink}`, color: tone.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap', fontFamily: "'Ruslan Display', serif", fontSize: 9, lineHeight: 1.05, transform: 'rotate(-12deg)', mixBlendMode: 'multiply', opacity: 0.85 }}>{res.ok ? 'ВДАЛОСЯ' : 'ПРОВАЛ'}</span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.5, fontWeight: 700, color: MUTE }}>СЬОГОДНІ · ВАШ ХІД</span>
         <span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.15, color: tone.ink }}>{res.title}</span>
@@ -347,7 +347,7 @@ function StampFlash({ res, onDone, s }: { res: Last; onDone: () => void; s: Game
             {got > 0 && <span style={{ display: 'block', color: T.clean.ink, fontWeight: 700 }}>+{G.fmt(got)} кр. брудними</span>}
             {!spent && !got && <span style={{ display: 'block', color: MUTE }}>Гроші не рухалися</span>}
           </span>
-          <span style={{ textAlign: 'right' }}><span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: MUTE }}>ЗАЛИШОК</span><b>{G.fmt(s.cash)}</b> брудних · <b>{G.fmt(s.clean)}</b> чистих</span>
+          <span style={{ textAlign: 'right' }}><span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: MUTE }}>ЗАЛИШОК</span><b>{G.fmt(G.dirtyTotal(s))}</b> брудних · <b>{G.fmt(s.clean)}</b> чистих</span>
         </div>
         <DeskBtn kind="brass" style={{ width: '100%', marginTop: 16 }} onClick={onDone}>Прочитано</DeskBtn>
       </div>
@@ -554,7 +554,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const bRival = b ? c.rivals.find((r) => r.id === b.rival) || null : null;
   const inst = panel === 'inst' ? G.INSTS.find((i) => i.id === selI) || null : null;
   const acts: ActOption[] = rv ? G.rivalActs(s, rv) : inst ? G.instActs(s, inst.id) : panel === 'biz' && b && b.status === 'open' ? G.bizActs(s, b) : [];
-  const cur = acts.find((o) => o.act === pick && o.can) || acts.find((o) => o.can) || null;
+  // never pre-select a risky move against a magnate (e.g. «Здати її»): the player has to pick it on purpose
+  const cur = acts.find((o) => o.act === pick && o.can) || acts.find((o) => o.can && (!rv || o.risk === 0)) || null;
 
   // first open: the whole height of the screen is the map
   useLayoutEffect(() => {
@@ -588,9 +589,9 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   // one move per unit per turn: each shop and each magnate can be dealt with once a day
   const unit = rv ? rv.id : inst ? 'i:' + inst.id : panel === 'biz' && b ? b.id : null;
   const used = unit ? G.didAct(c, unit) : false;
-  const made = G.movesMade(c);
+  const left = G.movesLeft(s), most = G.movesMax(s);
   const marks = (c.today || []).filter((r) => !r.rival).map((r) => ({ biz: r.biz, ok: r.ok }));
-  const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} сьогодні вже говорили. Наступна розмова — завтра зранку.` : inst ? 'Тут сьогодні вже були. Знову — завтра зранку.' : 'Цей заклад сьогодні вже відвідували. Знову — завтра зранку.';
+  const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} цього року вже говорили. Наступна розмова — наступного року.` : inst ? 'Тут цього року вже були. Знову — наступного року.' : 'Цей заклад цього року вже відвідували. Знову — наступного року.';
   const doneNote = used ? <div style={{ fontSize: 14, fontStyle: 'italic', color: rivMode ? INK : '#E9E1C2', padding: '4px 2px' }}>{doneT}</div> : null;
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
     const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
@@ -615,11 +616,11 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '4px 8px', pointerEvents: 'none' }}>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontFamily: "'Ruslan Display', serif", fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Порт-Аурум</span>
-            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{made > 0 ? `ХОДІВ СЬОГОДНІ: ${made}` : 'ПО ХОДУ НА КОЖНОГО'}</span>
+            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{left > 0 ? `ХОДИ НА РІК: ${left} / ${most}` : 'ХОДИ НА РІК ВИЧЕРПАНО'}</span>
           </span>
           {/* the purse: dirty pays for most moves, clean for charity */}
-          <span key={`${s.cash}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
-            {([['БРУДНІ', s.cash, '#E3B866'], ['ЧИСТІ', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
+          <span key={`${G.dirtyTotal(s)}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
+            {([['БРУДНІ', G.dirtyTotal(s), '#E3B866'], ['ЧИСТІ', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
               <span key={l} style={{ textAlign: 'center', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(240,215,140,0.35)', borderRadius: 2 }}>
                 <span style={{ display: 'block', fontSize: 10, letterSpacing: 1, color: '#CDBB8E' }}>{l}</span>
                 <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>{G.fmt(v)}</span>

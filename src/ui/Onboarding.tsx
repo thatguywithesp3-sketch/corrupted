@@ -114,13 +114,17 @@ const ClippedPhoto = ({ src }: { src: string }) => (
   </div>
 );
 
+const STEP_KEY = 'corrupted.form.step';
+
 export function Onboarding({ s, run }: Props) {
-  const [step, setStep] = useState(0);
+  // the page of the form survives a reload (the answers themselves live in the saved game)
+  const [step, setStepRaw] = useState(() => { try { return Math.min(BLANKS.length - 1, Math.max(0, Number(localStorage.getItem(STEP_KEY)) || 0)); } catch { return 0; } });
+  const setStep = (n: number) => { setStepRaw(n); try { localStorage.setItem(STEP_KEY, String(n)); } catch { /* no storage */ } };
   const C = G.getEra(s.era);
   const last = BLANKS.length - 1;
   const b = BLANKS[step];
   const canNext = step !== 1 || (s.first.trim() !== '' && s.surname.trim() !== '');
-  const next = () => { if (!canNext) return; if (step === last) run(G.signForm); else setStep(step + 1); };
+  const next = () => { if (!canNext) return; if (step === last) { try { localStorage.removeItem(STEP_KEY); } catch { /* no storage */ } run(G.signForm); } else setStep(step + 1); };
   const origin = C.origins[s.origin], dream = C.dreams[s.dream];
   const face = G.portraitFor(1, 1, s.gender, s.face);
 
@@ -140,7 +144,7 @@ export function Onboarding({ s, run }: Props) {
         </div>
         <Die onRoll={() => run(G.rollName)} label="Випадкове ім’я" />
       </div>
-      <Note what="Ім’я засновника роду. Кубик підкаже випадкове ім’я цієї епохи."
+      <Note what={`Ім’я ${s.gender === 'f' ? 'засновниці' : 'засновника'} роду. Кубик підкаже випадкове ім’я цієї епохи.`}
         effect="Прізвище стане назвою вашої династії на всі сім епох. Імена спадкоємців гра придумає сама." />
     </>
   );
@@ -155,7 +159,7 @@ export function Onboarding({ s, run }: Props) {
         ))}
       </div>
       <Note what="Стать засновника роду. На наступному аркуші — ім’я, що пасує заявнику."
-        effect="Епоха реагує на неї: газети, колеги й покровителі ставляться до жінки на посаді інакше, особливо на початку. Механіка схем і рішень однакова." />
+        effect="Газети й колеги помітять жінку на посаді, особливо на початку: рядки та портрети епохи пишуться під вас. Механіка схем і рішень однакова." />
     </>
   );
   if (step === 2) body = (
@@ -169,7 +173,7 @@ export function Onboarding({ s, run }: Props) {
           </button>
         ))}
       </div>
-      <Note what="Як виглядає засновник роду."
+      <Note what={`Як виглядає ${s.gender === 'f' ? 'засновниця' : 'засновник'} роду.`}
         effect="Портрет з’являється на табличці з ім’ям угорі екрана та в галереї предків. На правила гри не впливає." />
     </>
   );

@@ -70,9 +70,10 @@ function Plaque({ title, sub, onClick, quiet }: { title: string; sub?: string; o
 
 export function MainMenu({ save, onContinue, onNew }: MainMenuProps) {
   const [panel, setPanel] = useState<'none' | 'confirm' | 'history'>('none');
-  const inProgress = !!save && save.screen !== 'form' && !(save.ending && save.heirs.length === 0);
+  // a half-filled application form counts too: «Нова династія» must not silently throw it away
+  const inProgress = !!save && !(save.ending && save.heirs.length === 0);
   const history = save?.history || [];
-  const where = save ? `Епоха ${ERA_ROMAN[save.era - 1]} · ${save.year} · ${G.rankName(save)} ${save.first.charAt(0)}. ${save.surname}` : '';
+  const where = save?.screen === 'form' ? 'Анкета заявника ще не підписана' : save ? `Епоха ${ERA_ROMAN[save.era - 1]} · ${save.year} · ${G.rankName(save)} ${save.first.charAt(0)}. ${save.surname}` : '';
 
   return (
     <div style={S.root}>

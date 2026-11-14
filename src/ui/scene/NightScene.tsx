@@ -180,7 +180,8 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
   const rest = s.report.filter((r) => r !== lead);
   const groups: { t: string; tone: Tone; lines: ReportLine[] }[] = [];
   rest.forEach((r) => { const g = GROUP[r.icon] || { t: 'ІНШЕ', tone: 'neu' as Tone }; let x = groups.find((y) => y.t === g.t); if (!x) groups.push((x = { ...g, lines: [] })); x.lines.push(r); });
-  const b = before;
+  // compare with the start of the year (kept in the save); old saves fall back to this evening
+  const b: G.YearMark | null = s.yearStart || before;
   const hidden = s.floor + s.wh, hiddenWas = b ? b.floor + b.wh : null;
   const dClean = b ? s.clean - b.clean : 0, dHidden = hiddenWas === null ? 0 : hidden - hiddenWas;
   const next = () => { if (dawn) return; setDawn(true); setTimeout(() => run(G.sleep), 1500); };
@@ -232,7 +233,7 @@ export function NightScene({ s, run, before }: { s: GameState; run: Run; before:
           {s.offers.length > 0 && (
             <Sec title="ПРОПОЗИЦІЇ НА РАНОК" tone="clean">
               {s.offers.map((o) => (
-                <div key={o.id} style={{ margin: '4px 0', padding: '8px 8px', borderLeft: `4px solid ${o.id === 'flee' ? T.hide.pen : o.id === 'retire' ? T.clean.pen : T.out.pen}`, background: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div key={o.id} style={{ margin: '4px 0', padding: '8px 8px', borderLeft: `4px solid ${o.id === 'flee' ? T.hide.pen : o.id === 'retire' || o.id === 'estate' ? T.clean.pen : T.out.pen}`, background: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontSize: 14 }}>{o.t}</b><span style={{ display: 'block', fontSize: 12, fontStyle: 'italic', color: MUTE }}>{o.sub}</span></span>
                   <DeskBtn kind="ink" style={{ minHeight: 34, fontSize: 12, padding: '0 8px' }} onClick={() => run((x) => G.acceptOffer(x, o.id))}>{o.btn}</DeskBtn>
                 </div>

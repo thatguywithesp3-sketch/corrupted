@@ -196,3 +196,85 @@ describe('city plan and rivals', () => {
     expect(s.city!.biz.every((b) => !b.rival)).toBe(true);
   });
 });
+
+describe('Era I mechanics fixes (QA 14.11)', () => {
+  const start = () => G.signForm(G.newGame(77));
+  /** a finished life with the estate, ready for the will */
+  const retiredWithEstate = () => {
+    const s = { ...start(), screen: 'night' as const, served: 13, estate: true, dreamDone: true, dream: 0, offers: [] };
+    return G.acceptOffer(s, 'retire');
+  };
+
+  it('the year report compares with the start of the year, not with the evening', () => {
+    const s = start();
+    expect(s.yearStart).toMatchObject({ patron: s.patron, clean: s.clean, floor: 0, wh: 0 });
+    const n = G.sleep({ ...s, screen: 'night', patron: 80, clean: 3000 });
+    expect(n.yearStart!.patron).toBe(80);
+    expect(n.yearStart!.clean).toBe(3000);
+  });
+
+  it('an heir who inherits the estate can still fulfil the estate dream by keeping it', () => {
+    const end = retiredWithEstate();
+    expect(end.ending!.dream).toBe(true);
+    const heir = G.pickHeir(end, end.heirs[0].id);
+    expect(heir.estate).toBe(true);
+    expect(heir.dream).toBe(0);
+    expect(heir.yearStart).toBeDefined();
+    const kept = G.acceptOffer({ ...heir, screen: 'night', served: 12, offers: [] }, 'retire');
+    expect(kept.ending!.dream).toBe(true);
+  });
+
+  it('retiring without the estate does not send you to the estate', () => {
+    const n = G.acceptOffer({ ...start(), screen: 'night', served: 12, offers: [] }, 'retire');
+    expect(n.ending!.text).not.toContain('маєток');
+    expect(retiredWithEstate().ending!.text).toContain('маєток');
+  });
+
+  it('rumours only point at shops nobody holds', () => {
+    let s = start();
+    for (let i = 0; i < 12; i++) {
+      s = G.sleep({ ...s, screen: 'night' });
+      for (const x of s.city!.news.filter((x) => x.kind === 'rumor')) expect(s.city!.biz.find((b) => b.id === x.biz)!.rival).toBeFalsy();
+    }
+  });
+
+  it('a city move that cannot be made returns the same state', () => {
+    const s = start();
+    const used = { ...s, city: { ...s.city!, done: ['a', 'b', 'c', 'd', 'e'] } };
+    expect(G.actOnInst(used, 'press', 'article')).toBe(used);
+    expect(G.actOnBiz(used, used.city.biz[0].id, 'inspect')).toBe(used);
+    expect(G.actOnRival(used, used.city.rivals[0].id, 'bribe')).toBe(used);
+  });
+});
+
+describe('Era I texts and lore (QA 14.11)', () => {
+  it('a heroine\'s Otto is her дівер, in every form', () => {
+    expect(G.kinFor('Ваш шурин Отто', 'f')).toBe('Ваш дівер Отто');
+    expect(G.kinFor('Склад шурина Отто', 'f')).toBe('Склад дівера Отто');
+    expect(G.kinFor('Шурин урядовця', 'f')).toBe('Дівер урядовця');
+    expect(G.kinFor('Ваш шурин Отто', 'm')).toBe('Ваш шурин Отто');
+    let s = G.signForm(G.setHero(G.newGame(5), { gender: 'f' }));
+    expect(s.acc.otto.r).toBe('дівер');
+    for (let i = 0; i < 6; i++) { expect(JSON.stringify(G.docsFor({ ...s, served: i }))).not.toMatch(/[Шш]урин/); }
+  });
+
+  it('shop owners keep their gender and magnates their case', () => {
+    const s = G.signForm(G.newGame(9));
+    const c = s.city!;
+    const shop = c.biz.find((b) => b.status === 'open' && !b.rival)!;
+    shop.owner = 'Пані Мельник';
+    const n = G.actOnBiz(s, shop.id, 'inspect');
+    const r = n.city!.today[0];
+    expect(r.title).toMatch(/Пані Мельник («віддячила»|не зрозуміла натяку)/);
+    const held = { ...shop, id: 'bx', rival: 'r1', pressure: 0, status: 'open' as const };
+    const acts = G.bizActs({ ...s, city: { ...c, biz: [...c.biz, held] } }, held);
+    expect(acts[0].sub).toContain('під рукою Пана Вайсмана');
+    expect(acts[1].sub).toContain('ніж платить Пану Вайсману');
+    expect(G.rivalCase(c.rivals[2], 'ins')).toBe('Графом Ґжеґожевським');
+  });
+
+  it('no president or mayor is left in Era I strings', () => {
+    const all = Object.values(getEra(1).strings).join('\n');
+    expect(all).not.toMatch(/президент|\bмер\b|меру\b/i);
+  });
+});

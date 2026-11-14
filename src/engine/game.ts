@@ -2,10 +2,10 @@ import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
 import { CITY_V, cityEvening, cityMorning, initCity } from './city';
-import { clamp100, fmt, fk } from './text';
+import { clamp100, fmt, fk, kinFor, mapText } from './text';
 import type {
   BankDeal,
-  AccKey, Alloc, Choice, ChoiceOption, Delta, Doc, EndKind, GameState, Gender, Heir, Kin, Offer, ReportLine, Who
+  AccKey, Alloc, Choice, ChoiceOption, Delta, Doc, EndKind, GameState, Gender, Heir, Kin, Offer, ReportLine, Who, YearMark
 } from './types';
 
 const ACCS: AccKey[] = ['pike', 'dobbs', 'otto'];
@@ -33,6 +33,10 @@ export function newGame(seed: number, era = 1): GameState {
 
 const emptyAlloc = (): Alloc => ({ floor: 0, wh: 0, laun: 0, kid: 0 });
 
+/** remember where the year started: the night report compares against it */
+export const yearMark = (s: GameState): YearMark =>
+  ({ patron: s.patron, people: s.people, system: s.system, threat: s.threat, clean: s.clean, cash: s.cash, floor: s.floor, wh: s.wh });
+
 // ============================================================ selectors
 
 export const rankName = (s: GameState, rank = s.rank) => {
@@ -57,7 +61,7 @@ export const raidOdds = (s: GameState) =>
 export const dangerZone = (s: GameState) => (s.tavro ? RULES.dangerZoneBranded : RULES.dangerZone);
 
 /** Portrait sets that exist (public/art). Founder of era I uses heroes/, every later head uses heirs/eN-. */
-export const PORTRAIT_ERAS = [1, 2, 3, 4, 5];
+export const PORTRAIT_ERAS = [1, 2, 3, 4, 5, 6, 7];
 export function portraitFor(era: number, gen: number, g: Gender, face: number | null | undefined): string | null {
   if (face === null || face === undefined) return null;
   if (era === 1 && gen === 1) return `art/heroes/${g}${face + 1}.jpg`;
@@ -90,7 +94,10 @@ export function offersFor(s: GameState): Offer[] {
     const r = R[s.rank + 1];
     o.push({ id: 'promo', t: S(s, 'offer.promo.t', { rank: s.gender === 'f' ? r.tf : r.t }), sub: S(s, 'offer.promo.sub', { cost: fmt(r.cost) }), btn: S(s, 'offer.promo.btn', { cost: fmt(r.cost) }) });
   }
-  if (s.rank === last && s.patron > O.patronMin) o.push({ id: 'pres', t: S(s, 'offer.pres.t'), sub: S(s, 'offer.pres.sub'), btn: S(s, 'offer.pres.btn') });
+  if (s.rank === last && s.patron > O.patronMin) o.push({ id: 'pres', t: S(s, 'offer.pres.t'), sub: S(s, 'offer.pres.sub', { cost: fmt(RULES.presidentFee) }), btn: S(s, 'offer.pres.btn') });
+  const E = RULES.estate;
+  if (E.on && s.era === 1 && !s.estate && s.clean >= E.price * E.offerFrom)
+    o.push({ id: 'estate', t: S(s, 'offer.estate.t'), sub: S(s, 'offer.estate.sub', { cost: fmt(E.price) }), btn: S(s, 'offer.estate.btn', { cost: fmt(E.price) }) });
   if (s.served >= O.retireAfter) o.push({ id: 'retire', t: S(s, 'offer.retire.t'), sub: S(s, 'offer.retire.sub'), btn: S(s, 'offer.retire.btn') });
   if (s.clean >= O.fleeCleanMin) o.push({ id: 'flee', t: S(s, 'offer.flee.t'), sub: S(s, 'offer.flee.sub'), btn: S(s, 'offer.flee.btn') });
   return o;
@@ -114,8 +121,11 @@ export function docsFor(s: GameState): Doc[] {
     const kd = [...LK].sort((a, b) => b.age - a.age)[s.served % LK.length];
     list.splice(1, 0, { kind: 'choice', choice: kidDoc(s, kd), who: { kind: 'fam', id: kd.id } });
   }
-  return list;
+  return s.gender === 'f' ? list.map((d) => mapText(d, (t) => kinFor(t, 'f'))) : list;
 }
+
+/** accomplices' roles in the hero's words (a heroine's Otto is her дівер) */
+const nameKin = (n: GameState) => { ACCS.forEach((k) => { n.acc[k].r = kinFor(n.acc[k].r, n.gender); }); };
 
 export const currentDoc = (s: GameState): Doc => { const d = docsFor(s); return d[Math.min(s.doc, d.length - 1)]; };
 
@@ -272,7 +282,8 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
   if (kind === 'flee') { inherit = Math.round(n.clean * E.fleeKeepsClean); lost = stash + n.clean - inherit; }
   if (kind === 'summit') { inherit = n.clean + stash; lost = 0; }
   const last = getEra(n.era).ranks.length - 1;
-  const dream = (n.dream === 0 && n.clean >= RULES.dreamCleanGoal) || (n.dream === 1 && n.rank >= last)
+  // the estate dream: buy it, or — for an heir who inherited it — keep it (a collapse takes it away)
+  const dream = (n.dream === 0 && (RULES.estate.on ? !!n.dreamDone || (!!n.estate && kind !== 'collapse') : n.clean >= RULES.dreamCleanGoal)) || (n.dream === 1 && n.rank >= last)
     || (n.dream === 2 && kind === 'retire' && n.threat < RULES.dreamCleanThreat) || (n.dream === 3 && kind === 'summit');
   const dynastyOver = kind === 'collapse' && n.tavro;
   const eraOver = !dynastyOver && n.gen >= RULES.gensPerEra;
@@ -344,12 +355,14 @@ export function signForm(s: GameState): GameState {
   n.first = n.first.trim() || C0.defaultHero.first;
   n.surname = n.surname.trim() || C0.defaultHero.surname;
   if (n.origin === 0) { n.system += 10; n.patron += 5; }
-  if (n.origin === 1) { n.people += 10; n.thrBase = 1; }
+  if (n.origin === 1) { n.people += 10; n.thrBase = RULES.threatPerYear - 1; } // the reporter's past: risk grows a point slower
   if (n.origin === 2) { n.clean += 800; n.launBonus = 200; }
   const title = rankName(n) + ' ' + n.first + ' ' + n.surname;
   n.headline = S(n, 'form.headline.' + n.gender, { title });
   n.body = S(n, 'form.body.' + n.gender, { title });
   startFamily(n);
+  nameKin(n);
+  n.yearStart = yearMark(n);
   n.city = initCity(n);
   n.screen = 'morning';
   return n;
@@ -517,7 +530,7 @@ export function lockSafe(s: GameState): GameState {
   if (rand(n) * 100 < raidOdds(n)) {
     const found: string[] = [];
     if (n.cash > 0) { found.push(S(n, 'search.cash', { amt: fmt(n.cash) })); n.cash = 0; }
-    if (n.floor > 0 && rand(n) < RULES.floorFoundChance) { found.push(S(n, 'search.floor', { amt: fmt(n.floor) })); n.floor = 0; }
+    if (n.floor > 0 && rand(n) < RULES.floorFoundChance && !n.estate) { found.push(S(n, 'search.floor', { amt: fmt(n.floor) })); n.floor = 0; }
     if (n.wh > 0 && n.acc.otto.l < RULES.warehouseUnsafeLoyalty) { found.push(S(n, 'search.wh', { amt: fmt(n.wh) })); n.wh = 0; }
     if (found.length) {
       n.threat += 10 * found.length;
@@ -595,8 +608,20 @@ export function lockSafe(s: GameState): GameState {
 export function acceptOffer(s: GameState, id: Offer['id']): GameState {
   if (s.screen !== 'night') throw new Error('Not night');
   const n = clone(s);
-  if (id === 'retire') return finish(n, 'retire', S(n, 'end.retire.t'), S(n, 'end.retire.x', { n: n.served }));
+  // in Era I "the estate" is a real purchase: without it the official goes home, not to the estate
+  const home = RULES.estate.on && n.era === 1 && !n.estate;
+  if (id === 'retire') return finish(n, 'retire', S(n, 'end.retire.t'), S(n, home ? 'end.retire.xHome' : 'end.retire.x', { n: n.served }));
   if (id === 'flee') return finish(n, 'flee', S(n, 'end.flee.t'), S(n, 'end.flee.x'));
+  if (id === 'estate') {
+    const price = RULES.estate.price;
+    if (n.clean < price) { n.report.push(line(S(n, 'rep.noClean', { cost: fmt(price) }), 'bad', 'clean')); n.offers = n.offers.filter((x) => x.id !== id); return n; }
+    n.clean -= price; n.estate = true;
+    if (n.dream === 0) n.dreamDone = true;
+    n.report.push(line(S(n, 'rep.estate'), 'ok', 'floor', true));
+    n.headline = S(n, 'news.estate.h', { surname: n.surname }); n.body = S(n, 'news.estate.b');
+    n.offers = n.offers.filter((x) => x.id !== id);
+    return n;
+  }
   const R = getEra(n.era).ranks;
   const cost = id === 'pres' ? RULES.presidentFee : R[n.rank + 1].cost;
   if (n.cash + n.floor + n.wh + n.clean < cost) {
@@ -623,6 +648,7 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
 export function sleep(s: GameState): GameState {
   const n = clone(s);
   Object.assign(n, { screen: 'morning', doc: 0, ap: 1, last: {} });
+  n.yearStart = yearMark(n); // before the magnates' night: what they do belongs to the new year
   if (n.city && n.city.v === CITY_V) cityMorning(n, n.city); else n.city = initCity(n);
   return n;
 }
@@ -672,7 +698,7 @@ export function electionNight(s: GameState, stuff: boolean): GameState {
   if (stuff) { me += K.stuffVotes; c.fraud = Math.min(100, c.fraud + K.stuffFraud); }
   const share = Math.round((me / (me + rival)) * 100);
   if (rand(n) * 100 < c.fraud * K.exposeFactor) return finish(n, 'collapse', S(n, 'end.fraud.t'), S(n, 'end.fraud.x'));
-  if (share > 50) return finish(n, 'summit', S(n, 'end.president.t'), S(n, 'end.president.x', { share, first: n.first, surname: n.surname }));
+  if (share > 50) return finish(n, 'summit', S(n, 'end.president.t', {}, n.gender), S(n, 'end.president.x', { share, first: n.first, surname: n.surname }, n.gender));
   n.patron = Math.max(1, n.patron + K.losePatron); n.screen = 'night'; n.camp = null;
   n.report = [line(S(n, 'rep.electLost', { share }), 'bad', 'patron', true)];
   n.offers = offersFor(n).filter((x) => x.id !== 'pres');
@@ -702,6 +728,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
     id: 's' + k.id, first: k.first, g: k.g, age: k.age + 1, trait: k.trait, prep: k.prep,
     l: Math.max(5, k.l - RULES.family.sibResentment), k: k.k, assets: k.assets, gone: false, why: ''
   }));
+  n.estate = !!s.estate && e.kind !== 'collapse';
   n.tavro = e.kind === 'collapse'; n.shadow = e.kind === 'summit' ? RULES.shadowYears : 0; n.rank = e.kind === 'summit' ? 1 : 0;
   n.threat = n.tavro ? 25 : 10;
   if (!e.eraOver) {
@@ -714,6 +741,8 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   const child = S(n, h.g === 'f' ? 'word.daughter' : 'word.son');
   n.headline = S(n, `heir.${e.kind}.h`, { child, surname: s.surname });
   n.body = S(n, `heir.${e.kind}.b`, { surname: s.surname }) + (h.g === 'f' ? S(n, 'heir.femaleSuffix') : '');
+  nameKin(n);
+  n.yearStart = yearMark(n);
   return n;
 }
 

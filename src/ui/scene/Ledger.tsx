@@ -250,7 +250,7 @@ export function Ledger({ s, run, fresh = true }: { s: GameState; run: Run; fresh
   if (page === 3) {
     const rows: { key: StashKey; name: string; ic: string; tone: Tone; note: ReactNode; held: number }[] = [
       { key: 'floor', name: G.str(s.era, 'view.stash.floor'), ic: 'floor', tone: 'hide', note: <>Знайдуть у <b>50%</b> обшуків.</>, held: s.floor },
-      { key: 'wh', name: G.str(s.era, 'view.stash.wh'), ic: 'wh', tone: s.acc.otto.l >= G.RULES.warehouseUnsafeLoyalty ? 'hide' : 'risk', note: s.acc.otto.l >= G.RULES.warehouseUnsafeLoyalty ? <>Надійно, поки шурин вірний (<b>{s.acc.otto.l}</b>). Але дізнається більше.</> : <b>Отто ображений — при обшуку здасть склад.</b>, held: s.wh },
+      { key: 'wh', name: G.kinFor(G.str(s.era, 'view.stash.wh'), s.gender), ic: 'wh', tone: s.acc.otto.l >= G.RULES.warehouseUnsafeLoyalty ? 'hide' : 'risk', note: s.acc.otto.l >= G.RULES.warehouseUnsafeLoyalty ? <>Надійно, поки {s.acc.otto.r} вірний (<b>{s.acc.otto.l}</b>). Але дізнається більше.</> : <b>Отто ображений — при обшуку здасть склад.</b>, held: s.wh },
       { key: 'laun', name: G.str(s.era, 'view.stash.laun'), ic: 'laun', tone: 'laun', note: <>Ліміт <b>{G.fmt(lim)}</b> · комісія <b>{Math.round(fee * 100)}%</b> · чистими: <b>{G.fmt(net)}</b></>, held: 0 }
     ];
     if (kt) rows.push({ key: 'kid', name: G.getEra(s.era).words.kids.stash + ' · ' + kt.first, ic: 'kid', tone: 'hide', note: <>Обшук не знайде, але може вибухнути скандал.</>, held: kt.assets });
