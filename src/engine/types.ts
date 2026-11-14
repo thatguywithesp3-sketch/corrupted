@@ -49,6 +49,12 @@ export interface ChoiceOption {
   fam?: FamFx;
   flag?: 'blood' | 'sellout';
   dark?: boolean;
+  /** deck: story flags this answer sets (conditions and later documents read them) */
+  set?: string[];
+  /** deck: a follow-up document that comes back in `in` years (an arc) */
+  then?: { id: string; in: number };
+  /** deck: what this does to a magnate of the city layer */
+  riv?: { id: string; heat?: number; power?: number };
   h: string;
   b: string;
 }
@@ -57,7 +63,8 @@ export type Who =
   | { kind: 'boss' }
   | { kind: 'journo' }
   | { kind: 'acc'; acc: AccKey }
-  | { kind: 'fam'; id: string };
+  | { kind: 'fam'; id: string }
+  | { kind: 'rival'; id: string };
 
 export interface Choice {
   from: string;
@@ -68,6 +75,28 @@ export interface Choice {
   /** narrator summary for the dialog screen */
   gist?: string;
 }
+
+/** When a deck card can be dealt: every listed test must pass. Ranges are inclusive [min, max]. */
+export interface DocCond {
+  rank?: [number, number];
+  /** years already served */
+  year?: [number, number];
+  patron?: [number, number]; people?: [number, number]; system?: [number, number]; threat?: [number, number];
+  /** story flags that must be set / must not be set */
+  flag?: string[]; noFlag?: string[];
+  /** a living child at least this old */
+  kidAge?: number;
+  estate?: boolean;
+  /** a magnate at least this angry (and not allied) */
+  rivalHeat?: { id: string; min: number };
+}
+
+/** A card of the document deck (Era I): drawn by weight among the cards whose conditions pass, no repeats
+ *  until the pile runs out. Arc cards are never drawn: they come back only when an earlier answer schedules them. */
+interface DeckBase { id: string; w?: number; cond?: DocCond; arc?: boolean }
+export type DeckScheme = DeckBase & Scheme;
+export type DeckChoice = DeckBase & Omit<Choice, 'opts'> & { opts: Array<Omit<ChoiceOption, 'fam'>>; who?: Who | null };
+export interface Deck { schemes: DeckScheme[]; choices: DeckChoice[] }
 
 export interface EraWords {
   campaign: { media: string; gift: string; rival: string };
@@ -91,6 +120,8 @@ export interface EraContent {
   schemes: Scheme[];
   choices: Array<Omit<Choice, 'opts'> & { opts: Array<Omit<ChoiceOption, 'fam'>> }>;
   words: EraWords;
+  /** the document deck; eras without one deal the prototype's fixed rotation */
+  deck?: Deck;
   meters: Record<Meter, MeterInfo>;
   strings: Record<string, string>;
   theme: { look: Record<string, unknown>; colors: Record<string, string>; icons: Record<string, string>; colorMap: Record<string, string> };
@@ -146,6 +177,8 @@ export interface Alloc { floor: number; wh: number; laun: number; kid: number }
 /** tonight's deal with the banker (evening only) */
 export type BankDeal = 'limit' | 'fee';
 
+export interface DeckState { today: string[]; seen: string[]; flags: Record<string, number>; queue: { id: string; at: number }[] }
+
 export interface YearMark { patron: number; people: number; system: number; threat: number; clean: number; cash: number; floor: number; wh: number }
 
 export type StampKind ='signed' | 'declined' | 'decided' | 'dark';
@@ -185,6 +218,8 @@ export interface GameState {
   dreamDone?: boolean;
   /** meters and money at the start of the current year, for the year report (absent in old saves) */
   yearStart?: YearMark;
+  /** the document deck: this year's cards, what was already dealt, story flags (value: the year set) and arcs due later */
+  deck?: DeckState;
   acc: Record<AccKey, Accomplice>;
   doc: number;
   ap: number; // appetite 0..2

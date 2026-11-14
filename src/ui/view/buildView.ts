@@ -286,6 +286,11 @@ export function buildView(ctx: Ctx): any {
       kd = 'kid'; const k = s.kids.concat(s.sibs).find((x) => x.id === w.id) || ({ id: 'k0', first: dc.from, g: 'm', age: 10, l: 50, k: 0 } as Kin);
       const isSib = k.id.charAt(0) === 's';
       Object.assign(v.dg, { name: k.first + ' ' + s.surname, role: (isSib ? (k.g === 'f' ? 'ваша сестра' : 'ваш брат') : k.g === 'f' ? 'ваша донька' : 'ваш син') + ' · ' + k.age + ' р.', kindLabel: 'РОДИНА', bg: k.g === 'f' ? 'linear-gradient(180deg, #E3B6C4, #7A4A5A)' : 'linear-gradient(180deg, #A9C2DE, #3E5470)', sil: k.g === 'f' ? '#3A1E28' : '#1E2A3A', mood: k.l >= 45 ? (isSib ? 'Тримається роду' : 'Любить вас') : k.l >= 25 ? 'Ображен' + (k.g === 'f' ? 'а' : 'ий') : 'Чужа людина', moodBg: k.l >= 45 ? '#9CDDB5' : k.l >= 25 ? '#F2DFA8' : '#F08A6E', pills: [pill('heart', 'вірність ' + k.l, k.l <= 30 ? 'bad' : 'neu')].concat(k.k ? [pill('ear', 'знає ' + k.k, k.k >= 40 ? 'bad' : 'neu')] : []) });
+    } else if (w.kind === 'rival') {
+      kd = 'boss'; const r = s.city?.rivals.find((x) => x.id === w.id);
+      Object.assign(v.dg, { name: r?.name || dc.from, role: r?.title || '', kindLabel: 'МОЖНОВЛАДЕЦЬ', bg: `linear-gradient(180deg, ${r?.color || '#6B5A42'}, #1F1A14)`, sil: '#1F1A14', hasBadge: true, badge: '♜', badgeBg: r?.color || '#3D3328',
+        mood: !r ? '' : r.ally ? 'Союзник роду' : r.heat >= 6 ? 'Полює на вас' : r.heat >= 3 ? 'Насторожений' : 'Спокійний', moodBg: !r || r.heat < 3 ? '#9CDDB5' : r.heat >= 6 ? '#F08A6E' : '#F2DFA8',
+        pills: r ? [pill('patron', 'вплив ' + Math.round(r.power), 'neu')] : [] });
     } else if (w.kind === 'journo') {
       kd = 'journo';
       Object.assign(v.dg, { name: dc.from, role: 'хоче поставити вам кілька запитань', kindLabel: 'ЖУРНАЛІСТ', bg: 'linear-gradient(180deg, #7FAEE3, #2A3A6A)', sil: '#141C30', hasBadge: true, badge: 'ПРЕСА', badgeBg: '#8E2A1F', mood: tv >= 60 ? 'Має докази' : 'Шукає докази', moodBg: tv >= 60 ? '#F08A6E' : '#F2DFA8', pills: [pill('threat', 'ризик ' + tv, tv >= 60 ? 'bad' : 'neu')] });
@@ -294,14 +299,14 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
-    const photo = w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
+    const photo = w.kind === 'rival' ? (s.era === 1 ? `art/rivals/${w.id}.jpg` : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
     if (photo) Object.assign(v.dg, { photo, photoOn: true, silOn: false, ovalFilter: 'none' });
     const says: Record<string, string> = { kid: 'Нам треба поговорити.', acc: 'Треба поговорити. Без свідків.', journo: 'Кілька запитань для завтрашнього номера. Коментар дасте?', boss: 'Маю до вас делікатне прохання.' };
     const g = dc.gist || dc.q.replace(/^[^«]*«/, '').replace(/»\.?$/, '');
     const hh = 20 + (s.served % 3), mm = 10 + ((s.served * 7) % 49), md = dlgW.medium;
     Object.assign(v.dg, {
       isLetter: md === 'letter', isCall: md === 'call', isChat: md === 'chat', say: dc.say || says[kd], gist: g, sign: v.dg.name, initial: v.dg.name.replace(/^(Пан|Пані|Писар) /, '').charAt(0),
-      hatOn: md === 'letter' && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: dlgW.place ? dlgW.place[kd] : '',
+      hatOn: md === 'letter' && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: w.kind === 'rival' ? 'передав посильний' : dlgW.place ? dlgW.place[kd] : '',
       device: kd === 'kid' && md === 'call' ? (s.era >= 5 ? 'Мобільний · дзвонить родина' : 'Домашній телефон') : dlgW.device || '', timer: '00:' + (10 + ((s.served * 13) % 49)),
       glow: dlgW.glow || '#1D2A3A', accent: dlgW.accent || '#4F8BE0', status: kd === 'journo' ? 'друкує…' : 'в мережі', app: dlgW.app || '', chatNote: dlgW.note || '', time1: hh + ':' + mm, time2: hh + ':' + (mm + 1),
       screenBg: md === 'letter' ? '#2A1A10' : md === 'chat' ? '#0E1621' : '#0D1117', optsBg: md === 'letter' ? '#2A1A10' : md === 'chat' ? '#17212B' : '#0D1117',
@@ -324,7 +329,14 @@ export function buildView(ctx: Ctx): any {
   } else {
     const dc = cur.choice, en = G.enabledOptions(s, dc.opts);
     v.q = dc.q;
-    v.opts = dc.opts.map((o, i) => ({ ...optView('o' + i, o.t, o.d, i, !!o.dark, () => run((x) => G.pickOption(x, i)), en[i]), why: (o.why || []).map((w) => ({ w })), hasWhy: !!(o.why && o.why.length) }));
+    // what an answer does to a magnate shows under it, like the other consequences
+    const rivWhy = (o: { riv?: { id: string; heat?: number; power?: number } }) => {
+      const r = o.riv && s.city?.rivals.find((x) => x.id === o.riv!.id);
+      if (!r || r.ally) return [];
+      const sg = (x: number) => (x > 0 ? '+' : '−') + Math.abs(x);
+      return [[o.riv!.heat ? 'злість ' + sg(o.riv!.heat) : '', o.riv!.power ? 'вплив ' + sg(o.riv!.power) : ''].filter(Boolean).join(', ')].filter(Boolean).map((t) => r.name + ': ' + t);
+    };
+    v.opts = dc.opts.map((o, i) => { const why = (o.why || []).concat(rivWhy(o)); return { ...optView('o' + i, o.t, o.d, i, !!o.dark, () => run((x) => G.pickOption(x, i)), en[i]), why: why.map((w) => ({ w })), hasWhy: why.length > 0 }; });
     if (v.isDialog) {
       const md = dlgW.medium;
       v.dlgOpts = v.opts.map((o: any, i: number) => {
