@@ -57,7 +57,7 @@ export const raidOdds = (s: GameState) =>
 export const dangerZone = (s: GameState) => (s.tavro ? RULES.dangerZoneBranded : RULES.dangerZone);
 
 /** Portrait sets that exist (public/art). Founder of era I uses heroes/, every later head uses heirs/eN-. */
-export const PORTRAIT_ERAS = [1, 2, 3, 4, 5];
+export const PORTRAIT_ERAS = [1, 2, 3, 4, 5, 6, 7];
 export function portraitFor(era: number, gen: number, g: Gender, face: number | null | undefined): string | null {
   if (face === null || face === undefined) return null;
   if (era === 1 && gen === 1) return `art/heroes/${g}${face + 1}.jpg`;
