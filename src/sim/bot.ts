@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES
+  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -41,9 +41,9 @@ export function cityMove(s: GameState, policy: CityPolicy = 'none', keepClean = 
   // wash the name before it is too late: the cheap levers first, the gendarmerie when it is getting hot
   if (s.threat >= 30) {
     const F = CITY_RULES.fame, fm = c.fame || {}, free = (id: string) => !didAct(c, 'i:' + id);
-    if (!fm.whisper && free('whisper') && s.cash >= F.whisper.cost * 4) return actOnInst(s, 'whisper', 'hire');
-    if (free('press') && s.cash >= F.article.cost + 150) return actOnInst(s, 'press', 'article');
-    if (s.threat >= 50 && free('okhrana') && s.cash >= F.silence.cost) return actOnInst(s, 'okhrana', 'silence');
+    if (!fm.whisper && free('whisper') && dirtyTotal(s) >= F.whisper.cost * 4) return actOnInst(s, 'whisper', 'hire');
+    if (free('press') && dirtyTotal(s) >= F.article.cost + 150) return actOnInst(s, 'press', 'article');
+    if (s.threat >= 50 && free('okhrana') && dirtyTotal(s) >= F.silence.cost) return actOnInst(s, 'okhrana', 'silence');
     if (!fm.fund && free('charity') && s.clean - F.fund.clean >= Math.max(F.fund.clean, keepClean)) return actOnInst(s, 'charity', 'fund');
     if (free('charity') && s.clean - F.donate.clean >= Math.max(F.donate.clean * 2, keepClean)) return actOnInst(s, 'charity', 'donate');
   }

@@ -269,7 +269,7 @@ export function cityEvening(s: GameState, c: CityState) {
   s.cash += c.tribute;
   if (c.fame?.whisper) {
     const w = CITY_RULES.fame.whisper.cost;
-    if (s.cash >= w) s.cash -= w;
+    if (dirtyTotal(s) >= w) payDirty(s, w);
     else { c.fame.whisper = false; c.news.push({ kind: 'flavor', head: 'Шептуни розійшлися', text: 'Цього разу їм не заплатили, і в шинках про вас знову говорять що завгодно.' }); }
   }
 }
@@ -283,6 +283,13 @@ export const movesMade = (c: CityState) => (c.done ? c.done.length : 0);
 /** this turn's result for one unit, if it was moved */
 export const resultFor = (c: CityState, id: string) => (c.today || []).find((r) => (r.rival || r.biz) === id) || null;
 const markDone = (c: CityState, id: string) => { (c.done ||= []).push(id); };
+/** all dirty money: the drawer, the floor and the relative's warehouse — city moves can be paid from any of it */
+export const dirtyTotal = (s: GameState) => s.cash + s.floor + s.wh;
+/** pay dirty money: the drawer first, then the floor, then the warehouse */
+function payDirty(n: GameState, cost: number) {
+  let left = cost;
+  (['cash', 'floor', 'wh'] as const).forEach((k) => { const c = Math.min(n[k], left); n[k] -= c; left -= c; });
+}
 /** moves allowed this year: a few, one more for every rank */
 export const movesMax = (s: GameState) => RULES.cityMoves.base + RULES.cityMoves.perRank * s.rank;
 /** moves still left this year */
@@ -314,7 +321,7 @@ function bizActsRaw(s: GameState, b: Biz): ActOption[] {
     const cost = r10(b.wealth * 0.35);
     return [
       { act: 'inspect', t: 'Податкова перевірка', sub: `Заклад під рукою ${rv.name}: ${'перевірка'} вдається гірше, а він це запам’ятає.`, can: b.status === 'open' && b.pressure < 3, why: b.pressure >= 3 ? 'Тиснути сильніше вже нікуди' : undefined, risk: 2, odds: bizOdds(b, 'inspect'), gain: r10(b.wealth * (0.3 + 0.2 * b.pressure)) },
-      { act: 'outbid', t: 'Перебити дах', sub: `Дати власнику більше, ніж платить ${rv.name}. ${rv.name} цього не пробачить.`, can: b.status === 'open' && s.cash >= cost, why: s.cash < cost ? `Бракує брудних: потрібно ${fmt(cost)} кр.` : undefined, risk: 2, odds: bizOdds(b, 'outbid', s), gain: r10(b.wealth * 0.25), perYear: true, cost },
+      { act: 'outbid', t: 'Перебити дах', sub: `Дати власнику більше, ніж платить ${rv.name}. ${rv.name} цього не пробачить.`, can: b.status === 'open' && dirtyTotal(s) >= cost, why: dirtyTotal(s) < cost ? `Бракує брудних: потрібно ${fmt(cost)} кр.` : undefined, risk: 2, odds: bizOdds(b, 'outbid', s), gain: r10(b.wealth * 0.25), perYear: true, cost },
       { act: 'seal', t: 'Опечатати заклад', sub: '', can: false, why: `Під рукою ${rv.name}: чіпати відкрито не можна`, risk: 0, odds: 0, gain: 0 }
     ];
   }
@@ -367,7 +374,7 @@ export function actOnBiz(s: GameState, id: string, act: BizAct): GameState {
       c.news.unshift({ kind: 'closed', biz: b.id, head: `Зачинено: ${b.kind} «${b.name}»`, text: `Після «перевірки» ${b.owner} не відкрив двері. Сусіди кажуть, справа не в порушеннях.` });
     }
   } else if (act === 'outbid' && holder) {
-    n.cash -= opt.cost || 0; res.spent = opt.cost || 0; res.d.i = opt.risk;
+    payDirty(n, opt.cost || 0); res.spent = opt.cost || 0; res.d.i = opt.risk;
     holder.heat = Math.min(10, holder.heat + 2);
     if (crand(c) < q) {
       res.ok = true; b.rival = null; b.status = 'roof'; b.tribute = r10(b.wealth * 0.25); b.grudge = 0; holder.power = Math.max(5, holder.power - 4);
@@ -491,9 +498,9 @@ function rivalActsRaw(s: GameState, r: Rival): RivalOption[] {
   const K = CITY_RULES, kid = eligibleKid(s), bribe = r10(K.bribeBase + r.power * K.bribePerPower), dowry = marriageCost(r);
   if (r.ally) return [];
   return [
-    { act: 'bribe', t: 'Підкупити', sub: `Подарунок ${r.name}: гроші, що виглядають як шана. Злість спадає: з вами, виявляється, можна домовитись.`, can: s.cash >= bribe && r.heat >= 0.5, why: s.cash < bribe ? `Бракує брудних: потрібно ${fmt(bribe)} кр.` : 'Не сердиться і так', risk: 0, odds: 0.85, gain: 0, gainT: `злість −${K.bribeDrop}`, cost: bribe },
+    { act: 'bribe', t: 'Підкупити', sub: `Подарунок ${r.name}: гроші, що виглядають як шана. Злість спадає: з вами, виявляється, можна домовитись.`, can: dirtyTotal(s) >= bribe && r.heat >= 0.5, why: dirtyTotal(s) < bribe ? `Бракує брудних: потрібно ${fmt(bribe)} кр.` : 'Не сердиться і так', risk: 0, odds: 0.85, gain: 0, gainT: `злість −${K.bribeDrop}`, cost: bribe },
     { act: 'expose', t: sx(r, 'Здати його', 'Здати її'), sub: `Анонімно «повідомити» куди слід про ${r.name}. Якщо вдасться, вплив і два заклади під ${sx(r, 'його', 'її')} рукою похитнуться. Якщо ні — дізнаються, хто писав.`, can: true, risk: 2, odds: exposeOdds(s, r), gain: 0, gainT: `вплив −${K.exposeDamage}` },
-    { act: 'marry', t: 'Віддати дитину заміж', sub: `${kid ? `${kid.first} (${kid.age} р.)` : 'Дитина'} вийде за родича ${r.name}. Дім стане союзником назавжди, але ви втратите дитину в родині.`, can: !!kid && r.heat <= K.marryHeat && s.cash >= dowry, why: !kid ? 'Немає дитини від 16 років' : r.heat > K.marryHeat ? `${r.name} надто злий: спершу вгамуйте` : `Придане ${fmt(dowry)} кр. — бракує брудних`, risk: 0, odds: 1, gain: 0, gainT: 'союзник назавжди', cost: dowry }
+    { act: 'marry', t: 'Віддати дитину заміж', sub: `${kid ? `${kid.first} (${kid.age} р.)` : 'Дитина'} вийде за родича ${r.name}. Дім стане союзником назавжди, але ви втратите дитину в родині.`, can: !!kid && r.heat <= K.marryHeat && dirtyTotal(s) >= dowry, why: !kid ? 'Немає дитини від 16 років' : r.heat > K.marryHeat ? `${r.name} надто злий: спершу вгамуйте` : `Придане ${fmt(dowry)} кр. — бракує брудних`, risk: 0, odds: 1, gain: 0, gainT: 'союзник назавжди', cost: dowry }
   ];
 }
 
@@ -508,7 +515,7 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
   if (!opt || !opt.can) return n;
   markDone(c, r.id);
   const K = CITY_RULES, res: ActResult = { biz: '', rival: r.id, act: act as never, ok: false, title: '', text: '', cash: 0, d: {} };
-  n.cash -= opt.cost || 0; res.spent = opt.cost || 0;
+  payDirty(n, opt.cost || 0); res.spent = opt.cost || 0;
   if (act === 'bribe') {
     if (crand(c) < opt.odds) { r.heat = Math.max(0, r.heat - K.bribeDrop); res.ok = true; res.title = `${r.name} ${sx(r, 'прийняв', 'прийняла')} дарунок`; res.text = 'Подяка тривала довше, ніж слід було б. Зате полювання вщухло.'; }
     else { res.title = `${r.name} ${sx(r, 'взяв', 'взяла')} гроші й нічого не ${sx(r, 'обіцяв', 'обіцяла')}`; res.text = 'Дарунок прийнято, а злість лишилась. Таке трапляється.'; res.d.i = 1; }
@@ -557,16 +564,16 @@ function instActsRaw(s: GameState, id: InstId): ActOption[] {
         : { act: 'fund', t: 'Заснувати фонд роду', sub: `Фонд «${s.surname} — дітям»: разовий внесок, а далі щороку ризик −${F.fund.calmYr} і народ +${F.fund.peopleYr}.`, can: s.clean >= F.fund.clean, why: `Потрібно ${fmt(F.fund.clean)} кр. чистими`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.fund.calmYr} щороку`, cost: F.fund.clean, clean: true, perYear: true }
     ];
     case 'press': return [
-      { act: 'article', t: 'Замовна стаття', sub: `Нарис про вашу чесну службу. Редактор може й злякатися: тоді гроші пропали.`, can: s.cash >= F.article.cost, why: `Бракує брудних: потрібно ${fmt(F.article.cost)} кр.`, risk: 0, odds: F.article.odds, gain: 0, gainT: `ризик −${F.article.calm}`, cost: F.article.cost, calm: F.article.calm },
+      { act: 'article', t: 'Замовна стаття', sub: `Нарис про вашу чесну службу. Редактор може й злякатися: тоді гроші пропали.`, can: dirtyTotal(s) >= F.article.cost, why: `Бракує брудних: потрібно ${fmt(F.article.cost)} кр.`, risk: 0, odds: F.article.odds, gain: 0, gainT: `ризик −${F.article.calm}`, cost: F.article.cost, calm: F.article.calm },
       fm.share
         ? { act: 'share', t: 'Пай у «Віснику» ваш', sub: '', can: false, why: `Щороку ризик −${F.share.calmYr}, брудна преса б’є вдвічі слабше`, risk: 0, odds: 1, gain: 0 }
-        : { act: 'share', t: 'Купити пай у газеті', sub: `Через підставну особу. Щороку ризик −${F.share.calmYr}, а нападки «Голосу Порту» б’ють вдвічі слабше.`, can: s.cash >= F.share.cost, why: `Бракує брудних: потрібно ${fmt(F.share.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.share.calmYr} щороку`, cost: F.share.cost, perYear: true }
+        : { act: 'share', t: 'Купити пай у газеті', sub: `Через підставну особу. Щороку ризик −${F.share.calmYr}, а нападки «Голосу Порту» б’ють вдвічі слабше.`, can: dirtyTotal(s) >= F.share.cost, why: `Бракує брудних: потрібно ${fmt(F.share.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.share.calmYr} щороку`, cost: F.share.cost, perYear: true }
     ];
     case 'whisper': return fm.whisper
       ? [{ act: 'dismiss', t: 'Розпустити шептунів', sub: `Заощадите ${fmt(F.whisper.cost)} кр. на рік, але чутки підуть без нагляду.`, can: true, risk: 0, odds: 1, gain: 0, gainT: `−${fmt(F.whisper.cost)} кр. витрат` }]
-      : [{ act: 'hire', t: 'Найняти шептунів', sub: `${fmt(F.whisper.cost)} кр. щороку брудними. Щороку ризик −${F.whisper.calmYr}, народ +${F.whisper.peopleYr}.`, can: s.cash >= F.whisper.cost, why: `Бракує брудних: потрібно ${fmt(F.whisper.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.whisper.calmYr} щороку`, cost: F.whisper.cost, perYear: true }];
+      : [{ act: 'hire', t: 'Найняти шептунів', sub: `${fmt(F.whisper.cost)} кр. щороку брудними. Щороку ризик −${F.whisper.calmYr}, народ +${F.whisper.peopleYr}.`, can: dirtyTotal(s) >= F.whisper.cost, why: `Бракує брудних: потрібно ${fmt(F.whisper.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.whisper.calmYr} щороку`, cost: F.whisper.cost, perYear: true }];
     case 'okhrana': return [
-      { act: 'silence', t: 'Заткнути критиків', sub: `Ротмістр «поговорить» із тими, хто скаржиться. Образи власників зникнуть, але місто це відчує. Якщо ротмістр передумає — ризик +${F.silence.backfire}.`, can: s.cash >= F.silence.cost, why: `Бракує брудних: потрібно ${fmt(F.silence.cost)} кр.`, risk: 0, odds: F.silence.odds, gain: 0, gainT: `ризик −${F.silence.calm}`, cost: F.silence.cost, calm: F.silence.calm }
+      { act: 'silence', t: 'Заткнути критиків', sub: `Ротмістр «поговорить» із тими, хто скаржиться. Образи власників зникнуть, але місто це відчує. Якщо ротмістр передумає — ризик +${F.silence.backfire}.`, can: dirtyTotal(s) >= F.silence.cost, why: `Бракує брудних: потрібно ${fmt(F.silence.cost)} кр.`, risk: 0, odds: F.silence.odds, gain: 0, gainT: `ризик −${F.silence.calm}`, cost: F.silence.cost, calm: F.silence.calm }
     ];
   }
 }
@@ -583,7 +590,7 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
   markDone(c, uid);
   const F = CITY_RULES.fame, fm = (c.fame ||= {});
   const res: ActResult = { biz: uid, act, ok: true, title: '', text: '', cash: 0, d: {} };
-  if (opt.clean) n.clean -= opt.cost || 0; else n.cash -= opt.cost || 0;
+  if (opt.clean) n.clean -= opt.cost || 0; else payDirty(n, opt.cost || 0);
   res.spent = opt.cost || 0; res.spentClean = !!opt.clean;
   const calm = (k: number) => { const was = n.threat; n.threat = Math.max(0, n.threat - k); res.d.i = n.threat - was; };
   if (act === 'donate') { calm(F.donate.calm); n.people = clamp100(n.people + F.donate.people); res.d.n = F.donate.people; res.title = 'Сиротинець дякує благодійнику'; res.text = 'Ігуменя згадала вас у недільній проповіді. На ринку кажуть: «Не такий уже він і поганий».'; }

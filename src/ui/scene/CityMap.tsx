@@ -224,7 +224,7 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
       <Seg title="ГОЛОВНЕ">
         <div style={{ display: 'flex', gap: 8 }}>
           <Fact label="ВАШ РИЗИК ЗАРАЗ" tone={s.threat >= 60 ? T.risk : undefined}><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{Math.round(s.threat)}<span style={{ fontSize: 14 }}>/100</span></span></Fact>
-          <Fact label="ГРОШІ"><span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>брудні {G.fk(s.cash)}<br />чисті {G.fk(s.clean)}</span></Fact>
+          <Fact label="ГРОШІ"><span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>брудні {G.fk(G.dirtyTotal(s))}<br />чисті {G.fk(s.clean)}</span></Fact>
         </div>
         {works.map((w) => <div key={w} style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: T.clean.ink, background: T.clean.note, padding: '2px 8px', border: `1px solid ${T.clean.pen}` }}>✓ {w}</div>)}
       </Seg>
@@ -347,7 +347,7 @@ function StampFlash({ res, onDone, s }: { res: Last; onDone: () => void; s: Game
             {got > 0 && <span style={{ display: 'block', color: T.clean.ink, fontWeight: 700 }}>+{G.fmt(got)} кр. брудними</span>}
             {!spent && !got && <span style={{ display: 'block', color: MUTE }}>Гроші не рухалися</span>}
           </span>
-          <span style={{ textAlign: 'right' }}><span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: MUTE }}>ЗАЛИШОК</span><b>{G.fmt(s.cash)}</b> брудних · <b>{G.fmt(s.clean)}</b> чистих</span>
+          <span style={{ textAlign: 'right' }}><span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: MUTE }}>ЗАЛИШОК</span><b>{G.fmt(G.dirtyTotal(s))}</b> брудних · <b>{G.fmt(s.clean)}</b> чистих</span>
         </div>
         <DeskBtn kind="brass" style={{ width: '100%', marginTop: 16 }} onClick={onDone}>Прочитано</DeskBtn>
       </div>
@@ -615,11 +615,11 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '4px 8px', pointerEvents: 'none' }}>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontFamily: "'Ruslan Display', serif", fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Порт-Аурум</span>
-            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{left > 0 ? `ХОДИ НА РІК: ${left} З ${most}` : 'ХОДИ НА РІК ВИЧЕРПАНО'}</span>
+            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{left > 0 ? `ХОДИ НА РІК: ${left} / ${most}` : 'ХОДИ НА РІК ВИЧЕРПАНО'}</span>
           </span>
           {/* the purse: dirty pays for most moves, clean for charity */}
-          <span key={`${s.cash}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
-            {([['БРУДНІ', s.cash, '#E3B866'], ['ЧИСТІ', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
+          <span key={`${G.dirtyTotal(s)}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
+            {([['БРУДНІ', G.dirtyTotal(s), '#E3B866'], ['ЧИСТІ', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
               <span key={l} style={{ textAlign: 'center', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(240,215,140,0.35)', borderRadius: 2 }}>
                 <span style={{ display: 'block', fontSize: 10, letterSpacing: 1, color: '#CDBB8E' }}>{l}</span>
                 <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>{G.fmt(v)}</span>

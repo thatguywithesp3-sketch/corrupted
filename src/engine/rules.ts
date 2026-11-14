@@ -13,7 +13,7 @@ export const RULES = {
   dangerZone: 15,
   dangerZoneBranded: 19,
   slidePerYear: 3,
-  threatPerYear: 1,
+  threatPerYear: 2,
   threatBranded: 2,
   threatBlood: 5,
   raidMaxOdds: 0.9,
@@ -29,7 +29,7 @@ export const RULES = {
   offers: { patronMin: 55, retireAfter: 12, fleeCleanMin: 4000 },
   presidentFee: 2000,
   /** the estate on Castle Hill: bought once with clean money; fulfils the "estate" dream and stays with the family */
-  estate: { on: true, price: 5000, offerFrom: 1 },
+  estate: { on: true, price: 5500, offerFrom: 1 },
   /** city moves a year: base + one per rank */
   cityMoves: { base: 3, perRank: 1 },
   endings: {
@@ -59,7 +59,7 @@ export const RULES = {
     testify: { loyaltyMax: 25, knowsMin: 40, threat: 25 },
     sibResentment: 20
   },
-  campaign: { rounds: 4, rivalStart: 40, rivalDrift: [2, 3], meCap: 70, rivalFloor: 10, stuffVotes: 8, stuffFraud: 30, exposeFactor: 0.6, losePatron: -20 }
+  campaign: { rounds: 4, rivalStart: 38, rivalDrift: [2, 3], meCap: 70, rivalFloor: 10, stuffVotes: 8, stuffFraud: 30, exposeFactor: 0.6, losePatron: -20 }
 };
 
 export type Rules = typeof RULES;
