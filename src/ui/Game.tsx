@@ -109,6 +109,21 @@ function withSlots(root: DcNode): DcNode {
   // the blotter is real leather: a painted tile in the same engraving style, over the old dotted colour
   const blot = r.ch[0];
   if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: linear-gradient(rgba(10,20,12,0.18), rgba(10,20,12,0.18)), url(art/desk/leather.jpg); background-size: 100% 100%, 200px 200px;"); });
+  // the prototype's inkwell peeked out from under the HUD as a black circle at the right edge (the desk props replace it)
+  const ink = (n: DcNode) => { if (n.t !== 'x') { n.ch = n.ch.filter((c) => !(c.t === 'e' && /top: \{\{inkTop\}\}/.test(c.a.style || ''))); n.ch.forEach(ink); } };
+  ink(r);
+  // the name plate: long ranks («Бургомістерка», «Прокураторка») cut the name off, so the rank gets its own small line
+  const plate = (n: DcNode): boolean => {
+    if (n.t === 'x') return false;
+    const i = n.ch.findIndex((c) => c.t === 'e' && /white-space: nowrap/.test(c.a.style || '') && c.ch.length === 1 && c.ch[0].t === 'x' && c.ch[0].v === '{{plateName}}');
+    if (i >= 0) {
+      (n.ch[i] as Extract<DcNode, { t: 'e' }>).ch = [{ t: 'x', v: '{{plateWho}}' }];
+      n.ch.splice(i, 0, E('span', 'font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: #4A3712; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 0 rgba(255,240,200,0.5)', [{ t: 'x', v: '{{plateRank}}' }]));
+      return true;
+    }
+    return n.ch.some(plate);
+  };
+  plate(r);
   // the old "Family N" pill squeezed into the name plate
   const drop = (n: DcNode) => { if (n.t !== 'x') n.ch = n.ch.filter((c) => !(c.t === 'e' && c.a['aria-label'] === 'Родинний альбом')); if (n.t !== 'x') n.ch.forEach(drop); };
   drop(r);
@@ -205,7 +220,7 @@ export function Game() {
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
       <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
         {mode === 'menu' ? (
-          <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
+          <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { try { localStorage.removeItem('corrupted.form.step'); } catch { /* no storage */ } setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}

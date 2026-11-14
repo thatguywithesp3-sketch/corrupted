@@ -114,13 +114,17 @@ const ClippedPhoto = ({ src }: { src: string }) => (
   </div>
 );
 
+const STEP_KEY = 'corrupted.form.step';
+
 export function Onboarding({ s, run }: Props) {
-  const [step, setStep] = useState(0);
+  // the page of the form survives a reload (the answers themselves live in the saved game)
+  const [step, setStepRaw] = useState(() => { try { return Math.min(BLANKS.length - 1, Math.max(0, Number(localStorage.getItem(STEP_KEY)) || 0)); } catch { return 0; } });
+  const setStep = (n: number) => { setStepRaw(n); try { localStorage.setItem(STEP_KEY, String(n)); } catch { /* no storage */ } };
   const C = G.getEra(s.era);
   const last = BLANKS.length - 1;
   const b = BLANKS[step];
   const canNext = step !== 1 || (s.first.trim() !== '' && s.surname.trim() !== '');
-  const next = () => { if (!canNext) return; if (step === last) run(G.signForm); else setStep(step + 1); };
+  const next = () => { if (!canNext) return; if (step === last) { try { localStorage.removeItem(STEP_KEY); } catch { /* no storage */ } run(G.signForm); } else setStep(step + 1); };
   const origin = C.origins[s.origin], dream = C.dreams[s.dream];
   const face = G.portraitFor(1, 1, s.gender, s.face);
 

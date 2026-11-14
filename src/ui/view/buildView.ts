@@ -141,7 +141,7 @@ export function buildView(ctx: Ctx): any {
     hudOpen: ui.hudOpen, hudClosed: !ui.hudOpen, toggleHud: () => setUi({ hudOpen: !ui.hudOpen }),
     blotterTop: '112px', inkTop: '136px', hudTitle: 'СТАН СПРАВ', hudCloseText: 'Згорнути', threatLabel: 'Ризик викриття',
     tipOn: tipText !== '', tipText, yearLabel: String(s.year), nightYear: String(s.year - 1),
-    plateTop: 'Рік ' + s.year + ' · Покоління ' + s.gen + ' з 2', plateName: short, fullName: s.first + ' ' + s.surname, surname: s.surname, houseUpper: s.surname.toUpperCase(),
+    plateTop: 'Рік ' + s.year + ' · Покоління ' + s.gen + ' з 2', plateName: short, plateRank: G.rankName(s).toUpperCase(), plateWho: (s.first + ' ' + s.surname).length > 15 ? s.first.charAt(0) + '. ' + s.surname : s.first + ' ' + s.surname, fullName: s.first + ' ' + s.surname, surname: s.surname, houseUpper: s.surname.toUpperCase(),
     cleanLabel: fk(s.clean), dirtyLabel: fk(s.cash + s.floor + s.wh), icCr: icon('cr', 13), tavro: s.tavro,
     meters: [meter('patron', 'Покровит.', 'p'), meter('people', 'Народ', 'n'), meter('system', 'Система', 's')],
     threat: { w: tv + '%', valText: tv + ' / 100', hasD: td !== 0, dText: td ? delta(td) : '', border: tv >= 70 ? '2px solid #E8603F' : '1px solid #4A3E2E', ic: icon('threat', 28, true) },
@@ -267,7 +267,7 @@ export function buildView(ctx: Ctx): any {
   // ---- office
   const docs = G.docsFor(s), cur = G.currentDoc(s);
   const dcFrom = cur.kind === 'scheme' ? cur.scheme.from : cur.choice.from;
-  v.docLabel = s.doc + 1 + ' З ' + docs.length;
+  v.docLabel = s.doc + 1 + ' / ' + docs.length; // «З» in the small-caps face reads as «3»
   v.pile = docs.slice(s.doc + 1).map((_, i) => ({ top: 6 + i * 5 + 'px', rot: (i % 2 ? 2.2 : -2.4) + 'deg' }));
   v.docFrom = dcFrom; v.docInitial = dcFrom.charAt(0);
   v.docHeadLine = String(L.docHead || '').replace('{from}', dcFrom).replace('{no}', String(214 + s.served * 3 + s.doc));
@@ -291,7 +291,7 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'хоче поставити вам кілька запитань', kindLabel: 'ЖУРНАЛІСТ', bg: 'linear-gradient(180deg, #7FAEE3, #2A3A6A)', sil: '#141C30', hasBadge: true, badge: 'ПРЕСА', badgeBg: '#8E2A1F', mood: tv >= 60 ? 'Має докази' : 'Шукає докази', moodBg: tv >= 60 ? '#F08A6E' : '#F2DFA8', pills: [pill('threat', 'ризик ' + tv, tv >= 60 ? 'bad' : 'neu')] });
     } else {
       kd = 'boss';
-      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 60 ? 'Прихильний' : 'Незадоволений', moodBg: s.patron >= 60 ? '#9CDDB5' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
+      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
     const photo = w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
@@ -464,7 +464,8 @@ export function buildView(ctx: Ctx): any {
     stars: stars(h.prep), hasAssets: h.assets > 0, assets: '+ ' + fmt(h.assets) + ' кр. на ' + (h.g === 'f' ? 'її' : 'його') + ' ім’я',
     minor: h.age < G.RULES.heir.minorAge, minorText: 'Неповнолітн' + (h.g === 'f' ? 'я' : 'ій') + ': до повноліття опікун забере 30% статку',
     l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => run((x) => G.pickHeir(x, h.id)),
-    ...(() => { const f = G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
+    // a child or a teenager is shown as they look now (the same face as in the family album), an adult as the future head
+    ...(() => { const kid = h.age < 18 && !h.nephew ? kinPortrait(s.era, h, false) : null; const f = kid || G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
   }));
   v.eraOver = e.eraOver; v.dynastyOver = e.dynastyOver;
   v.showRestart = e.dynastyOver || e.campaignOver;

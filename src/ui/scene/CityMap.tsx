@@ -317,7 +317,7 @@ function TodayMark({ res }: { res: Last }) {
   const tone = res.ok ? T.clean : T.risk;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '4px 8px', border: `1.5px dashed ${tone.pen}`, background: 'rgba(255,255,255,0.35)' }}>
-      <span style={{ flexShrink: 0, width: 58, height: 58, borderRadius: '50%', border: `3px double ${tone.ink}`, color: tone.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap', fontFamily: "'Ruslan Display', serif", fontSize: 10, lineHeight: 1.05, transform: 'rotate(-12deg)', mixBlendMode: 'multiply', opacity: 0.85 }}>{res.ok ? 'ВДА-\nЛОСЯ' : 'ПРО-\nВАЛ'}</span>
+      <span style={{ flexShrink: 0, width: 58, height: 58, borderRadius: '50%', border: `3px double ${tone.ink}`, color: tone.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap', fontFamily: "'Ruslan Display', serif", fontSize: 9, lineHeight: 1.05, transform: 'rotate(-12deg)', mixBlendMode: 'multiply', opacity: 0.85 }}>{res.ok ? 'ВДАЛОСЯ' : 'ПРОВАЛ'}</span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.5, fontWeight: 700, color: MUTE }}>СЬОГОДНІ · ВАШ ХІД</span>
         <span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.15, color: tone.ink }}>{res.title}</span>
@@ -554,7 +554,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const bRival = b ? c.rivals.find((r) => r.id === b.rival) || null : null;
   const inst = panel === 'inst' ? G.INSTS.find((i) => i.id === selI) || null : null;
   const acts: ActOption[] = rv ? G.rivalActs(s, rv) : inst ? G.instActs(s, inst.id) : panel === 'biz' && b && b.status === 'open' ? G.bizActs(s, b) : [];
-  const cur = acts.find((o) => o.act === pick && o.can) || acts.find((o) => o.can) || null;
+  // never pre-select a risky move against a magnate (e.g. «Здати її»): the player has to pick it on purpose
+  const cur = acts.find((o) => o.act === pick && o.can) || acts.find((o) => o.can && (!rv || o.risk === 0)) || null;
 
   // first open: the whole height of the screen is the map
   useLayoutEffect(() => {
