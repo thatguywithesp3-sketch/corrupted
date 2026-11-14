@@ -260,7 +260,7 @@ export function buildView(ctx: Ctx): any {
   const st = s.lastStamp ? STAMP[s.lastStamp] : null;
   v.hasStamp = !!st; v.stampT = st ? (L.stampWords || {})[st.t] || st.t : ''; v.stampC = st ? st.c : '#8E2A1F';
   const last = R.length - 1;
-  const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше 30', 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — президентство'][s.dream];
+  const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
   v.dreamText = C.dreams[s.dream].t + ': ' + dreamProg + '.';
   v.toOffice = () => run(G.toOffice);
 
@@ -419,8 +419,8 @@ export function buildView(ctx: Ctx): any {
     const share = Math.round((c.me / (c.me + c.rival)) * 100);
     v.elect = { title: share > 50 ? 'Ви попереду: ' + share + '% у другому турі' : 'Суперник попереду: ' + (100 - share) + '%', bars: [{ name: s.first + ' ' + s.surname, val: share + '%', w: share + '%', color: '#D9A441' }, { name: W.rival, val: 100 - share + '%', w: 100 - share + '%', color: '#7FAEE3' }] };
     v.electActs = [
-      { ...optView('e1', 'Чекати чесного підрахунку', {}, 0, false, () => run((x) => G.electionNight(x, false))), sub: 'Результат як є (±3%). Підозра не зростає.' },
-      { ...optView('e2', 'Вкинути бюлетені', { i: 10 }, 2, true, () => run((x) => G.electionNight(x, true))), sub: '+8% голосів, але підозра +30. Шанс викриття = 60% від підозри.' }
+      { ...optView('e1', 'Чекати чесного підрахунку', {}, 0, false, () => run((x) => G.electionNight(x, false))), sub: `Результат як є (±3%). Нової підозри не буде, але накопичена дає шанс викриття ${Math.round(c.fraud * G.RULES.campaign.exposeFactor)}%.` },
+      { ...optView('e2', 'Вкинути бюлетені', { i: 10 }, 2, true, () => run((x) => G.electionNight(x, true))), sub: `+${G.RULES.campaign.stuffVotes}% голосів, але підозра +${G.RULES.campaign.stuffFraud}: шанс викриття ${Math.round(Math.min(100, c.fraud + G.RULES.campaign.stuffFraud) * G.RULES.campaign.exposeFactor)}%.` }
     ];
   }
 
@@ -437,7 +437,7 @@ export function buildView(ctx: Ctx): any {
   v.endTiles = [
     { label: 'РОДУ ДІСТАНЕТЬСЯ', big: fmt(heirGets), unit: 'кр.', sub: e.dream ? 'разом із +1 000 за мрію' : 'чистими грошима', c: Gc.c, bg: Gc.bg, bd: Gc.c, flex: '1.35' },
     { label: e.kind === 'flee' ? 'КИНУТО ВДОМА' : 'ВТРАЧЕНО', big: fmt(e.lost), unit: 'кр.', sub: e.lost ? 'конфіскат і схованки' : 'нічого не забрали', c: e.lost ? Rr.c : Gr.c, bg: e.lost ? Rr.bg : Gr.bg, bd: e.lost ? Rr.c : Gr.c, flex: '1' },
-    { label: 'НА СЛУЖБІ', big: String(s.served), unit: 'р.', sub: e.kind === 'summit' ? 'Президент' : G.rankName(s), c: Bl.c, bg: Bl.bg, bd: Bl.c, flex: '0.9' }
+    { label: 'НА СЛУЖБІ', big: String(s.served), unit: 'р.', sub: e.kind === 'summit' ? (s.gender === 'f' ? 'Дожеса' : 'Дож') : G.rankName(s), c: Bl.c, bg: Bl.bg, bd: Bl.c, flex: '0.9' }
   ];
   const B: any[] = [];
   const head = (t: string, k: { c: string }) => B.push({ head: true, row: false, t, c: k.c, bg: '', mark: '', v: '' });
@@ -446,7 +446,7 @@ export function buildView(ctx: Ctx): any {
   row(C.dreams[s.dream].t, e.dream ? Au : Gr, e.dream ? '★' : '—', e.dream ? 'здійснено · +1 000' : 'не здійснено');
   head('СПАДКОЄМЕЦЬ ОТРИМУЄ', Bl);
   row('Чистий статок роду', Gc, '+', fmt(heirGets) + ' кр.');
-  if (e.kind === 'summit') row('Захист батька-президента: Покровитель стоїть на 70', Bl, '✦', '5 років');
+  if (e.kind === 'summit') row('Тінь дожа: Покровитель стоїть на 70', Bl, '✦', '5 років');
   if (e.kind === 'retire') row('Ім’я без плям — місто ставиться прихильно', Bl, '✓');
   if (e.kidAssets) row('Записано на дітей — конфіскація не торкнулась. Дістанеться тому, кого оберете', Gc, '✓', fmt(e.kidAssets) + ' кр.');
   if (e.kind === 'collapse' || e.kind === 'flee') {

@@ -39,7 +39,7 @@ export const RULES = {
   },
   dreamBonus: 1000,
   dreamCleanGoal: 8000,
-  dreamCleanThreat: 30,
+  dreamCleanThreat: 25,
   heir: { minorAge: 16, minorKeeps: 0.7, nephewPatron: -10, starsRankUp: 80 },
   shadowYears: 5,
   shadowPatron: 70,
@@ -59,7 +59,7 @@ export const RULES = {
     testify: { loyaltyMax: 25, knowsMin: 40, threat: 25 },
     sibResentment: 20
   },
-  campaign: { rounds: 4, rivalStart: 45, rivalDrift: [2, 3], meCap: 70, rivalFloor: 10, stuffVotes: 8, stuffFraud: 30, exposeFactor: 0.6, losePatron: -20 }
+  campaign: { rounds: 4, rivalStart: 40, rivalDrift: [2, 3], meCap: 70, rivalFloor: 10, stuffVotes: 8, stuffFraud: 30, exposeFactor: 0.6, losePatron: -20 }
 };
 
 export type Rules = typeof RULES;
@@ -74,6 +74,8 @@ export const PROTOTYPE_PATCH = {
     offers: { patronMin: 60 },
     presidentFee: 3000,
     estate: { on: false },
+    dreamCleanThreat: 30,
+    campaign: { rivalStart: 45 },
     cityMoves: { base: 1e9 },
     family: { allowance: { child: 100, teen: 300, adult: 200 } }
   },

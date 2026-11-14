@@ -90,7 +90,7 @@ export function offersFor(s: GameState): Offer[] {
     const r = R[s.rank + 1];
     o.push({ id: 'promo', t: S(s, 'offer.promo.t', { rank: s.gender === 'f' ? r.tf : r.t }), sub: S(s, 'offer.promo.sub', { cost: fmt(r.cost) }), btn: S(s, 'offer.promo.btn', { cost: fmt(r.cost) }) });
   }
-  if (s.rank === last && s.patron > O.patronMin) o.push({ id: 'pres', t: S(s, 'offer.pres.t'), sub: S(s, 'offer.pres.sub'), btn: S(s, 'offer.pres.btn') });
+  if (s.rank === last && s.patron > O.patronMin) o.push({ id: 'pres', t: S(s, 'offer.pres.t'), sub: S(s, 'offer.pres.sub', { cost: fmt(RULES.presidentFee) }), btn: S(s, 'offer.pres.btn') });
   const E = RULES.estate;
   if (E.on && s.era === 1 && !s.estate && s.clean >= E.price * E.offerFrom)
     o.push({ id: 'estate', t: S(s, 'offer.estate.t'), sub: S(s, 'offer.estate.sub', { cost: fmt(E.price) }), btn: S(s, 'offer.estate.btn', { cost: fmt(E.price) }) });
@@ -685,7 +685,7 @@ export function electionNight(s: GameState, stuff: boolean): GameState {
   if (stuff) { me += K.stuffVotes; c.fraud = Math.min(100, c.fraud + K.stuffFraud); }
   const share = Math.round((me / (me + rival)) * 100);
   if (rand(n) * 100 < c.fraud * K.exposeFactor) return finish(n, 'collapse', S(n, 'end.fraud.t'), S(n, 'end.fraud.x'));
-  if (share > 50) return finish(n, 'summit', S(n, 'end.president.t'), S(n, 'end.president.x', { share, first: n.first, surname: n.surname }));
+  if (share > 50) return finish(n, 'summit', S(n, 'end.president.t', {}, n.gender), S(n, 'end.president.x', { share, first: n.first, surname: n.surname }, n.gender));
   n.patron = Math.max(1, n.patron + K.losePatron); n.screen = 'night'; n.camp = null;
   n.report = [line(S(n, 'rep.electLost', { share }), 'bad', 'patron', true)];
   n.offers = offersFor(n).filter((x) => x.id !== 'pres');
