@@ -34,6 +34,8 @@ export interface Scheme {
   /** per appetite level 0/1/2 (5% / 10% / 20%) */
   i: number[]; n: number[]; s: number[]; p: number[]; k: number[];
   h: string[]; b: string[];
+  /** the newspaper sketch for this document (public/art/news/<art>.jpg) */
+  art?: string;
   no: { t: string; d: Delta; al?: Partial<Record<AccKey, number>>; h: string; b: string };
 }
 
@@ -55,6 +57,8 @@ export interface ChoiceOption {
   then?: { id: string; in: number };
   /** deck: what this does to a magnate of the city layer */
   riv?: { id: string; heat?: number; power?: number };
+  /** a different newspaper sketch for this answer than the document's own */
+  art?: string;
   h: string;
   b: string;
 }
@@ -74,6 +78,8 @@ export interface Choice {
   say?: string;
   /** narrator summary for the dialog screen */
   gist?: string;
+  /** the newspaper sketch for this document (public/art/news/<art>.jpg) */
+  art?: string;
 }
 
 /** When a deck card can be dealt: every listed test must pass. Ranges are inclusive [min, max]. */
@@ -234,6 +240,8 @@ export interface GameState {
   last: Delta;
   headline: string;
   body: string;
+  /** the newspaper sketch that goes with the headline (absent: the paper crops the city view) */
+  art?: string | null;
   report: ReportLine[];
   offers: Offer[];
   ending: Ending | null;
