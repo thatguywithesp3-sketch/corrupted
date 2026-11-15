@@ -43,7 +43,7 @@ const RIVAL_CASES: Record<string, { gen: string; dat: string; acc: string; ins: 
   r2: { gen: 'Пані Берг', dat: 'Пані Берг', acc: 'Пані Берг', ins: 'Пані Берг' },
   r3: { gen: 'Графа Ґжеґожевського', dat: 'Графу Ґжеґожевському', acc: 'Графа Ґжеґожевського', ins: 'Графом Ґжеґожевським' }
 };
-export const rivalCase = (r: Rival, k: 'gen' | 'dat' | 'acc' | 'ins') => RIVAL_CASES[r.id]?.[k] || r.name;
+export const rivalCase = (r: Rival, k: 'gen' | 'dat' | 'acc' | 'ins') => (r.gen && r.gen > 1 ? RIVAL_HEIRS[r.id]?.cases[k] : RIVAL_CASES[r.id]?.[k]) || r.name;
 /** a shop owner is a woman when she is «Пані …» */
 const ow = (b: { owner: string }, m: string, f: string) => (b.owner.startsWith('Пані') ? f : m);
 /** «відкриває візницьку біржу»: feminine kinds take the accusative */
@@ -70,6 +70,8 @@ export interface Rival {
   ally: boolean; // bound to us by marriage
   focus: District; // where he likes to expand
   last: string; // what he did last night
+  /** 2 once the house has passed to the next generation (with ours) */
+  gen?: number;
 }
 
 export interface Biz {
@@ -438,6 +440,50 @@ export const RIVAL_FILE: Record<string, RivalFile> = {
   r2: { age: 47, from: 'вдова друкаря з Подолу', bio: 'Успадкувала «Голос Порту» разом із боргами й з перших днів почала друкувати те, чого інші бояться. Листок виходить ромейською, але торік з’явився додаток вальдорською: продається вдвічі краще. Подейкують, що половину скандалів вона вигадує сама.', likes: 'гучні заголовки, чужі секрети, чай із коньяком', weak: 'мріє про салон у Старому місті, а двері туди відчиняє лише губернатор, тож його ім’я в її листку з’являється рідко й без глузування', quote: '«Правда — це те, що надруковано першим.»' },
   r3: { age: 68, from: 'останній із роду, що колись володів півміста', bio: 'Титул роду Ґжеґожевських імператор дарував за вірність ще три століття тому. Від маєтків лишилися замок на пагорбі, герб і листування зі столицею, яке граф вважає владою. Удома говорить ромейською, вальдорською — лише зі слугами. Вас називає не інакше як «вискочка з управи».', likes: 'родовід, полювання, довгі листи з підкресленнями', weak: 'тоне в боргах і панічно боїться, що замок піде з молотка; за відстрочку може забути всі образи', quote: '«Мій рід тут був, коли вашого ще не було навіть у списках.»' }
 };
+
+/** The next generation of each magnate's house: when our family passes to an heir, so do theirs. */
+interface RivalHeir { name: string; title: string; f?: boolean; file: RivalFile; cases: { gen: string; dat: string; acc: string; ins: string }; news: [string, string] }
+export const RIVAL_HEIRS: Record<string, RivalHeir> = {
+  r1: {
+    name: 'Пан Леопольд Вайсман', title: 'син купця, господар пароплавства',
+    file: { age: 31, from: 'син Вайсмана, вчився в столиці', bio: 'Старий Вайсман передав синові склади, пароплави й записник із боргами всього порту. Леопольд вчився в столиці, говорить трьома мовами й рахує швидше за батька. Батько купував заклади, син купує людей у ратуші: так дешевше.', likes: 'акції пароплавства, швидкі коні, парові машини', weak: 'хоче, щоб його поважали старі гільдії, а вони досі бачать у ньому сина юнги', quote: '«Батько рахував крони. Я рахую відсотки.»' },
+    cases: { gen: 'Пана Леопольда Вайсмана', dat: 'Пану Леопольду Вайсману', acc: 'Пана Леопольда Вайсмана', ins: 'Паном Леопольдом Вайсманом' },
+    news: ['Склади Вайсмана перейшли до сина', 'Старий купець відійшов від справ. Леопольд Вайсман уже звільнив половину прикажчиків і найняв бухгалтерів зі столиці.']
+  },
+  r2: {
+    name: 'Пані Ельза Берг', title: 'донька Берг, редакторка «Голосу Порту»', f: true,
+    file: { age: 26, from: 'донька вдови Берг', bio: 'Мати передала їй газету й звичку друкувати першою. Ельза перевела «Голос Порту» на вальдорську повністю й продає вдвічі більше. Мати вигадувала скандали, донька їх розкопує: у неї знайомі серед писарів, кучерів і покоївок.', likes: 'нічні засідання редакції, велосипед, чужі листи', weak: 'вірить у те, що пише, тож її купують не грошима, а правдою про когось іншого', quote: '«Мама писала, що чула. Я пишу, що бачила.»' },
+    cases: { gen: 'Пані Ельзи Берг', dat: 'Пані Ельзі Берг', acc: 'Пані Ельзу Берг', ins: 'Пані Ельзою Берг' },
+    news: ['«Голос Порту» має нову редакторку', 'Вдова Берг передала газету доньці. Перший номер Ельзи Берг вийшов повністю вальдорською й розійшовся до обіду.']
+  },
+  r3: {
+    name: 'Граф Казимир Ґжеґожевський', title: 'небіж старого графа, господар замку',
+    file: { age: 34, from: 'небіж старого графа, повернувся зі столиці', bio: 'Старий граф помер, лишивши небожеві замок, герб і борги. Казимир прожив молодість у столиці при дворі й повернувся з манерами, позиками й друзями в міністерствах. Сам доносів не пише: за нього пишуть інші, а він лише передає листи за обідом.', likes: 'карти, полювання, листи з печатками міністерств', weak: 'програє в карти більше, ніж має; за сплачений борг забуде будь-яку образу', quote: '«Дядько воював із вискочками. Я з ними обідаю й записую.»' },
+    cases: { gen: 'Графа Казимира Ґжеґожевського', dat: 'Графу Казимиру Ґжеґожевському', acc: 'Графа Казимира Ґжеґожевського', ins: 'Графом Казимиром Ґжеґожевським' },
+    news: ['Помер граф Ґжеґожевський', 'Замок на пагорбі успадкував небіж Казимир, який двадцять років прожив при дворі. Кредитори графа вже стоять біля брами.']
+  }
+};
+/** heirs of the magnates whose portraits exist in public/art/rivals/<id>-g2.jpg */
+export const RIVAL_HEIR_PORTRAITS = new Set<string>(['r1', 'r2', 'r3']);
+export const rivalFile = (r: Rival): RivalFile => (r.gen && r.gen > 1 && RIVAL_HEIRS[r.id] ? RIVAL_HEIRS[r.id].file : RIVAL_FILE[r.id]);
+export const rivalPortrait = (r: Rival) => `art/rivals/${r.id}${r.gen && r.gen > 1 && RIVAL_HEIR_PORTRAITS.has(r.id) ? '-g2' : ''}.jpg`;
+
+/** The city the heir takes over (same era): the shops, our roofs, the magnates and their grudges stay;
+ *  each magnate's house passes to its own heir. A collapse loses our roofs: owners stop paying a fallen family. */
+export function inheritCity(old: CityState, collapse: boolean): CityState {
+  const c: CityState = structuredClone(old);
+  c.done = []; c.today = []; c.last = null; c.tribute = 0; c.news = [];
+  if (collapse) c.biz.forEach((b) => { if (b.status === 'roof') { b.status = 'open'; b.tribute = 0; b.grudge = 0; } });
+  c.rivals.forEach((r) => {
+    const h = RIVAL_HEIRS[r.id];
+    if (!h || (r.gen && r.gen > 1)) return;
+    r.gen = 2; r.name = h.name; r.title = h.title; r.f = !!h.f;
+    r.heat = Math.round(r.heat / 2); r.power = clampN(Math.round(r.power * 0.85), 5, 95);
+    r.last = r.ally ? 'союзник, як і батьки' : 'новий голова дому';
+    c.news.push({ kind: 'rival', rival: r.id, head: h.news[0], text: h.news[1] + (r.ally ? ' Шлюбний союз із вашим родом лишається в силі.' : '') });
+  });
+  return c;
+}
 
 export const holdings = (c: CityState, id: string) => c.biz.filter((b) => b.rival === id && b.status !== 'closed');
 

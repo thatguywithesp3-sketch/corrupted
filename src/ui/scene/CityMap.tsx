@@ -75,7 +75,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival 
     items.push({ y: h.y, el: (
       <g key={r.id} onClick={() => onRival(r.id)} style={{ cursor: 'pointer' }}>
         <Sprite art={h.art} x={h.x} y={h.y} w={HOME_W[h.art]} />
-        <Plaque x={h.x} y={h.y + 2.8} t={r.name.replace('Граф ', '')} color={r.color} />
+        <Plaque x={h.x} y={h.y + 2.8} t={r.name.replace(/^Граф (\S+ )?/, '').replace(/^(Пан|Пані) \S+ (\S+)$/, '$1 $2')} color={r.color} />
         <rect x={h.x - 8} y={h.y - 17} width="16" height="21" fill="transparent" />
       </g>
     ) });
@@ -405,10 +405,10 @@ const RULED = 'repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 27px, rgba(70,9
 /** «Розклад сил»: the character's working notebook. One index tab per magnate; the page holds his file, his shops and the moves open against him. */
 function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['city']>; selR: string; onSel: (id: string) => void; children: React.ReactNode }) {
   const rv = c.rivals.find((r) => r.id === selR) || c.rivals[0];
-  const f = G.RIVAL_FILE[rv.id];
+  const f = G.rivalFile(rv);
   const held = G.holdings(c, rv.id), lamps = Math.min(3, Math.round(rv.heat / 3.3));
   const [page, setPage] = useState<'deal' | 'bio'>('deal');
-  const surname = (n: string) => n.replace('Пан ', '').replace('Пані ', '').replace('Граф Ґжеґожевський', 'Ґжеґожевський');
+  const surname = (n: string) => n.split(' ').pop() || n; // «Пані Ельза Берг» → «Берг»
   return (
     <div style={{ position: 'relative', color: INK }}>
       {/* index tabs sticking out of the top edge of the pages */}
@@ -431,7 +431,7 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
         {children}
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           {/* the portrait, pinned in photo corners */}
-          <span style={{ position: 'relative', width: 100, height: 132, flexShrink: 0, background: `url(art/rivals/${rv.id}.jpg) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: `2px solid ${INK}`, boxShadow: '2px 5px 10px rgba(0,0,0,0.5)', transform: 'rotate(-2.5deg)' }}>
+          <span style={{ position: 'relative', width: 100, height: 132, flexShrink: 0, background: `url(${G.rivalPortrait(rv)}) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: `2px solid ${INK}`, boxShadow: '2px 5px 10px rgba(0,0,0,0.5)', transform: 'rotate(-2.5deg)' }}>
             {[{ top: -3, left: -3, r: 0 }, { top: -3, right: -3, r: 90 }, { bottom: -3, right: -3, r: 180 }, { bottom: -3, left: -3, r: 270 }].map((s, i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', ...s, width: 15, height: 15, background: '#F1E6C8', border: `1px solid ${INK}`, clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: `rotate(${s.r}deg)` } as CSSProperties} />)}
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -644,7 +644,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
           </div>
           {rivMode && rv && (used ? <div style={{ flexShrink: 0, paddingTop: 8, fontSize: 14, fontStyle: 'italic', color: '#E9E1C2' }}>{doneT}</div> : (
             <div style={{ flexShrink: 0, paddingTop: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, letterSpacing: 1.6, fontWeight: 700, color: '#D9C79B', marginBottom: 4 }}>ЩО ЗРОБИТИ З {rv.name.toUpperCase().replace('ГРАФ ҐЖЕҐОЖЕВСЬКИЙ', 'ГРАФОМ').replace('ПАН ВАЙСМАН', 'ВАЙСМАНОМ').replace('ПАНІ БЕРГ', 'БЕРГ')} · 1 ХІД<span style={{ flex: 1, height: 1, background: 'rgba(217,199,155,0.35)' }} /></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, letterSpacing: 1.6, fontWeight: 700, color: '#D9C79B', marginBottom: 4 }}>ЩО ЗРОБИТИ З {G.rivalCase(rv, 'ins').toUpperCase()} · 1 ХІД<span style={{ flex: 1, height: 1, background: 'rgba(217,199,155,0.35)' }} /></div>
               {rv.ally ? <div style={{ fontSize: 14, fontStyle: 'italic', color: '#E9E1C2' }}>Дім скріплено шлюбом. {rv.f ? 'Вона' : 'Він'} більше не полює на вас.</div> : <>
                 <div style={{ display: 'flex', gap: 4 }}>{acts.map((o) => <ToolChip key={o.act} o={o} on={cur?.act === o.act} locked={used} onPick={() => setPick(o.act)} />)}</div>
                 {cur && !used && <div style={{ marginTop: 8, padding: '4px 8px', fontSize: 12, lineHeight: 1.3, color: '#E9E1C2', background: 'rgba(0,0,0,0.3)', borderLeft: '3px solid #B8913C' }}>

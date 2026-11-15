@@ -1,7 +1,7 @@
 import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
-import { CITY_V, cityEvening, cityMorning, initCity } from './city';
+import { CITY_V, cityEvening, cityMorning, inheritCity, initCity } from './city';
 import { applyStory, cardById, dealYear, deckOf } from './deck';
 import { clamp100, fmt, fk, kinFor, mapText } from './text';
 import type {
@@ -325,8 +325,26 @@ function advance(n: GameState): GameState {
   const dead = deathOf(n);
   if (dead) return finish(n, 'collapse', dead[0], dead[1]);
   n.doc += 1; n.ap = 1;
-  if (n.doc >= docsFor(n).length) { n.doc = 0; n.screen = 'evening'; n.alloc = emptyAlloc(); if (n.city) cityEvening(n, n.city); }
+  if (n.lastDec && n.lastStamp) (n.dayLog ||= []).push({ t: n.lastDec.t, h: n.headline, stamp: n.lastStamp });
+  const len = docsFor(n).length;
+  if (n.doc >= len) {
+    // the papers are done; the day ends when the player says so (Era I has the end-of-day sheet; later eras
+    // still move on by themselves until their screens get one)
+    if (RULES.dayEnd.manual && n.era === 1) n.doc = len;
+    else toEvening(n);
+  }
   return n;
+}
+
+function toEvening(n: GameState) { n.doc = 0; n.screen = 'evening'; n.alloc = emptyAlloc(); if (n.city) cityEvening(n, n.city); }
+
+/** every document of the day is answered: the office waits for the player to end the day */
+export const officeDone = (s: GameState) => s.screen === 'office' && s.doc >= docsFor(s).length;
+
+/** End the working day (after the last document): on to the evening ledger. */
+export function endDay(s: GameState): GameState {
+  if (!officeDone(s)) throw new Error('The documents are not done yet');
+  const n = clone(s); toEvening(n); return n;
 }
 
 function fitAlloc(a: Alloc, s: GameState): Alloc {
@@ -381,7 +399,7 @@ export function signForm(s: GameState): GameState {
 
 export function toOffice(s: GameState): GameState {
   const n = clone(s);
-  Object.assign(n, { screen: 'office', doc: 0, ap: 1, last: {}, lastStamp: null });
+  Object.assign(n, { screen: 'office', doc: 0, ap: 1, last: {}, lastStamp: null, dayLog: [] });
   return n;
 }
 
@@ -399,7 +417,7 @@ export function schemeDelta(s: GameState, ap = s.ap): Delta {
 
 export function signScheme(s: GameState): GameState {
   const doc = currentDoc(s);
-  if (s.screen !== 'office' || doc.kind !== 'scheme') throw new Error('No scheme to sign');
+  if (s.screen !== 'office' || doc.kind !== 'scheme' || officeDone(s)) throw new Error('No scheme to sign');
   const sc = doc.scheme, ap = s.ap, d = schemeDelta(s, ap), n = clone(s);
   apply(n, d);
   n.owed[sc.acc] = (n.owed[sc.acc] || 0) + Math.round((d.cash! * RULES.accShare) / 10) * 10;
@@ -411,7 +429,7 @@ export function signScheme(s: GameState): GameState {
 
 export function declineScheme(s: GameState): GameState {
   const doc = currentDoc(s);
-  if (s.screen !== 'office' || doc.kind !== 'scheme') throw new Error('No scheme to decline');
+  if (s.screen !== 'office' || doc.kind !== 'scheme' || officeDone(s)) throw new Error('No scheme to decline');
   const no = doc.scheme.no, n = clone(s);
   apply(n, no.d);
   (Object.keys(no.al || {}) as AccKey[]).forEach((k) => { n.acc[k].l = clamp100(n.acc[k].l + (no.al![k] || 0)); });
@@ -422,7 +440,7 @@ export function declineScheme(s: GameState): GameState {
 
 export function pickOption(s: GameState, index: number): GameState {
   const doc = currentDoc(s);
-  if (s.screen !== 'office' || doc.kind !== 'choice') throw new Error('No choice to answer');
+  if (s.screen !== 'office' || doc.kind !== 'choice' || officeDone(s)) throw new Error('No choice to answer');
   const o = doc.choice.opts[index];
   if (!o) throw new Error('No option ' + index);
   if (!enabledOptions(s, doc.choice.opts)[index]) throw new Error('Option not affordable');
@@ -761,6 +779,8 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   n.body = S(n, `heir.${e.kind}.b`, { surname: s.surname }) + (h.g === 'f' ? S(n, 'heir.femaleSuffix') : '');
   nameKin(n);
   n.yearStart = yearMark(n);
+  // the city goes on: our roofs, the shops and the magnates (whose houses pass to their own heirs)
+  if (!e.eraOver && s.city && s.city.v === CITY_V) n.city = inheritCity(s.city, e.kind === 'collapse');
   // the same era's documents are not dealt again to the second generation; a new era starts a fresh deck
   if (!e.eraOver && s.deck) n.deck = { today: [], seen: [...s.deck.seen], flags: {}, queue: [] };
   dealYear(n);

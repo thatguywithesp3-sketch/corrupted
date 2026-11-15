@@ -340,3 +340,50 @@ describe('document deck (Era I)', () => {
     finally { G.RULES.deck.on = true; }
   });
 });
+
+describe('generations in the city and the end of the day', () => {
+  const retiredWithRoof = (kind: 'retire' | 'collapse' = 'retire') => {
+    let s = G.signForm(G.newGame(41));
+    const b = s.city!.biz.find((x) => x.status === 'open' && !x.rival)!;
+    b.status = 'roof'; b.tribute = 120;
+    s.city!.rivals[0].heat = 6;
+    s = { ...s, screen: 'night', served: 13, offers: [] };
+    return kind === 'retire' ? G.acceptOffer(s, 'retire') : { ...G.acceptOffer(s, 'retire'), ending: { ...G.acceptOffer(s, 'retire').ending!, kind: 'collapse' as const } };
+  };
+
+  it('the heir keeps the father’s roofs, and each magnate’s house passes to its own heir', () => {
+    const end = retiredWithRoof();
+    const roofId = end.city!.biz.find((x) => x.status === 'roof')!.id;
+    const h = G.pickHeir(end, end.heirs[0].id);
+    expect(h.city!.biz.find((x) => x.id === roofId)!.status).toBe('roof');
+    const r1 = h.city!.rivals.find((r) => r.id === 'r1')!;
+    expect(r1.gen).toBe(2);
+    expect(r1.name).toBe('Пан Леопольд Вайсман');
+    expect(r1.heat).toBe(3); // old grudges cool off by half
+    expect(G.rivalCase(r1, 'dat')).toBe('Пану Леопольду Вайсману');
+    expect(G.rivalFile(r1).age).toBe(31);
+    expect(h.city!.news.some((x) => x.kind === 'rival' && /сина/.test(x.head))).toBe(true);
+  });
+
+  it('a fallen family loses its roofs', () => {
+    const h = G.pickHeir(retiredWithRoof('collapse'), retiredWithRoof('collapse').heirs[0].id);
+    expect(h.city!.biz.some((x) => x.status === 'roof')).toBe(false);
+  });
+
+  it('after the last document the office waits for the player to end the day', () => {
+    let s = G.toOffice(G.signForm(G.newGame(43)));
+    const n = docsFor(s).length;
+    for (let i = 0; i < n; i++) {
+      const d = G.currentDoc(s);
+      s = d.kind === 'scheme' ? G.declineScheme(s) : G.pickOption(s, G.enabledOptions(s, d.choice.opts).indexOf(true));
+    }
+    expect(s.screen).toBe('office');
+    expect(G.officeDone(s)).toBe(true);
+    expect(s.dayLog!.length).toBe(n);
+    expect(() => G.declineScheme(s)).toThrow();
+    expect(G.movesLeft(s)).toBeGreaterThan(0); // the city still takes moves
+    const e = G.endDay(s);
+    expect(e.screen).toBe('evening');
+    expect(() => G.endDay(G.toOffice(G.signForm(G.newGame(43))))).toThrow();
+  });
+});

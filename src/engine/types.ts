@@ -224,6 +224,8 @@ export interface GameState {
   dreamDone?: boolean;
   /** meters and money at the start of the current year, for the year report (absent in old saves) */
   yearStart?: YearMark;
+  /** today's decisions in the office, for the end-of-day sheet (cleared every morning) */
+  dayLog?: { t: string; h: string; stamp: StampKind }[];
   /** the document deck: this year's cards, what was already dealt, story flags (value: the year set) and arcs due later */
   deck?: DeckState;
   acc: Record<AccKey, Accomplice>;
