@@ -23,57 +23,90 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops } from './mapLayout';
 
 /** a painted building standing on a little clearing; its base sits on (x, y) */
-function Sprite({ art, x, y, w, dim }: { art: string; x: number; y: number; w: number; dim?: boolean }) {
+function Sprite({ art, x, y, w, dim, quiet }: { art: string; x: number; y: number; w: number; dim?: boolean; quiet?: boolean }) {
   const h = spriteH(art, w);
   return (
     <g transform={`translate(${x} ${y})`}>
       <ellipse cx="0" cy="-.4" rx={w * 0.56} ry={w * 0.2} fill="#EFE5C9" fillOpacity=".92" />
       <ellipse cx=".6" cy="0" rx={w * 0.46} ry={w * 0.13} fill="#3A2A10" fillOpacity=".18" />
-      <image href={`art/map/${art}.webp`} x={-w / 2} y={-h * 0.94} width={w} height={h} preserveAspectRatio="xMidYMax meet" style={dim ? { filter: 'grayscale(1) opacity(.55)' } : undefined} />
+      <image href={`art/map/${art}.webp`} x={-w / 2} y={-h * 0.94} width={w} height={h} preserveAspectRatio="xMidYMax meet" style={dim ? { filter: 'grayscale(1) opacity(.55)' } : quiet ? { filter: 'sepia(.45) saturate(.6) opacity(.85)' } : undefined} />
     </g>
   );
 }
-/** a small engraved name plate under a painted place */
-function Plaque({ x, y, t, on, color }: { x: number; y: number; t: string; on?: boolean; color?: string }) {
-  const w = t.length * 1.32 + 2.4;
+/** a small engraved name plate under a painted place. `gold`: a place we can act at (brass plate);
+ * `quiet`: a landmark we only look at (just the engraved name, no plate) */
+function Plaque({ x, y, t, on, color, gold, quiet }: { x: number; y: number; t: string; on?: boolean; color?: string; gold?: boolean; quiet?: boolean }) {
+  if (quiet) return <text x={x} y={y + 0.3} textAnchor="middle" fontFamily="Old Standard TT, serif" fontSize="1.9" fontStyle="italic" fill="#4A3B22" stroke="#EFE5C9" strokeWidth=".7" paintOrder="stroke" style={{ pointerEvents: 'none' }}>{t}</text>;
+  const fs = gold ? 2.3 : 2, w = t.length * (gold ? 1.5 : 1.32) + (gold ? 3.4 : 2.4), h = gold ? 3.3 : 2.9;
   return (
     <g transform={`translate(${x} ${y})`}>
-      <rect x={-w / 2} y="-1.9" width={w} height="2.9" rx=".3" fill={on ? '#FFF7DC' : '#F4EBCF'} stroke={on ? RED : color || '#5A4A30'} strokeWidth={on ? 0.4 : 0.22} />
-      {color && <rect x={-w / 2} y="-1.9" width=".9" height="2.9" fill={color} />}
-      <text textAnchor="middle" y=".3" fontFamily="Old Standard TT, serif" fontSize="2" fontWeight={on ? 700 : 400} fill={INK}>{t}</text>
+      <rect x={-w / 2} y={-h + 1} width={w} height={h} rx=".3" fill={gold ? 'url(#mp-brass)' : on ? '#FFF7DC' : '#F4EBCF'} stroke={on ? RED : gold ? '#5A4012' : color || '#5A4A30'} strokeWidth={on ? 0.45 : gold ? 0.32 : 0.22} filter={gold ? 'url(#mp-sh)' : undefined} />
+      {gold && <rect x={-w / 2 + 0.5} y={-h + 1.5} width={w - 1} height={h - 1} rx=".2" fill="none" stroke="#FFF2C0" strokeOpacity=".55" strokeWidth=".18" />}
+      {color && !gold && <rect x={-w / 2} y="-1.9" width=".9" height="2.9" fill={color} />}
+      <text textAnchor="middle" y={gold ? 0.25 : 0.3} fontFamily="Old Standard TT, serif" fontSize={fs} fontWeight={on || gold ? 700 : 400} fill={INK}>{t}</text>
     </g>
   );
 }
+/** the brass medallion hung over a place we can act at: its emblem says what the place is for */
+const INST_GLYPH: Record<G.InstId, string> = {
+  charity: 'M0 2.2 C-2.6 .4 -2.6 -1.9 -1.2 -1.9 C-.5 -1.9 0 -1.3 0 -.9 C0 -1.3 .5 -1.9 1.2 -1.9 C2.6 -1.9 2.6 .4 0 2.2 Z',
+  press: 'M1.9 -2.1 C.2 -1.4 -1 .2 -1.5 1.9 M1.9 -2.1 C1.4 -.4 .2 .6 -1.1 1.1 M-1.5 1.9 L-1.9 2.3',
+  whisper: 'M-2 -1.4 H2 V.9 H-.2 L-1.3 2 V.9 H-2 Z M-1 -.3 H-.6 M-.2 -.3 H.2 M.6 -.3 H1',
+  okhrana: 'M-1.9 -1.9 L1.9 1.9 M1.9 -1.9 L-1.9 1.9 M-2.2 -1 L-1 -2.2 M2.2 -1 L1 -2.2'
+};
+const PLACE_NAME: Record<G.InstId, string> = { charity: 'Сиротинець', press: '«Вісник»', whisper: 'Ринок', okhrana: 'Жандармерія' };
+function InstSign({ id, x, y, on }: { id: G.InstId; x: number; y: number; on: boolean }) {
+  const fill = id === 'charity' || id === 'okhrana';
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <g style={{ transform: on ? 'scale(1.18)' : 'none', transition: 'transform .2s' }}>
+                <g filter="url(#mp-sh)"><circle r="4.1" fill="url(#mp-brass)" stroke="#4A3410" strokeWidth=".4" /><circle r="4.1" fill="url(#mp-head)" /></g>
+        <circle r="3.1" fill="#FBF4DC" stroke="#8A6A28" strokeWidth=".2" />
+        <path d={INST_GLYPH[id]} fill={fill ? RED : 'none'} stroke={fill && id === 'charity' ? 'none' : id === 'okhrana' ? '#23356A' : INK} strokeWidth=".45" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+    </g>
+  );
+}
+/** a painted <g> that behaves like a button: focusable, Enter/Space, a name for screen readers */
+const asBtn = (label: string, fn: () => void) => ({
+  role: 'button', tabIndex: 0, 'aria-label': label, onClick: fn,
+  onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } },
+  style: { cursor: 'pointer', outline: 'none' } as CSSProperties
+});
 const Mark = ({ x, y, ok }: { x: number; y: number; ok: boolean }) => (
   <g transform={`translate(${x} ${y}) rotate(-14)`}><circle r="2.1" fill="#F6EEDA" stroke={ok ? '#2F6E46' : '#8E1F12'} strokeWidth=".45" /><path d={ok ? 'M-1 0 L-.2 .9 L1.1 -.9' : 'M-.9 -.9 L.9 .9 M.9 -.9 L-.9 .9'} stroke={ok ? '#2F6E46' : '#8E1F12'} strokeWidth=".55" fill="none" strokeLinecap="round" /></g>
 );
 
 /** the plan: the quiet engraving underneath, the painted places and the shops on top */
-function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival }: { biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[]; marks: { biz: string; ok: boolean }[]; selInst: string | null; onInst: (id: G.InstId) => void; onRival: (id: string) => void }) {
+function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival, live }: { live: Set<string>; biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[]; marks: { biz: string; ok: boolean }[]; selInst: string | null; onInst: (id: G.InstId) => void; onRival: (id: string) => void }) {
   const colOf = (id?: string | null) => rivals.find((r) => r.id === id)?.color;
   const ctl = G.control({ biz, rivals } as never);
   const markOf = (id: string) => marks.find((m) => m.biz === id);
   // everything painted is drawn back to front, so nearer buildings overlap farther ones
   type Item = { y: number; el: React.ReactNode };
   const items: Item[] = [];
-  DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} x={p.x} y={p.y} w={p.w} />{p.t && <Plaque x={p.x} y={p.y + 2.6} t={p.t} />}</g> }));
+  DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} x={p.x} y={p.y} w={p.w} quiet />{p.t && <Plaque x={p.x} y={p.y + 2.2} t={p.t} quiet />}</g> }));
   items.push({ y: OUR_HOME.y, el: <g key="home" style={{ pointerEvents: 'none' }}><Sprite art={OUR_HOME.art} x={OUR_HOME.x} y={OUR_HOME.y} w={HOME_W.grabs} /><Plaque x={OUR_HOME.x} y={OUR_HOME.y + 2.6} t="Ваш дім" color="#3F8A5A" /></g> });
   G.INSTS.forEach((p) => {
-    const on = selInst === p.id, mk = markOf('i:' + p.id), w = INST_W[p.id];
+    const on = selInst === p.id, mk = markOf('i:' + p.id), w = INST_W[p.id], h = spriteH(p.art, w), lit = live.has(p.id);
     items.push({ y: p.y, el: (
-      <g key={p.id} onClick={() => onInst(p.id)} style={{ cursor: 'pointer' }}>
-        {on && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.66} ry={w * 0.26} fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
+      <g key={p.id} {...asBtn(G.INSTS.find((i) => i.id === p.id)!.t, () => onInst(p.id))} className="mp-hit">
+        {/* the brass ring on the ground: a place where a move can be made this year */}
+        <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.66} ry={w * 0.25} fill="#F3DC93" fillOpacity={lit ? 0.45 : 0.18} stroke="#B8913C" strokeWidth=".45" />
+        {lit && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.66} ry={w * 0.25} fill="none" stroke="#C9A24A" strokeWidth=".5"><animate attributeName="rx" values={`${w * 0.62};${w * 0.8};${w * 0.62}`} dur="2.4s" repeatCount="indefinite" /><animate attributeName="ry" values={`${w * 0.23};${w * 0.32};${w * 0.23}`} dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".9;0;.9" dur="2.4s" repeatCount="indefinite" /></ellipse>}
+        {on && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.72} ry={w * 0.29} fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
         <Sprite art={p.art} x={p.x} y={p.y} w={w} />
-        <Plaque x={p.x} y={p.y + 2.8} t={{ charity: 'Сиротинець', press: '«Вісник»', whisper: 'Шептуни', okhrana: 'Жандармерія' }[p.id]} on={on} color="#B8913C" />
+        <InstSign id={p.id} x={p.x + w * 0.45} y={p.y - h * 0.72} on={on} />
+        <Plaque x={p.x} y={p.y + 3} t={PLACE_NAME[p.id]} on={on} gold />
         {mk && <Mark x={p.x + w * 0.42} y={p.y - 1.5} ok={mk.ok} />}
-        <rect x={p.x - w / 2} y={p.y - spriteH(p.art, w) * 0.9} width={w} height={spriteH(p.art, w) * 0.9 + 4} fill="transparent" />
+        <rect x={p.x - w / 2} y={p.y - h * 0.94} width={w + 4.5} height={h * 0.94 + 4.5} fill="transparent" />
       </g>
     ) });
   });
   rivals.forEach((r) => {
     const h = HOMES[r.id]; if (!h) return;
     items.push({ y: h.y, el: (
-      <g key={r.id} onClick={() => onRival(r.id)} style={{ cursor: 'pointer' }}>
+      <g key={r.id} {...asBtn(r.name, () => onRival(r.id))} className="mp-hit">
         <Sprite art={h.art} x={h.x} y={h.y} w={HOME_W[h.art]} />
         <Plaque x={h.x} y={h.y + 2.8} t={r.name.replace(/^Граф (\S+ )?/, '').replace(/^(Пан|Пані) \S+ (\S+)$/, '$1 $2')} color={r.color} />
         <rect x={h.x - 8} y={h.y - 17} width="16" height="21" fill="transparent" />
@@ -86,7 +119,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival 
     const on = b.id === sel, closed = b.status === 'closed', roof = b.status === 'roof';
     const col = pinColor(b), rc = colOf(b.rival), mk = markOf(b.id);
     items.push({ y: b.y + (on ? 50 : 0), el: (
-      <g key={b.id} onClick={() => onPick(b.id)} style={{ cursor: 'pointer' }}>
+      <g key={b.id} {...asBtn(`${b.name}, ${b.kind}`, () => onPick(b.id))} className="mp-hit">
         {on && <ellipse cx={b.x} cy={b.y + 4.2} rx="6.6" ry="2.6" fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
         <Sprite art={shopArt(b.id)} x={b.x} y={b.y + 4.2} w={9.5} dim={closed} />
         {/* the shop sign hangs above the roof: enamel medallion with the trade's emblem */}
@@ -113,6 +146,8 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival 
     <svg viewBox="-4 -4 208 228" style={{ display: 'block', width: 1040 * zoom, height: 1140 * zoom, flexShrink: 0 }} aria-label="План Порт-Аурума">
       <defs>
         <filter id="mp-sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx=".5" dy=".9" stdDeviation=".5" floodColor="#000" floodOpacity=".55" /></filter>
+        <linearGradient id="mp-brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F6E3A1" /><stop offset=".5" stopColor="#D9B45C" /><stop offset="1" stopColor="#A67F2E" /></linearGradient>
+        <style>{'.mp-hit:focus-visible > *:first-child { stroke: #8E1F12; stroke-width: .8; stroke-dasharray: 1.3 .7 }'}</style>
         <radialGradient id="mp-head" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#fff" stopOpacity=".85" /><stop offset=".35" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".35" /></radialGradient>
       </defs>
       <PlanArt />
@@ -393,7 +428,9 @@ function Legend({ rivals, onClose }: { rivals: Rival[]; onClose: () => void }) {
         <H t="СУПЕРНИКИ І РАЙОНИ" />
         <Row pin={<MiniPin col="#F2E9D0" ring={rivals[0]?.color || '#2E5E8E'} />} title="Кольорове кільце" text="Заклад під рукою суперника. Колір — його колір." />
         <Row pin={<svg viewBox="0 0 34 8" width="38" height="10"><circle cx="5" cy="4" r="3" fill="#3F8A5A" stroke={INK} /><circle cx="17" cy="4" r="3" fill={rivals[1]?.color || '#7A3F8E'} stroke={INK} /><circle cx="29" cy="4" r="3" fill="#F2E9D0" stroke={INK} /></svg>} title="Крапки під назвою району" text="Хто там тримає заклади: ви, суперник або ніхто." />
-        <div style={{ marginTop: 8, fontSize: 12, fontStyle: 'italic', color: MUTE }}>Кожен заклад, кожен можновладець і кожне місце з позолоченою табличкою (сиротинець, «Вісник», шептуни, жандармерія) — по одному ходу на день. Торкніться будівлі — з’явиться її картка.</div>
+        <H t="МІСЬКІ УСТАНОВИ" />
+        <Row pin={<svg viewBox="-5 -5 10 10" width="30" height="30"><defs><linearGradient id="lg-brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F6E3A1" /><stop offset="1" stopColor="#A67F2E" /></linearGradient></defs><circle r="4.4" fill="url(#lg-brass)" stroke={INK} strokeWidth=".4" /><circle r="3.3" fill="#FBF4DC" /><path d={INST_GLYPH.press} transform="scale(1.1)" fill="none" stroke={INK} strokeWidth=".5" strokeLinecap="round" /></svg>} title="Латунний медальйон" text="Сиротинець, «Вісник», ринок, жандармерія: тут відмивають ім’я й гасять чутки. Кільце на землі дихає, поки цього року тут можна зробити хід." />
+        <div style={{ marginTop: 8, fontSize: 12, fontStyle: 'italic', color: MUTE }}>Кожен заклад, кожен можновладець і кожна установа — по одному ходу на рік. Будівлі без таблички (собор, ратуша, вокзал) — лише орієнтири. Торкніться будівлі — з’явиться її картка.</div>
       </div>
     </div>
   );
@@ -591,6 +628,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const used = unit ? G.didAct(c, unit) : false;
   const left = G.movesLeft(s), most = G.movesMax(s);
   const marks = (c.today || []).filter((r) => !r.rival).map((r) => ({ biz: r.biz, ok: r.ok }));
+  // places where a move can still be made this year: their brass ring breathes
+  const live = new Set<string>(left > 0 ? G.INSTS.filter((i) => !G.didAct(c, 'i:' + i.id) && G.instActs(s, i.id).some((o) => o.can)).map((i) => i.id) : []);
   const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} цього року вже говорили. Наступна розмова — наступного року.` : inst ? 'Тут цього року вже були. Знову — наступного року.' : 'Цей заклад цього року вже відвідували. Знову — наступного року.';
   const doneNote = used ? <div style={{ fontSize: 14, fontStyle: 'italic', color: rivMode ? INK : '#E9E1C2', padding: '4px 2px' }}>{doneT}</div> : null;
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
@@ -610,7 +649,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       {/* the whole plan; it shrinks only while a card is open */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
         <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
-          <Plan marks={marks} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} selInst={panel === 'inst' ? selI : null} onInst={(id) => { setSelI(id); setPanel('inst'); }} onRival={(id) => { setSelR(id); setPanel('riv'); }} />
+          <Plan live={live} marks={marks} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} selInst={panel === 'inst' ? selI : null} onInst={(id) => { setSelI(id); setPanel('inst'); }} onRival={(id) => { setSelR(id); setPanel('riv'); }} />
         </div>
         {/* floating furniture: title plaque, close, zoom, legend */}
         <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '4px 8px', pointerEvents: 'none' }}>

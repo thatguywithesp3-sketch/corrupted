@@ -34,7 +34,7 @@ export const SCENE_CAPTION: Record<string, string> = {
   delegates: 'на вокзалі',
   bourse: 'на біржі',
   bank: 'під банком «Аурум»',
-  flags: 'на Ратушній площі',
+  hideout: 'на Подолі, біля накритої криївки',
   guild: 'у залі гільдій',
   court: 'у міському суді',
   insider: 'у шинку біля доків',

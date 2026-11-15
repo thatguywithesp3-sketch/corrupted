@@ -7,7 +7,7 @@
 | Файл для гри | `public/art/news/<сцена>.jpg`, 800×600 (4:3), JPG 82% |
 | Оригінал | `art/news/<сцена>-src.jpg` (1280×960, JPG 90%; генерації у Figma-файлі «Corrupted! — замальовки газети») |
 | Поки малюнка немає | газета показує вирізку з ранкової панорами міста (як раніше) |
-| Готово | усі 40 сцен (15.11) |
+| Готово | усі 40 сцен (15.11; `customs` перегенеровано з імперськими прапорами, `flags` замінено на `hideout`) |
 
 ## Правила саме для замальовок
 
@@ -20,7 +20,7 @@
    - ротмістр — жандармський офіцер, блакитний мундир, кашкет, навощені вуса;
    - губернатор — літній генерал, сиві бакенбарди, зелений мундир, золоті еполети, червона стрічка;
    - Вайсман, Берг, граф — як у `art/STYLE.md` → «Суперники».
-3. **Без тексту й без символів реальних держав** (загальні правила `STYLE.md`). Прапори — без гербів: імперський темно-жовтий, вальдорський синьо-білий.
+3. **Без тексту й без символів реальних держав** (загальні правила `STYLE.md`). Прапори: імперський — горизонтальні смуги червона, біла, жовта (на суднах без герба; над Ратушею й губернаторським палацом — з чорним двоголовим орлом у білій смузі, орел тримає якір і ключ); монети — з тим самим орлом; вальдорський — блакитна, чорна, жовта, і до Епохи IV (1990) він заборонений: ніколи не висить відкрито, лише в криївці, у жандармів у руках або фарбою на стіні.
 4. **Тон** — газетна хроніка без моралі: сатира в деталі (конверт, зайва опора, позолота, що облізла), а не в плакаті.
 
 ## Шаблон промпту
@@ -61,7 +61,7 @@ No text, no letters, no numbers, no signage, no captions, no coats of arms or sy
 | `bridge` | міст через гирло | stone piers of an unfinished bridge across the river mouth, scaffolding, engineers arguing over plans, a rowing boat ferrying people underneath |
 | `gymnasium` | гімназія | a new gymnasium building with schoolchildren in uniforms going in; buckets catch drips under the fresh roof; a proud teacher at the door |
 | `opera` | опера | an opera house interior before a premiere: gilded boxes, a huge chandelier, ladies with lorgnettes; a workman on a ladder touches up flaking gold leaf |
-| `customs` | портові мита | a customs house on the quay, barrels of rum and bales of cloth, a captain winking at a clerk who writes in a ledger, ships labelled only by flags without symbols |
+| `customs` | портові мита | a customs house on the quay, barrels of rum and bales of cloth, a captain winking at a clerk who writes in a ledger; merchant ships fly plain horizontal red-white-yellow tricolour flags without emblems |
 | `garrison` | постачання гарнізону | an imperial garrison courtyard in winter, thin soldiers in threadbare summer greatcoats lining up for bales of cheap cloth from a cheerful plump merchant in a red checked suit |
 | `governor_party` | подарунок губернаторші | fireworks over the governor's palace and an orchestra on the terrace; the governor's wife in a grand gown receives gifts, a city treasury chest stands open nearby |
 | `revisor` | ревізор зі столиці | an inspector from the imperial capital arriving at the station with trunks and a stern assistant, a thin clerk with round spectacles bowing deeply and holding a ledger |
@@ -70,7 +70,7 @@ No text, no letters, no numbers, no signage, no captions, no coats of arms or sy
 | `ball` | благодійний бал | a charity ball in a ballroom with a portrait of an aging emperor without insignia, ladies of the committee writing down donors' names, a donation box |
 | `inspector` | Отто-інспектор; вдова | a plump cheerful inspector in a red checked suit inspecting a small shop on a poor street while the widow owner and her son stand at the door with witnesses |
 | `portrait` | парадний портрет | a painter's studio, a grand gilded portrait of an anonymous official in heroic pose on the easel, the painter mixing gold paint, an envelope sticking out of the portrait's pocket |
-| `poetry` | вечір поезії | students reading poetry from handwritten sheets in a candle-lit hall full of young people, a blue-and-white ribbon on a lectern, a policeman listening at the window |
+| `poetry` | вечір поезії | students reading poetry from handwritten sheets in a candle-lit hall full of young people, a policeman listening at the window |
 | `berg` | Пані Берг | a gossip newspaper printing shop: a thin widow with a sharp nose, feather in her hair bun, mourning silk and a long cigarette holder, inspecting fresh caricature sheets coming off the press |
 | `dinner` | Вайсман | a private dining room of the Grand restaurant: a stout bald merchant with a sea-captain beard, pince-nez and a cigar paying the bill with a gold coin, waiters bowing, a city map on the table split in two |
 | `count` | граф | a crumbling castle on the hill, a withered old count with a walrus moustache, monocle and patched faded uniform sealing a letter with red wax; a bank clerk waits with an auction notice |
@@ -78,7 +78,7 @@ No text, no letters, no numbers, no signage, no captions, no coats of arms or sy
 | `delegates` | делегати до столиці | a delegation of merchants in fur coats boarding a train to the capital with a rolled petition, citizens waving them off on the platform |
 | `bourse` | облігації | the stock exchange floor, brokers shouting, a large board with falling arrows only (no numbers), a nervous official holding a bundle of imperial bonds |
 | `bank` | банк «Аурум» | a grand bank façade with columns; depositors crowd the closed doors while a carriage loaded with suitcases leaves around the corner |
-| `flags` | другий прапор | the town hall tower at dawn with two flags side by side, a dark yellow imperial one and a blue-and-white Valdorian one, citizens pointing up from the square |
+| `hideout` | криївка на Подолі (картка ордера) | a night raid on a printer's cellar: gendarmes in blue uniforms with lanterns pull rolled banners striped light blue, black and yellow out of a crate, a hand press and scattered leaflets, a printer in an apron held by the arm, neighbours watching from the stairs |
 | `guild` | гільдії | guild elders in fur-trimmed robes around a long table with a salt barrel in the middle, shaking hands over a sealed contract |
 | `court` | суд; свідчення; провал роду | a city courtroom, a witness pointing a finger, the judge peering over spectacles, journalists scribbling in the gallery |
 | `insider` | інсайдер у газеті | a smoky dockside tavern where a nervous informant whispers to a reporter in a flat cap who writes in a notebook |

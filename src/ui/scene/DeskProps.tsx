@@ -52,7 +52,7 @@ export function DeskProps() {
       <style>{'@keyframes dp-glint{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}.dp-glint{animation:dp-glint 6s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.dp-glint{animation:none;opacity:.5}}'}</style>
       <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: NATURAL, transform: `scale(${k})`, transformOrigin: '50% 0' }}>
         <Obj src="art/desk/inkwell.png" x={28} y={8} w={112} rot={-4} glint={[24, 18, 0]} />
-        <Obj src="art/desk/coins.png" x={166} y={60} w={92} rot={6} glint={[40, 10, 2.4]} />
+        <Obj src="art/desk/coins.png" x={160} y={62} w={106} rot={4} glint={[40, 10, 2.4]} />
         <Obj src="art/desk/stamp.png" x={282} y={4} w={78} rot={3} glint={[38, 14, 4.1]} />
       </div>
     </div>
