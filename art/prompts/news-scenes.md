@@ -27,19 +27,20 @@
 ```
 Hand-tinted 19th-century newspaper engraving, bold pen-and-ink with sharp cross-hatching in the manner
 of Puck magazine and Thomas Nast, on cream newsprint; soft watercolor tints, muted palette of black ink,
-deep vermilion red and dull ochre gold, faint halftone texture. Strongly grotesque, sculpted character
-design: every face is a distorted caricature carved in hard planes like a bust, with exaggerated anatomy
-that tells class and character — heavy brow ridges, deep-set eye sockets, oversized hooked or bulbous
-noses, big ears, jutting or receding chins, crooked teeth, sunken cheeks, deep wrinkles, asymmetry; the
-wealthy are bloated and soft with double chins and tiny eyes lost in fat, the poor are bony and angular
-with gaunt faces and huge gnarled hands. Elongated or squashed skulls, big heads, small bodies.
+deep vermilion red and dull ochre gold, faint halftone texture. Grotesque, sculpted character faces with
+normal body proportions: every face is a pronounced caricature carved in hard planes like a bust — heavy
+brow ridges, deep-set suspicious eyes, large hooked or bulbous noses, big ears, jutting or receding chins,
+crooked teeth, deep wrinkles, asymmetry — the exaggeration lives in the faces and hands, not in the body
+size; anatomy tells class and character: the wealthy are fleshy and puffy with heavy jowls, double chins
+and small greedy eyes, the poor are bony and gaunt with sunken cheeks, broken noses and big gnarled hands.
+Unsettling but still believable, like real people of a hard port city, not a cartoon.
 Scene in Port-Aurum, a merchant port city of the 1870s (Venice-like canals and bridges mixed with Lviv,
 Odesa, Kraków and Prague: tiled roofs, onion-domed monastery on a hill, town-hall tower, opera, harbour
 with lighthouse): <СЦЕНА>. Wide 4:3 composition, readable at small size, one clear focal point.
 No text, no letters, no numbers, no signage, no captions, no coats of arms or symbols of real states.
 ```
 
-Напрям облич (від 15.11, рішення Макса): гротеск, як у портретах героїв і суперників, з принципом
+Напрям облич (від 15.11, рішення Макса): гротеск в обличчях і руках, але нормальні пропорції тіла (без «великих голів на малих тілах»), з принципом
 «анатомія розповідає про клас» (орієнтир — дизайн персонажів студії Arkane, без копіювання їхніх
 персонажів). Перші 12 замальовок згенеровано ще в м'якшому варіанті; `roads` — зразок нового напряму.
 
