@@ -25,14 +25,23 @@
 ## Шаблон промпту
 
 ```
-Hand-tinted 19th-century newspaper engraving, pen-and-ink with fine cross-hatching in the manner of
-Puck magazine and Thomas Nast, on cream newsprint; soft watercolor tints, muted palette of black ink,
-deep vermilion red and dull ochre gold, faint halftone texture. A satirical but deadpan city sketch
-from Port-Aurum, a merchant port city of the 1870s (Venice-like canals and bridges mixed with Lviv,
+Hand-tinted 19th-century newspaper engraving, bold pen-and-ink with sharp cross-hatching in the manner
+of Puck magazine and Thomas Nast, on cream newsprint; soft watercolor tints, muted palette of black ink,
+deep vermilion red and dull ochre gold, faint halftone texture. Strongly grotesque, sculpted character
+design: every face is a distorted caricature carved in hard planes like a bust, with exaggerated anatomy
+that tells class and character — heavy brow ridges, deep-set eye sockets, oversized hooked or bulbous
+noses, big ears, jutting or receding chins, crooked teeth, sunken cheeks, deep wrinkles, asymmetry; the
+wealthy are bloated and soft with double chins and tiny eyes lost in fat, the poor are bony and angular
+with gaunt faces and huge gnarled hands. Elongated or squashed skulls, big heads, small bodies.
+Scene in Port-Aurum, a merchant port city of the 1870s (Venice-like canals and bridges mixed with Lviv,
 Odesa, Kraków and Prague: tiled roofs, onion-domed monastery on a hill, town-hall tower, opera, harbour
-with lighthouse). Scene: <СЦЕНА>. Wide 4:3 composition, readable at small size, one clear focal point.
+with lighthouse): <СЦЕНА>. Wide 4:3 composition, readable at small size, one clear focal point.
 No text, no letters, no numbers, no signage, no captions, no coats of arms or symbols of real states.
 ```
+
+Напрям облич (від 15.11, рішення Макса): гротеск, як у портретах героїв і суперників, з принципом
+«анатомія розповідає про клас» (орієнтир — дизайн персонажів студії Arkane, без копіювання їхніх
+персонажів). Перші 12 замальовок згенеровано ще в м'якшому варіанті; `roads` — зразок нового напряму.
 
 ## Сцени
 
