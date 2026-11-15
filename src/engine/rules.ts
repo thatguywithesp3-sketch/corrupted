@@ -29,7 +29,9 @@ export const RULES = {
   offers: { patronMin: 55, retireAfter: 12, fleeCleanMin: 4000 },
   presidentFee: 2000,
   /** the estate on Castle Hill: bought once with clean money; fulfils the "estate" dream and stays with the family */
-  estate: { on: true, price: 5500, offerFrom: 1 },
+  estate: { on: true, price: 5000, offerFrom: 1 },
+  /** the document deck (Era I): conditional cards and arcs instead of the prototype's fixed rotation */
+  deck: { on: true },
   /** city moves a year: base + one per rank */
   cityMoves: { base: 3, perRank: 1 },
   endings: {
@@ -39,7 +41,7 @@ export const RULES = {
   },
   dreamBonus: 1000,
   dreamCleanGoal: 8000,
-  dreamCleanThreat: 25,
+  dreamCleanThreat: 27,
   heir: { minorAge: 16, minorKeeps: 0.7, nephewPatron: -10, starsRankUp: 80 },
   shadowYears: 5,
   shadowPatron: 70,
@@ -59,7 +61,7 @@ export const RULES = {
     testify: { loyaltyMax: 25, knowsMin: 40, threat: 25 },
     sibResentment: 20
   },
-  campaign: { rounds: 4, rivalStart: 38, rivalDrift: [2, 3], meCap: 70, rivalFloor: 10, stuffVotes: 8, stuffFraud: 30, exposeFactor: 0.6, losePatron: -20 }
+  campaign: { rounds: 4, rivalStart: 38, rivalDrift: [2, 3], meCap: 70, rivalFloor: 10, stuffVotes: 8, stuffFraud: 30, exposeFactor: 0.6, losePatron: -20, pledgeVotes: 8 }
 };
 
 export type Rules = typeof RULES;
@@ -74,6 +76,7 @@ export const PROTOTYPE_PATCH = {
     offers: { patronMin: 60 },
     presidentFee: 3000,
     estate: { on: false },
+    deck: { on: false },
     dreamCleanThreat: 30,
     campaign: { rivalStart: 45 },
     cityMoves: { base: 1e9 },

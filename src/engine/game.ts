@@ -2,6 +2,7 @@ import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
 import { CITY_V, cityEvening, cityMorning, initCity } from './city';
+import { applyStory, cardById, dealYear, deckOf } from './deck';
 import { clamp100, fmt, fk, kinFor, mapText } from './text';
 import type {
   BankDeal,
@@ -111,9 +112,16 @@ const WHO_BY_CHOICE: Record<number, Who> = { 0: { kind: 'boss' }, 1: { kind: 'ac
 export function docsFor(s: GameState): Doc[] {
   const C = getEra(s.era);
   const Sc = C.schemes, Ch = C.choices as Choice[];
-  const ci = (s.served * 5) % Ch.length, ci2 = (s.served * 5 + 3) % Ch.length;
-  const list: Doc[] = [{ kind: 'scheme', scheme: Sc[s.served % Sc.length] }, { kind: 'choice', choice: Ch[ci], who: WHO_BY_CHOICE[ci] || null }];
-  if (s.rank >= 2) list.push({ kind: 'choice', choice: Ch[ci2], who: WHO_BY_CHOICE[ci2] || null });
+  const D = deckOf(s);
+  let list: Doc[];
+  if (D && s.deck && s.deck.today.length) {
+    // this year's cards from the deck (dealt at the start of the year)
+    list = s.deck.today.map((id) => cardById(D, id)).filter(Boolean).map((c): Doc => ('budget' in c! ? { kind: 'scheme', scheme: c } : { kind: 'choice', choice: c as unknown as Choice, who: (c as { who?: Who | null }).who || null }));
+  } else {
+    const ci = (s.served * 5) % Ch.length, ci2 = (s.served * 5 + 3) % Ch.length;
+    list = [{ kind: 'scheme', scheme: Sc[s.served % Sc.length] }, { kind: 'choice', choice: Ch[ci], who: WHO_BY_CHOICE[ci] || null }];
+    if (s.rank >= 2) list.push({ kind: 'choice', choice: Ch[ci2], who: WHO_BY_CHOICE[ci2] || null });
+  }
   if (s.served % 3 === 2) list.unshift({ kind: 'choice', choice: meetDoc(s), who: { kind: 'acc', acc: 'pike' } });
   const LS = liveSibs(s), LK = liveKids(s);
   if (s.served % 4 === 3 && LS.length) { const sb = LS[s.served % LS.length]; list.splice(1, 0, { kind: 'choice', choice: sibDoc(s, sb), who: { kind: 'fam', id: sb.id } }); }
@@ -358,12 +366,13 @@ export function signForm(s: GameState): GameState {
   if (n.origin === 1) { n.people += 10; n.thrBase = RULES.threatPerYear - 1; } // the reporter's past: risk grows a point slower
   if (n.origin === 2) { n.clean += 800; n.launBonus = 200; }
   const title = rankName(n) + ' ' + n.first + ' ' + n.surname;
-  n.headline = S(n, 'form.headline.' + n.gender, { title });
+  n.headline = S(n, 'form.headline.' + n.gender, { title }); n.art = 'council';
   n.body = S(n, 'form.body.' + n.gender, { title });
   startFamily(n);
   nameKin(n);
   n.yearStart = yearMark(n);
   n.city = initCity(n);
+  dealYear(n);
   n.screen = 'morning';
   return n;
 }
@@ -395,7 +404,7 @@ export function signScheme(s: GameState): GameState {
   apply(n, d);
   n.owed[sc.acc] = (n.owed[sc.acc] || 0) + Math.round((d.cash! * RULES.accShare) / 10) * 10;
   n.acc[sc.acc].k = clamp100(n.acc[sc.acc].k + sc.k[ap]);
-  n.headline = sc.h[ap]; n.body = sc.b[ap]; n.last = d;
+  n.headline = sc.h[ap]; n.body = sc.b[ap]; n.last = d; n.art = sc.art || null;
   n.lastStamp = 'signed'; n.lastDec = { t: sc.yes, d };
   return advance(n);
 }
@@ -406,7 +415,7 @@ export function declineScheme(s: GameState): GameState {
   const no = doc.scheme.no, n = clone(s);
   apply(n, no.d);
   (Object.keys(no.al || {}) as AccKey[]).forEach((k) => { n.acc[k].l = clamp100(n.acc[k].l + (no.al![k] || 0)); });
-  n.headline = no.h; n.body = no.b; n.last = no.d;
+  n.headline = no.h; n.body = no.b; n.last = no.d; n.art = doc.scheme.art || null;
   n.lastStamp = 'declined'; n.lastDec = { t: no.t, d: no.d };
   return advance(n);
 }
@@ -422,6 +431,11 @@ export function pickOption(s: GameState, index: number): GameState {
   if (o.al) (Object.keys(o.al) as AccKey[]).forEach((k) => { const x = n.acc[k], f = o.al![k]!; x.l = clamp100(x.l + (f.l || 0)); x.k = clamp100(x.k + (f.k || 0)); });
   if (o.flag === 'blood') n.blood = true;
   if (o.flag === 'sellout') { n.acc.pike.l = 30; n.acc.pike.k = 0; n.owed.pike = 0; }
+  applyStory(n, o);
+  if (o.riv && n.city) {
+    const r = n.city.rivals.find((x) => x.id === o.riv!.id);
+    if (r && !r.ally) { r.heat = Math.max(0, Math.min(10, r.heat + (o.riv.heat || 0))); r.power = Math.max(5, Math.min(95, r.power + (o.riv.power || 0))); }
+  }
   if (o.fam) {
     const kd = famFind(n, o.fam.id), f = o.fam;
     if (kd) {
@@ -435,6 +449,7 @@ export function pickOption(s: GameState, index: number): GameState {
     }
   }
   n.headline = o.h; n.body = o.b; n.last = o.d;
+  n.art = o.art || doc.choice.art || (doc.who?.kind === 'fam' ? 'family' : doc.who?.kind === 'acc' && doc.who.acc === 'pike' && !doc.choice.art ? 'contractor' : null);
   n.lastStamp = o.dark ? 'dark' : 'decided'; n.lastDec = { t: o.t, d: o.d };
   return advance(n);
 }
@@ -523,7 +538,7 @@ export function lockSafe(s: GameState): GameState {
     if (x.l <= I.loyaltyMax && x.k >= I.knowsMin) {
       n.threat += I.threat; x.k = Math.round(x.k / 2); x.l = 40;
       rep.push(line(S(n, 'rep.insider', { name: x.n }), 'bad', 'ear', true));
-      n.headline = S(n, 'news.insider.h'); n.body = S(n, 'news.insider.b');
+      n.headline = S(n, 'news.insider.h'); n.body = S(n, 'news.insider.b'); n.art = 'insider';
     }
   });
 
@@ -535,11 +550,11 @@ export function lockSafe(s: GameState): GameState {
     if (found.length) {
       n.threat += 10 * found.length;
       rep.push(line(S(n, 'rep.searchFound', { found: found.join(', '), risk: 10 * found.length }), 'bad', 'threat', true));
-      n.headline = S(n, 'news.search.h', { surname: n.surname }); n.body = S(n, 'news.search.b');
+      n.headline = S(n, 'news.search.h', { surname: n.surname }); n.body = S(n, 'news.search.b'); n.art = 'raid';
     } else {
       n.threat = Math.max(0, n.threat - 10);
       rep.push(line(S(n, 'rep.searchEmpty'), 'ok', 'floor', true));
-      n.headline = S(n, 'news.searchEmpty.h'); n.body = S(n, 'news.searchEmpty.b');
+      n.headline = S(n, 'news.searchEmpty.h'); n.body = S(n, 'news.searchEmpty.b'); n.art = 'raid';
     }
   } else rep.push(line(S(n, 'rep.noSearch'), 'neu', 'floor'));
 
@@ -565,12 +580,12 @@ export function lockSafe(s: GameState): GameState {
     if (kd.assets > 0 && rand(n) * 100 < Math.min(F.scandalMaxPct, kd.assets / F.scandalAssetsPerPct)) {
       n.threat += F.scandalThreat; kd.k = clamp100(kd.k + 5);
       rep.push(line(S(n, 'rep.scandal', { name: kd.first, flash }), 'bad', 'ear'));
-      n.headline = S(n, 'news.scandal.h', { surname: n.surname, flash }, kd.g); n.body = S(n, 'news.scandal.b');
+      n.headline = S(n, 'news.scandal.h', { surname: n.surname, flash }, kd.g); n.body = S(n, 'news.scandal.b'); n.art = 'scandal';
     }
     if (kd.l <= T.loyaltyMax && kd.k >= T.knowsMin) {
       n.threat += T.threat; kd.gone = true; kd.why = S(n, 'why.testify', {}, kd.g);
       rep.push(line(S(n, 'rep.kidTestify', { name: kd.first }, kd.g), 'bad', 'kid', true));
-      n.headline = S(n, 'news.kidTestify.h', { surname: n.surname }); n.body = S(n, 'news.kidTestify.b');
+      n.headline = S(n, 'news.kidTestify.h', { surname: n.surname }); n.body = S(n, 'news.kidTestify.b'); n.art = 'court';
     } else if (kd.l <= 0) {
       kd.gone = true; kd.why = S(n, 'why.renounce', {}, kd.g);
       rep.push(line(S(n, 'rep.kidRenounce', { name: kd.first }, kd.g), 'bad', 'kid', true));
@@ -582,7 +597,7 @@ export function lockSafe(s: GameState): GameState {
     if (sb.l <= T.loyaltyMax && sb.k >= T.knowsMin) {
       n.threat += T.threat; sb.gone = true; sb.why = S(n, 'why.testify', {}, sb.g);
       rep.push(line(S(n, 'rep.sibTestify', { rel, name: sb.first }, sb.g), 'bad', 'kid', true));
-      n.headline = S(n, 'news.sibTestify.h', { rel, surname: n.surname }); n.body = S(n, 'news.sibTestify.b');
+      n.headline = S(n, 'news.sibTestify.h', { rel, surname: n.surname }); n.body = S(n, 'news.sibTestify.b'); n.art = 'court';
     } else if (sb.l <= 0) {
       sb.gone = true; sb.why = S(n, 'why.sibBreak', {}, sb.g);
       rep.push(line(S(n, 'rep.sibBreak', { rel, name: sb.first }, sb.g), 'warn', 'kid'));
@@ -618,7 +633,7 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
     n.clean -= price; n.estate = true;
     if (n.dream === 0) n.dreamDone = true;
     n.report.push(line(S(n, 'rep.estate'), 'ok', 'floor', true));
-    n.headline = S(n, 'news.estate.h', { surname: n.surname }); n.body = S(n, 'news.estate.b');
+    n.headline = S(n, 'news.estate.h', { surname: n.surname }); n.body = S(n, 'news.estate.b'); n.art = 'estate';
     n.offers = n.offers.filter((x) => x.id !== id);
     return n;
   }
@@ -631,7 +646,9 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
   }
   payOut(n, cost);
   if (id === 'pres') {
-    n.camp = { round: 1, me: Math.round(26 + n.people / 5), rival: RULES.campaign.rivalStart, fraud: 0, log: '' };
+    // promises made to the guilds over the years count as votes in the Great Council
+    const pledged = n.deck ? Object.keys(n.deck.flags).filter((f) => f.startsWith('votes_')).length * RULES.campaign.pledgeVotes : 0;
+    n.camp = { round: 1, me: Math.round(26 + n.people / 5) + pledged, rival: RULES.campaign.rivalStart, fraud: 0, log: '' };
     n.screen = 'campaign';
     return n;
   }
@@ -639,7 +656,7 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
   if (n.shadow <= 0) n.patron = Math.max(1, n.patron - RULES.promoPatronCost);
   n.threat += RULES.promoThreat;
   n.report.push(line(S(n, 'rep.promo', { rank: rankName(n) }), 'ok', 'patron', true));
-  n.headline = S(n, 'news.promo.h', { rank: rankName(n), first: n.first, surname: n.surname });
+  n.headline = S(n, 'news.promo.h', { rank: rankName(n), first: n.first, surname: n.surname }); n.art = 'promo';
   n.body = S(n, 'news.promo.b');
   n.offers = n.offers.filter((x) => x.id !== 'promo');
   return n;
@@ -650,6 +667,7 @@ export function sleep(s: GameState): GameState {
   Object.assign(n, { screen: 'morning', doc: 0, ap: 1, last: {} });
   n.yearStart = yearMark(n); // before the magnates' night: what they do belongs to the new year
   if (n.city && n.city.v === CITY_V) cityMorning(n, n.city); else n.city = initCity(n);
+  dealYear(n);
   return n;
 }
 
@@ -702,7 +720,7 @@ export function electionNight(s: GameState, stuff: boolean): GameState {
   n.patron = Math.max(1, n.patron + K.losePatron); n.screen = 'night'; n.camp = null;
   n.report = [line(S(n, 'rep.electLost', { share }), 'bad', 'patron', true)];
   n.offers = offersFor(n).filter((x) => x.id !== 'pres');
-  n.headline = S(n, 'news.electLost.h', { first: n.first, surname: n.surname }, n.gender); n.body = S(n, 'news.electLost.b');
+  n.headline = S(n, 'news.electLost.h', { first: n.first, surname: n.surname }, n.gender); n.body = S(n, 'news.electLost.b'); n.art = 'council';
   return n;
 }
 
@@ -739,10 +757,13 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   if (h.nephew) n.patron += H.nephewPatron;
   if (n.shadow > 0) n.patron = RULES.shadowPatron;
   const child = S(n, h.g === 'f' ? 'word.daughter' : 'word.son');
-  n.headline = S(n, `heir.${e.kind}.h`, { child, surname: s.surname });
+  n.headline = S(n, `heir.${e.kind}.h`, { child, surname: s.surname }); n.art = e.kind === 'collapse' ? 'court' : 'heir';
   n.body = S(n, `heir.${e.kind}.b`, { surname: s.surname }) + (h.g === 'f' ? S(n, 'heir.femaleSuffix') : '');
   nameKin(n);
   n.yearStart = yearMark(n);
+  // the same era's documents are not dealt again to the second generation; a new era starts a fresh deck
+  if (!e.eraOver && s.deck) n.deck = { today: [], seen: [...s.deck.seen], flags: {}, queue: [] };
+  dealYear(n);
   return n;
 }
 

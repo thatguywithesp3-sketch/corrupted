@@ -8,6 +8,7 @@ import type { GameState } from '../../engine';
 import { CityMap } from './CityMap';
 import { T } from './Ledger';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
+import { sceneCaption, sceneSrc } from '../scenes';
 
 type Run = (f: (x: GameState) => GameState) => void;
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -16,16 +17,20 @@ const NEWS = '#EFE7D2';
 const Rule = ({ double }: { double?: boolean }) => <div style={{ borderTop: double ? `3px double ${INK}` : `1px solid ${INK}`, margin: '4px 0' }} />;
 const ColHead = ({ t }: { t: string }) => <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.8, textAlign: 'center', borderTop: `1.5px solid ${INK}`, borderBottom: `1px solid ${INK}`, padding: '2px 0', margin: '2px 0 4px' }}>{t}</div>;
 
-/** a newspaper engraving: a piece of the city view, printed in black ink with a halftone screen */
-function Engraving({ era, seed, caption }: { era: number; seed: number; caption: string }) {
+/** a newspaper engraving: the artist's sketch of the scene (art/news), or a piece of the city view until there is one */
+function Engraving({ era, seed, scene }: { era: number; seed: number; scene?: string | null }) {
+  const [missing, setMissing] = useState<string | null>(null);
+  const sketch = era === 1 && scene && missing !== scene ? sceneSrc(scene) : null;
   const x = 15 + ((seed * 37) % 70), y = 30 + ((seed * 53) % 50);
   return (
     <figure style={{ margin: 0 }}>
       <div style={{ position: 'relative', height: 112, border: `1px solid ${INK}`, overflow: 'hidden', background: '#ddd' }}>
-        <img src={`art/city/e${era}-morning.jpg`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${x}% ${y}%`, transform: 'scale(1.8)', transformOrigin: `${x}% ${y}%`, filter: 'grayscale(1) contrast(1.55) brightness(1.08) sepia(0.25)' }} />
-        <div style={{ position: 'absolute', inset: 0, mixBlendMode: 'multiply', opacity: 0.35, backgroundImage: 'radial-gradient(circle, #000 0.6px, transparent 0.9px)', backgroundSize: '3px 3px' }} />
+        {sketch
+          ? <img key={sketch} src={sketch} alt="" onError={() => setMissing(scene!)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.08) sepia(0.12)' }} />
+          : <img src={`art/city/e${era}-morning.jpg`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${x}% ${y}%`, transform: 'scale(1.8)', transformOrigin: `${x}% ${y}%`, filter: 'grayscale(1) contrast(1.55) brightness(1.08) sepia(0.25)' }} />}
+        <div style={{ position: 'absolute', inset: 0, mixBlendMode: 'multiply', opacity: sketch ? 0.18 : 0.35, backgroundImage: 'radial-gradient(circle, #000 0.6px, transparent 0.9px)', backgroundSize: '3px 3px' }} />
       </div>
-      <figcaption style={{ fontSize: 10, fontStyle: 'italic', color: MUTE, marginTop: 2, lineHeight: 1.2 }}>{caption}</figcaption>
+      <figcaption style={{ fontSize: 10, fontStyle: 'italic', color: MUTE, marginTop: 2, lineHeight: 1.2 }}>{sceneCaption(sketch ? scene : null)}</figcaption>
     </figure>
   );
 }
@@ -77,7 +82,7 @@ export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run;
             </div>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ width: '46%', flexShrink: 0 }}><Engraving era={s.era} seed={s.year + s.served} caption="Замальовка нашого художника з Ратушної площі." /></div>
+            <div style={{ width: '46%', flexShrink: 0 }}><Engraving era={s.era} seed={s.year + s.served} scene={s.art} /></div>
             <p style={{ margin: 0, fontSize: 12, lineHeight: 1.35, textAlign: 'justify', hyphens: 'auto' }}><span style={{ float: 'left', fontFamily: "'Ruslan Display', serif", fontSize: 28, lineHeight: 0.9, marginRight: 2 }}>{s.body.charAt(0)}</span>{s.body.slice(1)}</p>
           </div>
           <Rule double />

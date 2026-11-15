@@ -278,3 +278,65 @@ describe('Era I texts and lore (QA 14.11)', () => {
     expect(all).not.toMatch(/президент|\bмер\b|меру\b/i);
   });
 });
+
+describe('document deck (Era I)', () => {
+  const D = getEra(1).deck!;
+  const year0 = (seed = 3) => G.signForm(G.newGame(seed));
+  const nextYear = (s: GameState) => G.sleep({ ...s, screen: 'night' });
+
+  it('deals one scheme and one decision (two from Senator up) at the start of each year', () => {
+    const s = year0();
+    expect(s.deck!.today.length).toBe(2);
+    expect(D.schemes.some((c) => c.id === s.deck!.today[0])).toBe(true);
+    const docs = docsFor(s);
+    expect(docs[docs.length - 2].kind === 'scheme' || docs[0].kind === 'scheme').toBe(true);
+    const senator = nextYear({ ...s, rank: 2 });
+    expect(senator.deck!.today.filter((id) => D.choices.some((c) => c.id === id)).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('is deterministic and does not repeat a card until the fitting pile runs out', () => {
+    let a = year0(11), b = year0(11);
+    const seen: string[] = [];
+    for (let y = 0; y < 8; y++) {
+      expect(a.deck!.today).toEqual(b.deck!.today);
+      a.deck!.today.forEach((id) => { expect(seen).not.toContain(id); seen.push(id); });
+      a = nextYear(a); b = nextYear(b);
+    }
+  });
+
+  it('respects conditions: rank-locked cards never reach a councillor, arcs are never drawn', () => {
+    let s = year0(5);
+    const locked = new Set(D.schemes.filter((c) => c.cond?.rank && c.cond.rank[0] > 0).map((c) => c.id));
+    const arcs = new Set(D.choices.filter((c) => c.arc).map((c) => c.id));
+    for (let y = 0; y < 18; y++) { s.deck!.today.forEach((id) => { expect(locked.has(id)).toBe(false); expect(arcs.has(id)).toBe(false); }); s = nextYear(s); }
+  });
+
+  it('an answer can set a flag and bring a follow-up back years later', () => {
+    let s = year0(7);
+    s = { ...s, screen: 'office', doc: 0, deck: { ...s.deck!, today: ['c_revisor'] } };
+    const i = docsFor(s).findIndex((d) => d.kind === 'choice' && (d.choice as { id?: string }).id === 'c_revisor');
+    s = { ...s, doc: i };
+    const n = G.pickOption(s, 0);
+    expect(n.deck!.queue).toContainEqual({ id: 'c_revisor2', at: s.served + 3 });
+    // the follow-up is dealt when it is due
+    const due = G.sleep({ ...n, screen: 'night', served: s.served + 3 });
+    expect(due.deck!.today).toContain('c_revisor2');
+  });
+
+  it('a magnate answer moves the city layer, and pledged guilds add votes in the Great Council', () => {
+    const s = year0(9);
+    const before = s.city!.rivals.find((r) => r.id === 'r1')!.heat;
+    const t = { ...s, screen: 'office' as const, deck: { ...s.deck!, today: ['c_weisman'] } };
+    const n = G.pickOption({ ...t, doc: docsFor(t).findIndex((d) => d.kind === 'choice' && d.who?.kind === 'rival') }, 0);
+    expect(n.city!.rivals.find((r) => r.id === 'r1')!.heat).toBe(Math.max(0, before - 4));
+    const top = { ...s, screen: 'night' as const, rank: 3, patron: 80, clean: 9000, offers: [], deck: { ...s.deck!, flags: { votes_salt: 5, votes_merchants: 6 } } };
+    const plain = { ...top, deck: { ...s.deck!, flags: {} } };
+    expect(G.acceptOffer(top, 'pres').camp!.me - G.acceptOffer(plain, 'pres').camp!.me).toBe(2 * G.RULES.campaign.pledgeVotes);
+  });
+
+  it('the parity switch brings back the prototype rotation', () => {
+    G.RULES.deck.on = false;
+    try { const s = year0(4); expect(s.deck).toBeUndefined(); expect((docsFor(s)[0] as { scheme: { from: string } }).scheme.from).toBe(getEra(1).schemes[0].from); }
+    finally { G.RULES.deck.on = true; }
+  });
+});
