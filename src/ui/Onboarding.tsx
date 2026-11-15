@@ -5,6 +5,7 @@ import * as G from '../engine';
 import { Die } from './Die';
 import { EdisonBulbs } from './EdisonBulbs';
 import type { GameState } from '../engine';
+import { RomeiArms } from './scene/Heraldry';
 
 interface Props { s: GameState; run: (f: (x: GameState) => GameState) => void }
 
@@ -221,6 +222,7 @@ export function Onboarding({ s, run }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, letterSpacing: 2, color: MUTE }}>
           <span>МІСТО ПОРТ-АУРУМ</span><span>{b.form.toUpperCase()} · {s.year}</span>
         </div>
+        {s.era === 1 && <div style={{ display: 'flex', justifyContent: 'center', margin: '2px 0 -2px' }}><RomeiArms size={30} style={{ mixBlendMode: 'multiply', opacity: 0.92 }} /></div>}
         <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 22, textAlign: 'center', lineHeight: 1.15 }}>{b.title}</div>
         <div style={{ borderTop: `3px double ${INK}` }} />
         {body}

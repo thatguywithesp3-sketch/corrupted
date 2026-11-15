@@ -30,7 +30,7 @@ export const FIXED: Box[] = [
   ...DECOR.map((p) => placeBox(p.x, p.y, p.w, p.art, plateW(p.t))),
   placeBox(OUR_HOME.x, OUR_HOME.y, HOME_W.grabs, OUR_HOME.art, plateW('Ваш дім')),
   ...Object.values(HOMES).map((h) => placeBox(h.x, h.y, HOME_W[h.art], h.art, 18)),
-  ...G.INSTS.map((i) => placeBox(i.x, i.y, INST_W[i.id], i.art, 16))
+  ...G.INSTS.map((i) => placeBox(i.x, i.y, INST_W[i.id], i.art, Math.max(16, INST_W[i.id] + 9)))
 ];
 
 const GAP = 0.8;
