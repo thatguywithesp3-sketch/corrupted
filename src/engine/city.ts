@@ -464,7 +464,7 @@ export const RIVAL_HEIRS: Record<string, RivalHeir> = {
   }
 };
 /** heirs of the magnates whose portraits exist in public/art/rivals/<id>-g2.jpg */
-export const RIVAL_HEIR_PORTRAITS = new Set<string>();
+export const RIVAL_HEIR_PORTRAITS = new Set<string>(['r1', 'r2', 'r3']);
 export const rivalFile = (r: Rival): RivalFile => (r.gen && r.gen > 1 && RIVAL_HEIRS[r.id] ? RIVAL_HEIRS[r.id].file : RIVAL_FILE[r.id]);
 export const rivalPortrait = (r: Rival) => `art/rivals/${r.id}${r.gen && r.gen > 1 && RIVAL_HEIR_PORTRAITS.has(r.id) ? '-g2' : ''}.jpg`;
 
