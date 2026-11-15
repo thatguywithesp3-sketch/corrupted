@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal
+  isFatal, schemeDelta, officeDone, endDay, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -78,6 +78,7 @@ function smartStep(s: GameState, st: BotStyle): GameState {
     case 'form': return signForm(setHero(s, { origin: 0, dream: 0 }));
     case 'morning': return cityMove(s, st.city) || toOffice(s);
     case 'office': {
+      if (officeDone(s)) return endDay(s);
       const d = currentDoc(s);
       if (d.kind === 'scheme') {
         let best = -1, bs = score(s, d.scheme.no.d);
@@ -119,6 +120,7 @@ export function botStep(s: GameState, r: () => number, st: BotStyle): GameState 
     case 'form': return signForm(setHero(s, { origin: Math.floor(r() * 3), dream: Math.floor(r() * 4), gender: r() < 0.5 ? 'm' : 'f' }));
     case 'morning': return cityMove(s, st.city) || toOffice(s);
     case 'office': {
+      if (officeDone(s)) return endDay(s);
       const d = currentDoc(s);
       if (d.kind === 'scheme') {
         if (r() < 0.12) return declineScheme(s);
@@ -194,6 +196,7 @@ export function goalStep(s: GameState, g: GoalBot): GameState {
       return toOffice(n);
     }
     case 'office': {
+      if (officeDone(s)) return endDay(s);
       const d = currentDoc(s);
       if (d.kind === 'scheme') {
         let best = -1, bs = goalScore(s, d.scheme.no.d, g);

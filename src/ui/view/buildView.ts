@@ -136,7 +136,7 @@ export function buildView(ctx: Ctx): any {
   };
 
   const v: any = {
-    isForm: screen === 'form', isMorning: screen === 'morning', isOffice: screen === 'office', isEvening: screen === 'evening', isNight: screen === 'night',
+    isForm: screen === 'form', isMorning: screen === 'morning', isOffice: screen === 'office' && !G.officeDone(s), isDayDone: G.officeDone(s), isEvening: screen === 'evening', isNight: screen === 'night',
     isEnding: screen === 'ending', isCampaign: screen === 'campaign', isElect: screen === 'elect', hudOn: screen !== 'form' && screen !== 'ending',
     hudOpen: ui.hudOpen, hudClosed: !ui.hudOpen, toggleHud: () => setUi({ hudOpen: !ui.hudOpen }),
     blotterTop: '112px', inkTop: '136px', hudTitle: 'СТАН СПРАВ', hudCloseText: 'Згорнути', threatLabel: 'Ризик викриття',
@@ -299,7 +299,7 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
-    const photo = w.kind === 'rival' ? (s.era === 1 ? `art/rivals/${w.id}.jpg` : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
+    const photo = w.kind === 'rival' ? (s.era === 1 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
     if (photo) Object.assign(v.dg, { photo, photoOn: true, silOn: false, ovalFilter: 'none' });
     const says: Record<string, string> = { kid: 'Нам треба поговорити.', acc: 'Треба поговорити. Без свідків.', journo: 'Кілька запитань для завтрашнього номера. Коментар дасте?', boss: 'Маю до вас делікатне прохання.' };
     const g = dc.gist || dc.q.replace(/^[^«]*«/, '').replace(/»\.?$/, '');

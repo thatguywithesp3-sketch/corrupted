@@ -19,6 +19,7 @@ import { MeterPops } from './scene/MeterPops';
 import { DeskProps } from './scene/DeskProps';
 import { CityMap } from './scene/CityMap';
 import { PauseFolio } from './scene/PauseFolio';
+import { DayDone } from './scene/DayDone';
 import { LOCAL_FONT_ERAS } from './fonts';
 
 const MAP_SCREENS = new Set(['morning', 'office', 'evening']);
@@ -51,6 +52,9 @@ function withSlots(root: DcNode): DcNode {
     if (n.v === '{{albumOn}}') n.ch = [slot('album')];
     if (n.v === '{{infoOn}}') n.ch = [slot('info')];
   });
+  // after the last document the office shows the day's register (the template's office block stays for the papers)
+  const oi = r.ch.findIndex((n) => n.t === 'if' && n.v === '{{isOffice}}');
+  if (oi >= 0) r.ch.splice(oi + 1, 0, { t: 'if', v: '{{isDayDone}}', ch: [slot('daydone')] } as DcNode);
   // the meter legend in the HUD: a React block instead of the template rows
   const legend = (n: DcNode): boolean => n.t === 'e' && n.ch.some((c) => c.t === 'e' && c.ch.some((x) => x.t === 'x' && /ЩО ОЗНАЧАЄ КОЖНА ШКАЛА/.test(x.v)));
   const swap = (n: DcNode) => { if (n.t === 'x') return; n.ch = n.ch.map((c) => (legend(c) ? slot('legend') : c)); n.ch.forEach(swap); };
@@ -208,6 +212,7 @@ export function Game() {
       morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} fresh={!pano} /> : null,
       evening: s.screen === 'evening' ? <Ledger key={s.year} s={s} run={run} fresh={!pano} /> : null,
       night: s.screen === 'night' ? <NightScene key={s.year} s={s} run={run} before={eve.current} /> : null,
+      daydone: G.officeDone(s) ? <DayDone s={s} run={run} onMap={() => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); setMapOpen(true); }} /> : null,
       family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} onMap={MAP_SCREENS.has(s.screen) ? () => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); setMapOpen(true); } : undefined} />,
       album: ui.album ? <FamilyAlbum s={s} onClose={() => setUi({ album: false })} /> : null,
       info: ui.info ? <MeterInfo s={s} m={ui.info} onClose={() => setUi({ info: null })} /> : null,
@@ -225,7 +230,7 @@ export function Game() {
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
-            {scenes && s.screen === 'office' && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
+            {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
             {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
         )}

@@ -32,6 +32,8 @@ export const RULES = {
   estate: { on: true, price: 5000, offerFrom: 1 },
   /** the document deck (Era I): conditional cards and arcs instead of the prototype's fixed rotation */
   deck: { on: true },
+  /** the day ends when the player says so (after the last document), not by itself */
+  dayEnd: { manual: true },
   /** city moves a year: base + one per rank */
   cityMoves: { base: 3, perRank: 1 },
   endings: {
@@ -77,6 +79,7 @@ export const PROTOTYPE_PATCH = {
     presidentFee: 3000,
     estate: { on: false },
     deck: { on: false },
+    dayEnd: { manual: false },
     dreamCleanThreat: 30,
     campaign: { rivalStart: 45 },
     cityMoves: { base: 1e9 },
