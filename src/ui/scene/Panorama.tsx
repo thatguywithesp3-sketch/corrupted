@@ -54,50 +54,102 @@ function voices(s: GameState, kind: PanoKind): Voice[] {
   return [...out.slice(0, 2), port];
 }
 
-// ---------------------------------------------------------------- the city's life: tiny ink figures
+// ---------------------------------------------------------------- the city's life: townsfolk from the same engraving
+// Sprites (public/art/life/*.webp) were drawn in the panorama's own technique: walkers in side view facing right,
+// horse-drawn vehicles facing right, people at rest. A figure lives on a lane of the painted ground (the market square,
+// the pier, the embankment); its size follows the depth of the picture, it bobs with each step, leans a little into
+// the walk, casts a soft shadow and takes the light of the hour (warm dawn, blue night with lanterns).
 
-/** a person walking from x0 to x1 (% of the picture) along the line y; k = size; lantern / pole / sack / basket */
-function Walker({ x0, x1, y, y1, k = 1, d = 0, dur = 8, lantern, pole, sack, basket, hat = true }: { x0: number; x1: number; y: number; k?: number; d?: number; dur?: number; lantern?: boolean; pole?: boolean; sack?: boolean; basket?: boolean; hat?: boolean; y1?: number }) {
-  const flip = x1 < x0;
+/** width / height of each sprite */
+const SPR: Record<string, number> = { 'i-beggar': 0.875, 'i-chestnut': 0.719, 'i-couple': 0.594, 'i-gossip': 0.896, 'i-guard': 0.292, 'i-kiosk': 0.646, 'i-rest': 1.25, 'i-talk': 0.667, 'v-barrels': 2.679, 'v-fiacre': 2.238, 'v-landau': 2.571, 'v-milk': 2.464, 'v-tram': 2.5, 'w-barrow': 1.031, 'w-docker': 0.562, 'w-fishwife': 0.51, 'w-flowergirl': 0.542, 'w-gendarme': 0.552, 'w-lady': 0.521, 'w-lamplighter': 0.771, 'w-merchant': 0.521, 'w-nanny': 1.062, 'w-oldman': 0.552, 'w-paperboy': 0.573, 'w-porter': 0.646, 'w-priest': 0.573, 'w-reader': 0.573, 'w-sailor': 0.594, 'w-student': 0.531, 'w-sweep': 0.573, 'w-washer': 0.583, 'w-worker': 0.583, 'w-yoke': 0.667 };
+/** a grown man's height in px on a ground line (y in % of the picture): further = smaller, as in the painting */
+const personH = (y: number, ground: 'square' | 'pier' | 'prom' | 'roof') => ({ square: 15.5 + (y - 56) * 0.9, pier: 12.5 + (y - 56) * 0.7, prom: 17 + (y - 64) * 0.8, roof: 21 })[ground];
+
+type Fig = { id: string; x0: number; x1?: number; y: number; ground: 'square' | 'pier' | 'prom' | 'roof'; speed?: number; phase?: number; lantern?: 'hand' | 'pole' | 'cab'; flip?: boolean; at?: number; dur?: number };
+const LOOK = {
+  morning: 'sepia(.22) saturate(.9) contrast(.96) brightness(.97)',
+  evening: 'brightness(.5) saturate(.55) sepia(.2) hue-rotate(-12deg) contrast(1.05)'
+};
+const glowAt = (left: string, top: string, r = 7) => <span style={{ position: 'absolute', left, top, width: r * 2, height: r * 2, marginLeft: -r, marginTop: -r, borderRadius: '50%', background: 'radial-gradient(circle, #FFEAB0, rgba(255,200,110,.5) 30%, rgba(255,190,90,0) 70%)', mixBlendMode: 'screen', animation: 'pano-flick 1.8s ease-in-out infinite' }} />;
+
+/** one figure. Walkers and vehicles go x0 → x1 along their lane, endlessly (a negative delay puts them mid-walk at the
+ *  start), fading in and out at the ends of the lane; idle figures stay and sway. */
+function Figure({ f, night }: { f: Fig; night: boolean }) {
+  const kind = f.id[0], h = personH(f.y, f.ground) * (kind === 'v' ? 1.25 : kind === 'i' && f.id === 'i-rest' ? 0.8 : 1), w = h * (SPR[f.id] || 0.6);
+  const moving = f.x1 !== undefined && f.x1 !== f.x0, left = moving && f.x1! < f.x0;
+  // a walk is ~0.8 % of the picture a second, a trotting horse ~2 %; the lane's length sets the loop
+  const speed = f.speed ?? (kind === 'v' ? 2 : 0.75), dur = f.dur ?? (moving ? Math.abs(f.x1! - f.x0) / speed : 0);
+  const delay = f.at ?? -(f.phase ?? 0.5) * dur;
+  const step = kind === 'v' ? 0.36 : 0.52 + (h % 3) * 0.04; // a trot is quicker than a step; people differ a little
+  const z = Math.round(f.y * 10);
+  const img = (
+    <img src={`art/life/${f.id}.webp`} alt="" draggable={false} style={{ position: 'absolute', left: -w / 2, top: -h, width: w, height: h, transform: left || f.flip ? 'scaleX(-1)' : undefined, filter: night ? LOOK.evening : LOOK.morning }} />
+  );
   return (
-    <span aria-hidden="true" style={{ position: 'absolute', top: `${y}%`, width: 0, height: 0, ['--x0' as string]: `${x0}%`, ['--x1' as string]: `${x1}%`, ['--y0' as string]: `${y}%`, ['--y1' as string]: `${y1 ?? y}%`, left: `${x0}%`, animation: `pano-walk ${dur}s linear ${d}s both` } as CSSProperties}>
-      <svg width={12 * k} height={22 * k} viewBox="-6 -22 12 22" style={{ position: 'absolute', left: -6 * k, top: -22 * k, overflow: 'visible', transform: flip ? 'scaleX(-1)' : undefined }}>
-        <g style={{ animation: `pano-bob ${0.5}s ease-in-out ${d}s infinite` }}>
-          {hat && <path d="M-2.4 -19.6 H2.4 V-21.2 H-1.6 Z M-3.2 -19.6 H3.2" stroke={INKC} strokeWidth=".8" fill={INKC} />}
-          <circle cx="0" cy="-18" r="1.9" fill={INKC} />
-          <path d="M-2.2 -15.6 L2.2 -15.6 L3 -8 L-3 -8 Z" fill={INKC} />
-          <path d="M-1 -8 L-2 -1 M1 -8 L2 -1" stroke={INKC} strokeWidth="1.4" strokeLinecap="round" style={{ transformOrigin: '0 -8px', animation: `pano-step .5s ease-in-out ${d}s infinite` }} />
-          {sack && <ellipse cx="-.6" cy="-17" rx="3.6" ry="2.4" fill="#3A2C1E" />}
-          {basket && <path d="M2.6 -11 h3 l-.6 2.6 h-1.8 Z" fill="#3A2C1E" />}
-          {pole && <path d="M2 -12 L7 -27" stroke={INKC} strokeWidth=".8" />}
-        </g>
-      </svg>
-      {lantern && <span style={{ position: 'absolute', left: (pole ? 8 : 4) * k - 6, top: (pole ? -27 : -10) * k - 6, width: 12, height: 12, borderRadius: '50%', background: 'radial-gradient(circle, #FFE7A8, rgba(255,200,110,0) 70%)', boxShadow: '0 0 10px 4px rgba(255,190,90,.55)', mixBlendMode: 'screen' }} />}
+    <span aria-hidden="true" style={{ position: 'absolute', left: `${f.x0}%`, top: `${f.y}%`, width: 0, height: 0, zIndex: z, ['--x0' as string]: `${f.x0}%`, ['--x1' as string]: `${f.x1 ?? f.x0}%`, ['--y0' as string]: `${f.y}%`, animation: moving ? `pano-lane ${dur}s linear ${delay}s infinite` : undefined } as CSSProperties}>
+      {/* the shadow stays on the ground: long and to the left in the low morning sun, a soft pool at night */}
+      <span style={{ position: 'absolute', left: -w * (night ? 0.32 : 0.55), top: -1.6, width: w * (night ? 0.64 : 0.95), height: Math.max(2.2, h * 0.11), borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(20,12,4,.42), rgba(20,12,4,0) 70%)', filter: 'blur(.6px)' }} />
+      {/* the body: bobs with each step and leans into the walk; at rest it only breathes and sways */}
+      <span style={{ position: 'absolute', left: 0, top: 0, width: 0, height: 0, transformOrigin: '0 0', animation: moving ? `pano-gait ${step}s ease-in-out ${delay}s infinite` : `pano-sway ${3.2 + (h % 2)}s ease-in-out ${-(f.phase ?? 0) * 3}s infinite alternate` }}>
+        {img}
+        {f.lantern === 'hand' && glowAt(`${(left ? -1 : 1) * w * 0.32}px`, `${-h * 0.42}px`, 7)}
+        {f.lantern === 'pole' && glowAt(`${(left ? -1 : 1) * w * 0.42}px`, `${-h * 0.98}px`, 9)}
+        {f.lantern === 'cab' && glowAt(`${(left ? -1 : 1) * w * 0.05}px`, `${-h * 0.62}px`, 9)}
+      </span>
     </span>
   );
 }
-/** a horse with a cab, a cart or the horse tram */
-function Rig({ x0, x1, y, k = 1, d = 0, dur = 8, kind = 'cab', lantern }: { x0: number; x1: number; y: number; k?: number; d?: number; dur?: number; kind?: 'cab' | 'cart' | 'tram'; lantern?: boolean }) {
-  const flip = x1 < x0, w = kind === 'tram' ? 46 : 32;
-  return (
-    <span aria-hidden="true" style={{ position: 'absolute', top: `${y}%`, width: 0, height: 0, ['--x0' as string]: `${x0}%`, ['--x1' as string]: `${x1}%`, ['--y0' as string]: `${y}%`, ['--y1' as string]: `${y}%`, left: `${x0}%`, animation: `pano-walk ${dur}s linear ${d}s both` } as CSSProperties}>
-      <svg width={w * k} height={18 * k} viewBox={`${-w / 2} -18 ${w} 18`} style={{ position: 'absolute', left: (-w / 2) * k, top: -18 * k, overflow: 'visible', transform: flip ? 'scaleX(-1)' : undefined }}>
-        <g style={{ animation: `pano-bob .42s ease-in-out ${d}s infinite` }} fill={INKC}>
-          {/* the horse */}
-          <path d={`M${w / 2 - 11} -10 q2 -3 6 -2 l3 -4 l1.6 1 l-1.4 4.6 l-1 1.4 q-1 3 -5 3 h-4 Z`} />
-          <path d={`M${w / 2 - 10} -6 l-1 6 M${w / 2 - 4} -6 l1 6`} stroke={INKC} strokeWidth="1.2" style={{ transformOrigin: `${w / 2 - 7}px -6px`, animation: `pano-step .42s ease-in-out ${d}s infinite` }} />
-          {kind === 'tram'
-            ? <><rect x={-w / 2} y="-15" width={w - 13} height="11" rx="1.5" /><rect x={-w / 2 + 2} y="-13" width={w - 17} height="4" fill="#E8C878" opacity=".55" /><rect x={-w / 2 - 1} y="-16.5" width={w - 11} height="1.6" /></>
-            : kind === 'cab'
-              ? <><path d={`M${-w / 2} -5 h${w - 14} v-6 q-3 -5 -9 -5 h-${w - 23} Z`} /><rect x={-w / 2 + 3} y="-13" width="5" height="4" fill="#E8C878" opacity=".5" /></>
-              : <><path d={`M${-w / 2} -6 h${w - 14} l-2 -4 h-${w - 18} Z`} /><path d={`M${-w / 2 + 2} -10 q4 -6 ${w - 20} -2 Z`} fill="#4A3826" /></>}
-          <circle cx={-w / 2 + 5} cy="-3" r="3" fill="none" stroke={INKC} strokeWidth="1" /><circle cx={w / 2 - 17} cy="-3" r="3" fill="none" stroke={INKC} strokeWidth="1" />
-        </g>
-      </svg>
-      {lantern && <span style={{ position: 'absolute', left: (w / 2 - 14) * k - 6, top: -14 * k - 6, width: 12, height: 12, borderRadius: '50%', background: 'radial-gradient(circle, #FFE7A8, rgba(255,200,110,0) 70%)', boxShadow: '0 0 12px 5px rgba(255,190,90,.55)', mixBlendMode: 'screen' }} />}
-    </span>
-  );
-}
+
+/** a busy lane: n walkers spread along it, both ways, varied people */
+const lane = (ids: string[], n: number, x0: number, x1: number, y: number, ground: Fig['ground'], seed: number): Fig[] => {
+  let a = seed; const r = () => ((a = (a * 16807) % 2147483647) / 2147483647);
+  return Array.from({ length: n }, (_, i) => {
+    const back = r() < 0.5, yy = y + (r() - 0.5) * 1.6;
+    return { id: ids[Math.floor(r() * ids.length) % ids.length], x0: back ? x1 : x0, x1: back ? x0 : x1, y: yy, ground, speed: 0.6 + r() * 0.35, phase: (i + r() * 0.6) / n };
+  });
+};
+const TOWNSFOLK = ['w-merchant', 'w-lady', 'w-worker', 'w-washer', 'w-paperboy', 'w-priest', 'w-student', 'w-fishwife', 'w-oldman', 'w-nanny', 'w-flowergirl', 'w-reader', 'w-yoke', 'w-porter'];
+const PORTFOLK = ['w-docker', 'w-porter', 'w-sailor', 'w-worker', 'w-fishwife', 'w-barrow'];
+const NIGHTFOLK = ['w-merchant', 'w-lady', 'w-worker', 'w-sailor', 'w-reader', 'w-oldman', 'w-student'];
+
+/** who is out in the morning: a busy market square, a working pier, people on the embankment */
+const MORNING_LIFE: Fig[] = [
+  // the market square (stop 2): three lanes of people, vehicles crossing, people standing about
+  ...lane(TOWNSFOLK, 9, 35, 60, 57.9, 'square', 11),
+  ...lane(TOWNSFOLK, 7, 36, 59, 55.4, 'square', 23),
+  ...lane(TOWNSFOLK, 5, 38, 57, 52.9, 'square', 37),
+  { id: 'v-tram', x0: 33, x1: 62, y: 58.3, ground: 'square', speed: 2.1, phase: 0.08 },
+  { id: 'v-barrels', x0: 62, x1: 33, y: 56.6, ground: 'square', speed: 1.6, phase: 0.55 },
+  { id: 'v-milk', x0: 34, x1: 61, y: 54.3, ground: 'square', speed: 1.4, phase: 0.6 },
+  { id: 'v-fiacre', x0: 61, x1: 34, y: 52.1, ground: 'square', speed: 2.2, phase: 0.25 },
+  { id: 'i-chestnut', x0: 47.6, y: 56.2, ground: 'square', phase: 0.2 },
+  { id: 'i-gossip', x0: 53.2, y: 58.1, ground: 'square', phase: 0.6 },
+  { id: 'i-talk', x0: 39.6, y: 55.0, ground: 'square', phase: 0.4 },
+  { id: 'i-kiosk', x0: 57.8, y: 55.0, ground: 'square', phase: 0.1 },
+  { id: 'i-guard', x0: 49.6, y: 51.8, ground: 'square', phase: 0.8 },
+  // the pier (stop 3): dockers carrying cargo, two resting, a cart along the quay
+  ...lane(PORTFOLK, 7, 74, 84, 56.2, 'pier', 51),
+  { id: 'i-rest', x0: 79.2, y: 55.3, ground: 'pier', phase: 0.5 },
+  { id: 'v-barrels', x0: 85, x1: 73, y: 57.8, ground: 'pier', speed: 1.2, phase: 0.35 },
+  // the embankment below (stop 3): a morning stroll
+  ...lane(['w-lady', 'w-merchant', 'w-nanny', 'w-oldman', 'w-flowergirl', 'w-priest', 'w-paperboy'], 5, 73.5, 84, 64.2, 'prom', 63),
+  { id: 'i-couple', x0: 79.6, y: 63.8, ground: 'prom', phase: 0.3 }
+];
+/** who is out in the evening: the lamplighter, cabs with lanterns, a patrol, late walkers, dockers at rest */
+const EVENING_LIFE: Fig[] = [
+  ...lane(NIGHTFOLK, 5, 36, 59, 57.6, 'square', 17),
+  ...lane(NIGHTFOLK, 3, 38, 57, 54.2, 'square', 29),
+  { id: 'v-fiacre', x0: 62, x1: 33, y: 56.4, ground: 'square', speed: 2.2, phase: 0.62, lantern: 'cab' },
+  { id: 'v-landau', x0: 33, x1: 62, y: 58.2, ground: 'square', speed: 1.9, phase: 0.3, lantern: 'cab' },
+  { id: 'i-beggar', x0: 49.8, y: 52.3, ground: 'square', phase: 0.5 },
+  { id: 'i-couple', x0: 41, y: 55.8, ground: 'square', phase: 0.2 },
+  // the patrol walks the pier with a lantern; dockers smoke on their sacks
+  { id: 'w-gendarme', x0: 84, x1: 74, y: 56.4, ground: 'pier', speed: 0.7, phase: 0.15, lantern: 'hand' },
+  { id: 'w-gendarme', x0: 84.8, x1: 74.8, y: 56.8, ground: 'pier', speed: 0.7, phase: 0.11 },
+  { id: 'i-rest', x0: 79.2, y: 55.3, ground: 'pier', phase: 0.5 },
+  ...lane(['w-sailor', 'w-worker', 'w-docker'], 3, 74, 84, 55.8, 'pier', 71),
+  ...lane(['w-lady', 'w-merchant', 'w-oldman'], 3, 73.5, 84, 64.2, 'prom', 83)
+];
 
 const Smoke = ({ x, y, d = 0, s = 1 }: { x: number; y: number; d?: number; s?: number }) => (
   <span aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 0, height: 0 }}>
@@ -134,7 +186,7 @@ const LAMPS: [number, number, number][] = [[12, 88.5, 15], [17.5, 84, 14], [22.5
 /** where the scraps of paper point: the three stops */
 const PLACES = ['Старе місто', 'Ринкова площа', 'Гавань'];
 /** the lamplighter's walk across the square; each square lamp comes on as he reaches it */
-const LL = { x0: 36, x1: 59, d: 3.5, dur: 3.2 };
+const LL = { x0: 46.4, x1: 52.8, d: 2.6, dur: 7 };
 const lampOnAt = (x: number) => (x >= LL.x0 && x <= LL.x1 ? LL.d + ((x - LL.x0) / (LL.x1 - LL.x0)) * LL.dur + 0.1 : seenAt(x) + 0.3);
 
 const CSS = `
@@ -149,9 +201,9 @@ const CSS = `
 @keyframes pano-breath { from { transform: scale(1.04); } to { transform: scale(1.0); } }
 @keyframes pano-fadeout { from { opacity: 1; } to { opacity: 0; } }
 @keyframes pano-fadein { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pano-walk { from { left: var(--x0); top: var(--y0); } to { left: var(--x1); top: var(--y1, var(--y0)); } }
-@keyframes pano-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-.6px); } }
-@keyframes pano-step { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+@keyframes pano-lane { 0% { left: var(--x0); opacity: 0; } 6% { opacity: 1; } 94% { opacity: 1; } 100% { left: var(--x1); opacity: 0; } }
+@keyframes pano-gait { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-.9px) rotate(.8deg); } 50% { transform: translateY(0) rotate(0deg); } 75% { transform: translateY(-.9px) rotate(-.5deg); } }
+@keyframes pano-sway { from { transform: rotate(-.7deg) translateY(0); } to { transform: rotate(.7deg) translateY(-.4px); } }
 @keyframes pano-lampoff { from { opacity: .95; } to { opacity: 0; } }
 @keyframes pano-lampon { 0% { opacity: 0; transform: scale(.4); } 40% { opacity: 1; transform: scale(1.15); } 100% { opacity: .9; transform: scale(1); } }
 @keyframes pano-flick { 0%,100% { opacity: .9; } 40% { opacity: .6; } 55% { opacity: 1; } 70% { opacity: .75; } }
@@ -233,32 +285,15 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           </>}
 
           {/* the city's life */}
+          {(night ? EVENING_LIFE : MORNING_LIFE).map((f, i) => <Figure key={i} f={f} night={night} />)}
+          {/* the lamplighter crosses the square lighting the lamps one by one */}
+          {night && <Figure f={{ id: 'w-lamplighter', x0: LL.x0, x1: LL.x1, y: 56.9, ground: 'square', lantern: 'pole', at: LL.d, dur: LL.dur }} night />}
           {morning && <>
-            {/* the market square: the horse tram, a cart to the market, people crossing */}
-            <Rig x0={34} x1={60} y={60} k={0.8} d={1.6} dur={8.4} kind="tram" />
-            <Rig x0={58} x1={39} y={57} k={0.65} d={2.4} dur={8} kind="cart" />
-            <Walker x0={42} x1={50} y={58.5} k={0.6} d={2.8} dur={7} />
-            <Walker x0={53} x1={45} y={61} k={0.62} d={3.2} dur={7} basket hat={false} />
-            {/* the quay: dockers with sacks, a boat rowing out */}
-            <Walker x0={68} x1={77} y={57} k={0.58} d={4.6} dur={6} sack />
-            <Walker x0={70} x1={78.5} y={56.6} k={0.55} d={5.2} dur={6} sack />
-            <Walker x0={79} x1={71} y={57.4} k={0.56} d={5.6} dur={6} />
             <span aria-hidden="true" style={{ position: 'absolute', left: '84%', top: '60%', animation: `pano-boat ${T}s linear both` }}><svg width="26" height="8" viewBox="0 0 26 8"><path d="M0 3 H26 L22 7 H4 Z" fill={INKC} /><path d="M10 3 L6 -2 M16 3 L20 -2" stroke={INKC} strokeWidth=".8" /></svg></span>
             {/* pigeons burst off the town hall tower */}
             <span aria-hidden="true" style={{ position: 'absolute', left: '29%', top: '14%', width: 0, height: 0, animation: 'pano-flock 5s cubic-bezier(.3,.1,.6,1) 1.2s both' }}>
               {FLOCK.map(([dx, dy, d, k], i) => <svg key={i} width={20 * k} height={9 * k} viewBox="0 0 22 10" style={{ position: 'absolute', left: dx * 1.4, top: dy * 1.2, overflow: 'visible' }}><path d="M0 5 Q5 0 11 5 Q17 0 22 5" fill="none" stroke="#231C16" strokeWidth="1.4" style={{ transformOrigin: '11px 5px', animation: `pano-wing .3s ease-in-out ${d}s infinite` }} /></svg>)}
             </span>
-          </>}
-          {night && <>
-            {/* the lamplighter crosses the market square lighting the lamps one by one */}
-            <Walker x0={LL.x0} x1={LL.x1} y={58.6} k={0.75} d={LL.d} dur={LL.dur} pole lantern />
-            {/* cabs with lanterns cross the square, late walkers */}
-            <Rig x0={60} x1={35} y={58} k={0.72} d={2.8} dur={7} kind="cab" lantern />
-            <Rig x0={37} x1={58} y={61} k={0.68} d={3.6} dur={7.5} kind="cab" lantern />
-            <Walker x0={47} x1={41} y={57} k={0.6} d={3.8} dur={6} />
-            {/* a gendarme patrol with a lantern on the quay */}
-            <Walker x0={78} x1={69} y={57} k={0.58} d={6} dur={6} lantern />
-            <Walker x0={79} x1={70} y={57.3} k={0.58} d={6.15} dur={6} />
           </>}
           <Smoke x={14} y={44} d={0} /><Smoke x={54} y={73} d={0.8} s={1.2} /><Smoke x={88} y={42} d={0.4} s={1.5} /><Smoke x={86.5} y={43} d={1.1} s={1.8} /><Smoke x={30} y={60} d={2.2} s={0.8} /><Smoke x={8} y={46} d={3} s={0.9} /><Smoke x={22} y={52} d={1.4} s={0.7} /><Smoke x={63} y={70} d={2.6} s={1} />
         </div>
