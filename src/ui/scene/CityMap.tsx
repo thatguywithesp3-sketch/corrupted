@@ -54,7 +54,6 @@ const INST_GLYPH: Record<G.InstId, string> = {
   whisper: 'M-2 -1.4 H2 V.9 H-.2 L-1.3 2 V.9 H-2 Z M-1 -.3 H-.6 M-.2 -.3 H.2 M.6 -.3 H1',
   okhrana: 'M-1.9 -1.9 L1.9 1.9 M1.9 -1.9 L-1.9 1.9 M-2.2 -1 L-1 -2.2 M2.2 -1 L1 -2.2'
 };
-const PLACE_NAME: Record<G.InstId, string> = { charity: 'Сиротинець', press: '«Вісник»', whisper: 'Ринок', okhrana: 'Жандармерія' };
 function InstSign({ id, x, y, on }: { id: G.InstId; x: number; y: number; on: boolean }) {
   const fill = id === 'charity' || id === 'okhrana';
   return (
@@ -78,7 +77,7 @@ const Mark = ({ x, y, ok }: { x: number; y: number; ok: boolean }) => (
 );
 
 /** the plan: the quiet engraving underneath, the painted places and the shops on top */
-function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival, live }: { live: Set<string>; biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[]; marks: { biz: string; ok: boolean }[]; selInst: string | null; onInst: (id: G.InstId) => void; onRival: (id: string) => void }) {
+function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival, live, when }: { when: { era: number; year: number }; live: Set<string>; biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[]; marks: { biz: string; ok: boolean }[]; selInst: string | null; onInst: (id: G.InstId) => void; onRival: (id: string) => void }) {
   const colOf = (id?: string | null) => rivals.find((r) => r.id === id)?.color;
   const ctl = G.control({ biz, rivals } as never);
   const markOf = (id: string) => marks.find((m) => m.biz === id);
@@ -97,7 +96,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
         {on && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.72} ry={w * 0.29} fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
         <Sprite art={p.art} x={p.x} y={p.y} w={w} />
         <InstSign id={p.id} x={p.x + w * 0.45} y={p.y - h * 0.72} on={on} />
-        <Plaque x={p.x} y={p.y + 3} t={PLACE_NAME[p.id]} on={on} gold />
+        <Plaque x={p.x} y={p.y + 3} t={G.instName(when, p.id)} on={on} gold />
         {mk && <Mark x={p.x + w * 0.42} y={p.y - 1.5} ok={mk.ok} />}
         <rect x={p.x - w / 2} y={p.y - h * 0.94} width={w + 4.5} height={h * 0.94 + 4.5} fill="transparent" />
       </g>
@@ -246,6 +245,23 @@ const INTERIOR: Record<G.InstId, string> = {
   whisper: 'Усередині: перекупки, вантажники й шинкар. За кілька монет вони щодня розповідають на ринку, яка ви порядна людина.',
   okhrana: 'Усередині: ротмістр над досьє, донощик мне шапку, у кутку — вилучені вальдорські прапори з бирками.'
 };
+/** the institution's full name under the power in charge (Era II renames the same buildings) */
+function instTitle(s: GameState, p: G.Inst): string {
+  const n = G.instName(s, p.id);
+  if (s.era !== 2) return p.t;
+  return p.id === 'press' ? 'Редакція ' + n : p.id === 'charity' ? (n === 'Сиротинець' ? p.t : 'Дитячий будинок імені Паризької комуни')
+    : p.id === 'okhrana' ? ({ Жандармерія: p.t, Міліція: 'Народна міліція', Губчека: 'Губернська надзвичайна комісія', ДПУ: 'Губвідділ ДПУ', НКВС: 'Управління НКВС' } as Record<string, string>)[n] || n : n === 'Ринок' ? p.t : 'Непманський ринок';
+}
+/** what the institution is for under the power in charge */
+function instSub(s: GameState, p: G.Inst): string {
+  if (s.era !== 2) return p.sub;
+  const n = G.instName(s, p.id);
+  if (p.id === 'okhrana' && n !== 'Жандармерія') return n === 'Міліція' ? 'Народна міліція замість поліції. Ті самі люди, нові кокарди.' : 'Тут знають усе про всіх. І про вас теж: ваша папка лежить у тій самій шафі.';
+  if (p.id === 'charity' && n === 'Дитбудинок') return 'Дитячий будинок у колишньому маєтку. Пожертви тепер звуться «шефською допомогою».';
+  if (p.id === 'press' && s.year >= 1917) return 'Газета пише те, що треба. Питання лише — кому треба.';
+  if (p.id === 'whisper' && n === 'Непманський ринок') return 'Непмани й перекупники знають, хто в місті береться за справи.';
+  return p.sub;
+}
 function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   const fm = s.city?.fame || {}, F = G.CITY_RULES.fame;
   const works: string[] = [];
@@ -261,8 +277,8 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.4, color: MUTE }}>ДОБРЕ ІМ’Я · {p.place.toUpperCase()}</span>
-          <span style={{ display: 'block', fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{p.t}</span>
-          <span style={{ display: 'block', fontSize: 12, fontStyle: 'italic', color: MUTE, lineHeight: 1.25, marginTop: 2 }}>{p.sub}</span>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{instTitle(s, p)}</span>
+          <span style={{ display: 'block', fontSize: 12, fontStyle: 'italic', color: MUTE, lineHeight: 1.25, marginTop: 2 }}>{instSub(s, p)}</span>
         </span>
       </div>
       {/* one line instead of a block: the picture above already takes the room */}
@@ -674,7 +690,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       {/* the whole plan; it shrinks only while a card is open */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
         <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
-          <Plan live={live} marks={marks} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} selInst={panel === 'inst' ? selI : null} onInst={(id) => { setSelI(id); setPanel('inst'); }} onRival={(id) => { setSelR(id); setPanel('riv'); }} />
+          <Plan when={s} live={live} marks={marks} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} selInst={panel === 'inst' ? selI : null} onInst={(id) => { setSelI(id); setPanel('inst'); }} onRival={(id) => { setSelR(id); setPanel('riv'); }} />
         </div>
         {/* floating furniture: small pills in the top left (moves, then the purse), close, zoom, legend.
             No title bar: the map keeps its top edge, district names and buildings stay visible. */}

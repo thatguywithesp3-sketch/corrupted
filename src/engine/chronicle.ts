@@ -55,17 +55,33 @@ export const ERA2_EVENTS: ChronPage[] = [
   }
 ];
 
+/** a page by its year: the chronicle of 1914 or one of Era II's great events */
+export const pageOf = (year: number): ChronPage | undefined => [...CHRONICLE, ...ERA2_EVENTS].find((p) => p.year === year);
+/** the pages of the chronicle now on screen */
+export const chronPages = (s: GameState): ChronPage[] => (s.chron?.years || CHRONICLE.map((p) => p.year)).map((y) => pageOf(y)!).filter(Boolean);
+
 /** start the chronicle for a fresh Era II head (called by pickHeir at the end of Era I) */
 export function startChronicle(n: GameState) {
   n.screen = 'chronicle';
-  n.chron = { step: 0, picks: [], marks: [] };
+  n.chron = { step: 0, picks: [], marks: [], years: CHRONICLE.map((p) => p.year), seen: [] };
   n.year = CHRONICLE[0].year;
 }
 
-/** take one decision; after the last page Era II begins (in 1914, the year of the war) */
+/** Era II: is there a great event on this year's front page that the family has not lived through yet? */
+export const eventFor = (n: GameState): ChronPage | undefined =>
+  n.era === 2 && n.screen === 'morning' && !(n.chron?.seen || []).includes(n.year) ? ERA2_EVENTS.find((p) => p.year === n.year) : undefined;
+
+/** open the year's great event over the morning (the decisions and marks gathered so far are kept) */
+export function startEvent(n: GameState) {
+  const c = n.chron || { step: 0, picks: [], marks: [] };
+  n.chron = { ...c, step: 0, years: [n.year], seen: [...(c.seen || []), n.year] };
+  n.screen = 'chronicle';
+}
+
+/** take one decision; after the last page the year goes on (Era II begins, or the morning of an event year) */
 export function chronPick(s: GameState, i: number): GameState {
   if (s.screen !== 'chronicle' || !s.chron) throw new Error('No chronicle');
-  const page = CHRONICLE[s.chron.step], o = page?.opts[i];
+  const pages = chronPages(s), page = pages[s.chron.step], o = page?.opts[i];
   if (!o) throw new Error('No such option');
   const n: GameState = JSON.parse(JSON.stringify(s));
   const c = n.chron!;
@@ -76,8 +92,14 @@ export function chronPick(s: GameState, i: number): GameState {
   (['patron', 'people', 'system'] as const).forEach((k) => { n[k] = Math.max(5, Math.min(95, n[k])); });
   c.picks.push(i); if (o.mark) c.marks.push(o.mark);
   c.step += 1;
-  if (c.step < CHRONICLE.length) { n.year = CHRONICLE[c.step].year; return n; }
-  return beginNewOrder(n);
+  if (c.step < pages.length) { n.year = pages[c.step].year; return n; }
+  if (pages[0].year === CHRONICLE[0].year) return beginNewOrder(n);
+  // an event year: the morning paper carries the event and what the family did
+  n.screen = 'morning';
+  n.headline = page.h; n.body = o.b; n.art = page.art;
+  n.lastDec = null; // yesterday's office decision does not belong under an event of this size
+  if (o.mark === 'exile') { n.tavro = true; n.threat = Math.max(n.threat, 25); }
+  return n;
 }
 
 /** the first morning of Era II: the city goes to war, and the family's choice is already in the paper */
@@ -85,6 +107,7 @@ function beginNewOrder(n: GameState): GameState {
   const m = n.chron!.marks;
   n.year = CHRONICLE[0].year;
   n.screen = 'morning';
+  n.lastDec = null;
   const f = n.gender === 'f', g = (m1: string, f1: string) => (f ? f1 : m1), who = `${n.first} ${n.surname}`;
   const fate = m.includes('profiteer') ? `${who} ${g('взяв', 'взяла')} підряд на шинелі для фронту.`
     : m.includes('loyal') ? `Списки рекрутів Нижнього Ауруму ${g('підписав', 'підписала')} ${who} першим підписом.`

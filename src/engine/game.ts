@@ -1,8 +1,9 @@
 import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
-import { startChronicle } from './chronicle';
-import { CITY_V, cityEvening, cityMorning, inheritCity, initCity } from './city';
+import { startChronicle, eventFor, startEvent } from './chronicle';
+import { REGIME_TURN, dressRivals, regimeOf } from './regime';
+import { carryCity, CITY_V, cityEvening, cityMorning, inheritCity, initCity } from './city';
 import { applyStory, cardById, dealYear, deckOf } from './deck';
 import { clamp100, fmt, fk, kinFor, mapText } from './text';
 import type {
@@ -42,8 +43,8 @@ export const yearMark = (s: GameState): YearMark =>
 // ============================================================ selectors
 
 export const rankName = (s: GameState, rank = s.rank) => {
-  const r = getEra(s.era).ranks[rank];
-  return s.gender === 'f' ? r.tf : r.t;
+  const r = getEra(s.era).ranks[rank], reg = regimeOf(s), nm = (reg && r.by?.[reg]) || r;
+  return s.gender === 'f' ? nm.tf : nm.t;
 };
 export const take = (s: GameState, budget: number, ap: number) =>
   Math.round((budget * RULES.appetite[ap] * getEra(s.era).ranks[s.rank].mult) / 10) * 10;
@@ -94,12 +95,15 @@ export function offersFor(s: GameState): Offer[] {
   const last = R.length - 1;
   if (s.rank < last && s.patron > O.patronMin) {
     const r = R[s.rank + 1];
-    o.push({ id: 'promo', t: S(s, 'offer.promo.t', { rank: s.gender === 'f' ? r.tf : r.t }), sub: S(s, 'offer.promo.sub', { cost: fmt(r.cost) }), btn: S(s, 'offer.promo.btn', { cost: fmt(r.cost) }) });
+    o.push({ id: 'promo', t: S(s, 'offer.promo.t', { rank: rankName(s, s.rank + 1) }), sub: S(s, 'offer.promo.sub', { cost: fmt(r.cost) }), btn: S(s, 'offer.promo.btn', { cost: fmt(r.cost) }) });
   }
   if (s.rank === last && s.patron > O.patronMin) o.push({ id: 'pres', t: S(s, 'offer.pres.t'), sub: S(s, 'offer.pres.sub', { cost: fmt(RULES.presidentFee) }), btn: S(s, 'offer.pres.btn') });
   const E = RULES.estate;
   if (E.on && s.era === 1 && !s.estate && s.clean >= E.price * E.offerFrom)
     o.push({ id: 'estate', t: S(s, 'offer.estate.t'), sub: S(s, 'offer.estate.sub', { cost: fmt(E.price) }), btn: S(s, 'offer.estate.btn', { cost: fmt(E.price) }) });
+  const T = RULES.trust;
+  if (s.era === 2 && !s.industry && s.year >= T.from && s.rank >= T.rank && s.clean >= T.price * 0.8)
+    o.push({ id: 'trust', t: S(s, 'offer.trust.t'), sub: S(s, 'offer.trust.sub', { cost: fmt(T.price) }), btn: S(s, 'offer.trust.btn', { cost: fmt(T.price) }) });
   if (s.served >= O.retireAfter) o.push({ id: 'retire', t: S(s, 'offer.retire.t'), sub: S(s, 'offer.retire.sub'), btn: S(s, 'offer.retire.btn') });
   if (s.clean >= O.fleeCleanMin) o.push({ id: 'flee', t: S(s, 'offer.flee.t'), sub: S(s, 'offer.flee.sub'), btn: S(s, 'offer.flee.btn') });
   return o;
@@ -299,7 +303,10 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
   if (kind === 'summit') { inherit = n.clean + stash; lost = 0; }
   const last = getEra(n.era).ranks.length - 1;
   // the estate dream: buy it, or — for an heir who inherited it — keep it (a collapse takes it away)
-  const dream = (n.dream === 0 && (RULES.estate.on ? !!n.dreamDone || (!!n.estate && kind !== 'collapse') : n.clean >= RULES.dreamCleanGoal)) || (n.dream === 1 && n.rank >= last)
+  // Era II goals: the trust (0), a post in the power that stays — the soviets, from the second level (1)
+  const era2 = n.era === 2, keeps = kind !== 'collapse' && kind !== 'flee';
+  const dream = (n.dream === 0 && (era2 ? !!n.industry && kind !== 'collapse' : RULES.estate.on ? !!n.dreamDone || (!!n.estate && kind !== 'collapse') : n.clean >= RULES.dreamCleanGoal))
+    || (n.dream === 1 && (era2 ? keeps && n.rank >= 1 && n.year >= RULES.trust.from : n.rank >= last))
     || (n.dream === 2 && kind === 'retire' && n.threat < RULES.dreamCleanThreat) || (n.dream === 3 && kind === 'summit');
   const dynastyOver = kind === 'collapse' && n.tavro;
   const nextStart = n.era < ERA_COUNT ? getEra(n.era + 1).startYear : Infinity;
@@ -339,7 +346,7 @@ function advance(n: GameState): GameState {
   if (n.doc >= len) {
     // the papers are done; the day ends when the player says so (Era I has the end-of-day sheet; later eras
     // still move on by themselves until their screens get one)
-    if (RULES.dayEnd.manual && n.era === 1) n.doc = len;
+    if (RULES.dayEnd.manual && n.era <= 2) n.doc = len;
     else toEvening(n);
   }
   return n;
@@ -657,6 +664,15 @@ export function acceptOffer(s: GameState, id: Offer['id']): GameState {
   const home = RULES.estate.on && n.era === 1 && !n.estate;
   if (id === 'retire') return finish(n, 'retire', S(n, 'end.retire.t'), S(n, home ? 'end.retire.xHome' : 'end.retire.x', { n: n.served }));
   if (id === 'flee') return finish(n, 'flee', S(n, 'end.flee.t'), S(n, 'end.flee.x'));
+  if (id === 'trust') {
+    const price = RULES.trust.price;
+    if (n.clean < price) { n.report.push(line(S(n, 'rep.noClean', { cost: fmt(price) }), 'bad', 'clean')); n.offers = n.offers.filter((x) => x.id !== id); return n; }
+    n.clean -= price; n.industry = true;
+    n.report.push(line(S(n, 'rep.trust'), 'ok', 'floor', true));
+    n.headline = S(n, 'news.trust.h', { surname: n.surname }); n.body = S(n, 'news.trust.b'); n.art = 'docks';
+    n.offers = n.offers.filter((x) => x.id !== id);
+    return n;
+  }
   if (id === 'estate') {
     const price = RULES.estate.price;
     if (n.clean < price) { n.report.push(line(S(n, 'rep.noClean', { cost: fmt(price) }), 'bad', 'clean')); n.offers = n.offers.filter((x) => x.id !== id); return n; }
@@ -698,7 +714,26 @@ export function sleep(s: GameState): GameState {
   n.yearStart = yearMark(n); // before the magnates' night: what they do belongs to the new year
   if (n.city && n.city.v === CITY_V) cityMorning(n, n.city); else n.city = initCity(n);
   dealYear(n);
+  regimeTurn(s, n);
+  // the great events of Era II (1917, 1918, 1920) take the front page and ask for a decision
+  if (RULES.chronicle.on && eventFor(n)) startEvent(n);
   return n;
+}
+
+/** Era II: a new power under the official's desk — a new name for the same post, a new patron, a new paper */
+function regimeTurn(s: GameState, n: GameState) {
+  const was = regimeOf({ era: s.era, year: n.year - 1 }), now = regimeOf(n);
+  if (!now || now === 'empire' || was === now) return;
+  dressRivals(n.city, now);
+  const t = REGIME_TURN[now];
+  n.headline = t.h; n.body = t.b; n.art = now === 'soviet' ? 'council' : 'portrait';
+  n.report.push(line(`Посаду перейменовано: тепер ви — ${rankName(n).toLowerCase()}.`, 'neu', 'patron', true));
+  // the new patron knows you only by hearsay: half of the old favour (or grudge) is gone
+  n.patron = Math.round(50 + (n.patron - 50) * 0.5);
+  if (now === 'soviet' && n.estate) {
+    n.estate = false;
+    n.report.push(line('Маєток роду на Замковому пагорбі націоналізовано й віддано під дитячий будинок.', 'bad', 'floor', true));
+  }
 }
 
 // ============================================================ actions: election
@@ -793,6 +828,8 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   n.yearStart = yearMark(n);
   // the city goes on: our roofs, the shops and the magnates (whose houses pass to their own heirs)
   if (!e.eraOver && s.city && s.city.v === CITY_V) n.city = inheritCity(s.city, e.kind === 'collapse');
+  // Era I → Era II: the same city goes on into 1914, with the same magnates
+  if (e.eraOver && s.era === 1 && s.city && s.city.v === CITY_V) n.city = carryCity(s.city);
   // the same era's documents are not dealt again to the second generation; a new era starts a fresh deck
   if (!e.eraOver && s.deck) n.deck = { today: [], seen: [...s.deck.seen], flags: {}, queue: [] };
   dealYear(n);

@@ -20,7 +20,7 @@ export interface Accomplice {
   k: number; // knows 0..100
 }
 
-export interface Rank { t: string; tf: string; cost: number; mult: number; limit: number }
+export interface Rank { t: string; tf: string; cost: number; mult: number; limit: number; /** the same rank under another power (Era II): regime → name */ by?: Record<string, { t: string; tf: string }> }
 export interface Origin { t: string; tf: string; d: string; fx: string }
 export interface Dream { t: string; g: string }
 export interface Trait { t: string; fx: string; d: Delta }
@@ -159,7 +159,7 @@ export interface Heir extends Kin { nephew?: boolean; /** portrait preset index 
 
 export interface ReportLine { t: string; tone: 'ok' | 'warn' | 'bad' | 'neu'; icon: string; strong?: boolean }
 
-export interface Offer { id: 'promo' | 'pres' | 'retire' | 'flee' | 'estate'; t: string; sub: string; btn: string }
+export interface Offer { id: 'promo' | 'pres' | 'retire' | 'flee' | 'estate' | 'trust'; t: string; sub: string; btn: string }
 
 export type EndKind = 'collapse' | 'retire' | 'flee' | 'summit';
 
@@ -250,7 +250,9 @@ export interface GameState {
   offers: Offer[];
   ending: Ending | null;
   /** the chronicle between Era I and Era II: the page we are on, the options picked, what they mean */
-  chron?: { step: number; picks: number[]; marks: string[] };
+  chron?: { step: number; picks: number[]; marks: string[]; years?: number[]; seen?: number[] };
+  /** Era II: the family runs the heavy industry (the «Аурумсталь» trust) — the goal «Господар промисловості» */
+  industry?: boolean;
   heirs: Heir[];
   lastStamp: StampKind | null;
   lastDec: { t: string; d: Delta } | null;

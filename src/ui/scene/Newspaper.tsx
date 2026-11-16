@@ -20,7 +20,7 @@ const ColHead = ({ t }: { t: string }) => <div style={{ fontSize: 10, fontWeight
 /** a newspaper engraving: the artist's sketch of the scene (art/news), or a piece of the city view until there is one */
 function Engraving({ era, seed, scene }: { era: number; seed: number; scene?: string | null }) {
   const [missing, setMissing] = useState<string | null>(null);
-  const sketch = era === 1 && scene && missing !== scene ? sceneSrc(scene) : null;
+  const sketch = era <= 2 && scene && missing !== scene ? sceneSrc(scene) : null;
   const x = 15 + ((seed * 37) % 70), y = 30 + ((seed * 53) % 50);
   return (
     <figure style={{ margin: 0 }}>
@@ -61,7 +61,7 @@ export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run;
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 12px 8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTE }}><span>Т. XIV · № {v.issueNo} · Ранок, {s.year}</span><span>Ціна 5 кр.</span></div>
           <Rule />
-          <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 28, textAlign: 'center', lineHeight: 1 }}>Вісник Порт-Аурума</div>
+          <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 28, textAlign: 'center', lineHeight: 1 }}>{G.paperOf(s)}</div>
           <Rule double />
           <div style={{ fontSize: 10, letterSpacing: 2, textAlign: 'center', color: MUTE }}>МІСТО · ТОРГІВЛЯ · ГРОМАДСЬКІ РОБОТИ · ВИХОДИТЬ ЩОРАНКУ</div>
           <Rule />

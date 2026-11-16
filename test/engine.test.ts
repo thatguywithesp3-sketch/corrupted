@@ -426,3 +426,46 @@ describe('the chronicle between Era I and Era II', () => {
     expect(G.ERA2_EVENTS.map((p) => p.year)).toEqual([1917, 1918, 1920]);
   });
 });
+
+describe('Era II: four powers in a row', () => {
+  it('the same post changes its name with the power, and so does the paper', () => {
+    const s = { ...G.newGame(3, 2), rank: 1, gender: 'm' as const };
+    const at = (year: number) => ({ ...s, year });
+    expect(G.regimeOf(at(1915))).toBe('empire');
+    expect(G.rankName(at(1915))).toBe('Бургомістр');
+    expect(G.rankName(at(1917))).toBe('Міський комісар');
+    expect(G.rankName(at(1919))).toBe('Голова міського ревкому');
+    expect(G.rankName(at(1925))).toBe('Голова міськвиконкому');
+    expect(G.rankName({ ...at(1925), gender: 'f' })).toBe('Голова міськвиконкому');
+    expect(G.paperOf(at(1915))).toBe('Вісник Порт-Аурума');
+    expect(G.paperOf(at(1918))).toBe('Аурумська правда');
+    expect(G.paperOf(at(1921))).toBe('Трибуна праці');
+    expect(G.regimeOf({ era: 1, year: 1880 })).toBeNull();
+  });
+});
+
+describe('Era II: the city under each power', () => {
+  it('the institutions and the three houses change their names, the deck deals by the calendar', () => {
+    const at = (year: number) => ({ era: 2, year });
+    expect(G.instName(at(1915), 'okhrana')).toBe('Жандармерія');
+    expect(G.instName(at(1917), 'okhrana')).toBe('Міліція');
+    expect(G.instName(at(1919), 'okhrana')).toBe('Губчека');
+    expect(G.instName(at(1925), 'okhrana')).toBe('ДПУ');
+    expect(G.instName(at(1936), 'okhrana')).toBe('НКВС');
+    expect(G.instName(at(1921), 'press')).toBe('«Трибуна праці»');
+    expect(G.instName(at(1925), 'charity')).toBe('Дитбудинок');
+    // a city of 1925 is dressed for the soviets
+    let s = { ...G.newGame(4, 2), year: 1925 };
+    s = G.ensureCity(s);
+    const c = JSON.parse(JSON.stringify(s.city));
+    G.dressRivals(c, 'soviet');
+    expect(c.rivals.map((r: { name: string }) => r.name)).toEqual(['Товариш Солонар', 'Товаришка Берг', 'Громадянин Кречетов']);
+    expect(G.rivalCase(c.rivals[2], 'ins')).toBe('Громадянином Кречетовим');
+    // the deck of Era II knows the calendar
+    const deck = G.getEra(2).deck!;
+    const war = deck.choices.find((x) => x.id === 'c2_exempt')!, nep = deck.choices.find((x) => x.id === 'c2_vsevolod')!;
+    expect(G.condOk({ ...s, year: 1915 }, war.cond)).toBe(true);
+    expect(G.condOk({ ...s, year: 1925 }, war.cond)).toBe(false);
+    expect(G.condOk({ ...s, year: 1925 }, nep.cond)).toBe(true);
+  });
+});
