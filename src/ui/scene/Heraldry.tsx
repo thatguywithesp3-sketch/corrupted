@@ -1,7 +1,7 @@
 // The symbols of the world (art/LORE.md → «Символіка»).
 // Romean Empire: a red-white-yellow tricolour; the state flag carries the arms in the white band.
 // The arms: a black gyrfalcon (кречет) under a crown, holding a key (money, the «key to the Third Rome») and an anchor
-// (the port), on a white-over-yellow shield; the official drawing is public/art/brand/romei-arms.jpg. The same falcon is
+// (the port), on a white-over-yellow shield; the official drawing is public/art/brand/romei-arms.png. The same falcon is
 // on the coins of the Romean crown and on the emperor's order.
 // The crown sign: Р under a crown. Valdoria: blue-black-yellow (sea, land, sun), banned until Era IV.
 import type { CSSProperties } from 'react';
@@ -11,7 +11,7 @@ export const VALDOR = { blue: '#5B9BD5', black: '#1F1A14', yellow: '#E8C33A' };
 
 /** the crowned gyrfalcon alone, centred on (0, 0): about 44 wide, from the crown (y -26) to the tail (y 18).
  * Wings displayed, head turned to the right, a key in the left talon and an anchor in the right, as on the official arms
- * (public/art/brand/romei-arms.jpg). */
+ * (public/art/brand/romei-arms.png). */
 export function RomeiFalcon({ color = ROMEI.ink, line = ROMEI.ink, tools = ROMEI.ink, eye = ROMEI.white }: { color?: string; line?: string; tools?: string; eye?: string }) {
   return (
     <g strokeLinejoin="round">
