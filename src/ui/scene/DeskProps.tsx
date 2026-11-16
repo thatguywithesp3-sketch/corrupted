@@ -56,3 +56,21 @@ export function DeskProps({ props }: { props: { src: string; x: number; y: numbe
     </div>
   );
 }
+
+// Era II: before a telephonogram lands on the desk, the telephone rings — the receiver jumps on its hook twice and a
+// short «дзень» rises from the bell, then the phone fades and the clerk's form takes its place. Once per document;
+// with reduced motion the phone just shows for a moment.
+export function PhoneRing({ k }: { k: string }) {
+  const [on, setOn] = useState(true);
+  useLayoutEffect(() => { setOn(true); const t = setTimeout(() => setOn(false), 1500); return () => clearTimeout(t); }, [k]);
+  if (!on) return null;
+  return (
+    <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 60, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 45%, rgba(20,12,4,0.25), rgba(20,12,4,0.7))', animation: 'pr-fade 1.5s ease-in forwards' }}>
+      <style>{'@keyframes pr-fade{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}@keyframes pr-ring{0%,100%{transform:rotate(0)}10%{transform:rotate(-7deg) translateY(-3px)}20%{transform:rotate(6deg)}30%{transform:rotate(-5deg) translateY(-2px)}40%{transform:rotate(4deg)}50%{transform:rotate(0)}}@keyframes pr-word{0%{opacity:0;transform:translateY(6px) scale(.9)}30%{opacity:1}100%{opacity:0;transform:translateY(-18px) scale(1.05)}}@media (prefers-reduced-motion: reduce){.pr-ph,.pr-w{animation:none!important}}'}</style>
+      <div style={{ position: 'relative' }}>
+        <img className="pr-ph" src="art/desk/phone.png" alt="" style={{ width: 120, display: 'block', transformOrigin: '50% 90%', animation: 'pr-ring .55s ease-in-out 2', filter: 'drop-shadow(6px 10px 10px rgba(0,0,0,0.6))' }} />
+        <span className="pr-w" style={{ position: 'absolute', left: -46, top: 4, fontFamily: "'Marck Script', cursive", fontSize: 26, color: '#F3E3B8', textShadow: '0 1px 2px #000', animation: 'pr-word .55s ease-out 2' }}>дзень!</span>
+      </div>
+    </div>
+  );
+}

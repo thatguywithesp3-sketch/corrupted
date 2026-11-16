@@ -20,17 +20,17 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 // Only what matters to us is painted, like the monuments on a pictorial city map: the places where the family
 // name is washed, the magnates' houses, our own house, the shops we can touch. The rest of the city stays a
 // quiet engraved wash underneath. Sprites are hand-tinted engravings (public/art/map), anchored by their base.
-import { skin } from '../skin';
+import { skin, interiorSrc, mapArt } from '../skin';
 import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops } from './mapLayout';
 
 /** a painted building standing on a little clearing; its base sits on (x, y) */
-function Sprite({ art, x, y, w, dim, quiet }: { art: string; x: number; y: number; w: number; dim?: boolean; quiet?: boolean }) {
+function Sprite({ art, src, x, y, w, dim, quiet }: { art: string; src?: string; x: number; y: number; w: number; dim?: boolean; quiet?: boolean }) {
   const h = spriteH(art, w);
   return (
     <g transform={`translate(${x} ${y})`}>
       <ellipse cx="0" cy="-.4" rx={w * 0.56} ry={w * 0.2} fill="#EFE5C9" fillOpacity=".92" />
       <ellipse cx=".6" cy="0" rx={w * 0.46} ry={w * 0.13} fill="#3A2A10" fillOpacity=".18" />
-      <image href={`art/map/${art}.webp`} x={-w / 2} y={-h * 0.94} width={w} height={h} preserveAspectRatio="xMidYMax meet" style={dim ? { filter: 'grayscale(1) opacity(.55)' } : quiet ? { filter: 'sepia(.45) saturate(.6) opacity(.85)' } : undefined} />
+      <image href={`art/map/${src || art}.webp`} x={-w / 2} y={-h * 0.94} width={w} height={h} preserveAspectRatio="xMidYMax meet" style={dim ? { filter: 'grayscale(1) opacity(.55)' } : quiet ? { filter: 'sepia(.45) saturate(.6) opacity(.85)' } : undefined} />
     </g>
   );
 }
@@ -122,7 +122,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
   // everything painted is drawn back to front, so nearer buildings overlap farther ones
   type Item = { y: number; el: React.ReactNode };
   const items: Item[] = [];
-  DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} x={p.x} y={p.y} w={p.w} quiet />{p.t && <Plaque x={p.x} y={p.y + 2.2} t={p.t} quiet />}</g> }));
+  DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} src={mapArt(when, p.art)} x={p.x} y={p.y} w={p.w} quiet />{p.t && <Plaque x={p.x} y={p.y + 2.2} t={p.t} quiet />}</g> }));
   items.push({ y: OUR_HOME.y, el: <g key="home" style={{ pointerEvents: 'none' }}><Sprite art={OUR_HOME.art} x={OUR_HOME.x} y={OUR_HOME.y} w={HOME_W.grabs} /><Plaque x={OUR_HOME.x} y={OUR_HOME.y + 2.6} t="Ваш дім" color="#3F8A5A" /></g> });
   G.INSTS.forEach((p) => {
     const on = selInst === p.id, mk = markOf('i:' + p.id), w = INST_W[p.id], h = spriteH(p.art, w), lit = live.has(p.id);
@@ -132,7 +132,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
         <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.66} ry={w * 0.25} fill="#F3DC93" fillOpacity={lit ? 0.45 : 0.18} stroke="#B8913C" strokeWidth=".45" />
         {lit && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.66} ry={w * 0.25} fill="none" stroke="#C9A24A" strokeWidth=".5"><animate attributeName="rx" values={`${w * 0.62};${w * 0.8};${w * 0.62}`} dur="2.4s" repeatCount="indefinite" /><animate attributeName="ry" values={`${w * 0.23};${w * 0.32};${w * 0.23}`} dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".9;0;.9" dur="2.4s" repeatCount="indefinite" /></ellipse>}
         {on && <ellipse cx={p.x} cy={p.y - 0.4} rx={w * 0.72} ry={w * 0.29} fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
-        <Sprite art={p.art} x={p.x} y={p.y} w={w} />
+        <Sprite art={p.art} src={mapArt(when, p.art)} x={p.x} y={p.y} w={w} />
         <InstSign id={p.id} x={p.x + w * 0.45} y={p.y - h * 0.72} on={on} />
         <Plaque x={p.x} y={p.y + 3} t={G.instName(when, p.id)} on={on} gold />
         {mk && <Mark x={p.x + w * 0.42} y={p.y - 1.5} ok={mk.ok} />}
@@ -144,7 +144,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
     const h = HOMES[r.id]; if (!h) return;
     items.push({ y: h.y, el: (
       <g key={r.id} {...asBtn(r.name, () => onRival(r.id))} className="mp-hit">
-        <Sprite art={h.art} x={h.x} y={h.y} w={HOME_W[h.art]} />
+        <Sprite art={h.art} src={mapArt(when, h.art)} x={h.x} y={h.y} w={HOME_W[h.art]} />
         <Plaque x={h.x} y={h.y + 2.8} t={/^Граф /.test(r.name) ? 'Граф ' + (r.name.split(' ').pop() || '').split('-')[0] : r.name.replace(/^(Пан|Пані) \S+ (\S+)$/, '$1 $2')} color={r.color} />
         <rect x={h.x - 8} y={h.y - 17} width="16" height="21" fill="transparent" />
       </g>
@@ -284,6 +284,13 @@ const INTERIOR: Record<G.InstId, string> = {
   whisper: 'Усередині: перекупки, вантажники й шинкар. За кілька монет вони щодня розповідають на ринку, яка ви порядна людина.',
   okhrana: 'Усередині: ротмістр над досьє, донощик мне шапку, у кутку — вилучені вальдорські прапори з бирками.'
 };
+/** Era II, from 1918: the same buildings under the new order (public/art/interiors/<id>-e2.jpg) */
+const INTERIOR2: Record<G.InstId, string> = {
+  charity: 'Усередині: колишня трапезна монастиря, ікони забілено. Сироти в сірому над юшкою, завідувачка з журналом, завгосп виносить мішок борошна чорним ходом.',
+  press: 'Усередині: редакторка з синім олівцем над коректурою, цензор у френчі креслить червоним, друкарка, портрет повернуто до стіни.',
+  whisper: 'Усередині: непман у хутряному комірі рахує гроші, спекулянт продає годинники з-під поли, міліціонер дивиться вбік, черга з хлібними картками.',
+  okhrana: 'Усередині: напівпідвал під голою лампочкою, слідчий у шкірянці, наган біля склянки чаю, колишній купець мне капелюх, у кутку вилучене срібло з бирками.'
+};
 /** the institution's full name under the power in charge (Era II renames the same buildings) */
 function instTitle(s: GameState, p: G.Inst): string {
   const n = G.instName(s, p.id);
@@ -310,7 +317,7 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   return (
     <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 12px 12px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: 'rotate(-0.3deg)', zIndex: 2, borderTop: '6px solid #B8913C' }}>
       {/* what it looks like inside: the engraving heads the card edge to edge and speaks for itself */}
-      <img src={`art/interiors/${p.id}.jpg`} alt={INTERIOR[p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      <img src={interiorSrc(s, p.id)} alt={(s.era === 2 && s.year >= 1918 ? INTERIOR2 : INTERIOR)[p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
         style={{ display: 'block', width: 'calc(100% + 24px)', margin: '-20px -12px 10px', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 40%', filter: 'sepia(0.12) contrast(1.03)', borderBottom: `3px double ${INK}` }} />
       <Clip side="top" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -365,6 +372,12 @@ const HOUSE: Record<string, string> = {
   r1: 'Порожня контора Солонарів над складами: стіна досягнень — від ятки з бочкою до ливарні, перша банкнота в слоїку, соляна бочка під скляним ковпаком, старі чоботи у вітрині, перші ваги, гільдійська грамота, книга боргів і сигара, що ще димить.',
   r2: 'Порожня вітальня-редакція Бергів: оксамитове крісло з мундштуком, що тліє, карикатури сохнуть на мотузках, чай із коньяком і стос конвертів, верстат біля вікна.',
   r3: 'Порожня зала замку Кречетових-Задонських: родовий герб із кречетом над каміном, спільний портрет предка з імператором на полюванні й голова оленя з того полювання, родове дерево з короною на вершині, портрети предків, плями від проданих картин, стіл на двох для почесного гостя.'
+};
+/** Era II under the councils (from 1922): the same houses nationalised or traded for an office */
+const HOUSE2: Record<string, string> = {
+  r1: 'Порожній кабінет червоного директора в його ж колишньому особняку: старий сейф під державною печаткою, графіки домен, телефон і склянка чаю, власний портрет у золотій рамі повернуто до стіни.',
+  r2: 'Порожній кабінет редакторки: оксамитове крісло під солдатською ковдрою, траурна шаль, підшивки газети, друкарська машинка, списки на стіні з червоними нитками, порожня клітка.',
+  r3: 'Порожній кабінет в органах: сірі шафи з теками, лампа з зеленим абажуром, одна тонка папка, у попільничці — родовий перстень-печатка, шабля загорнута в газету.'
 };
 function RivalCard({ r, c, wide }: { r: Rival; c: NonNullable<GameState['city']>; wide: boolean }) {
   const held = G.holdings(c, r.id), lamps = Math.min(3, Math.round(r.heat / 3.3));
@@ -509,7 +522,7 @@ const STYLE_N: Record<string, string> = { expander: 'Скуповує закла
 const RULED = 'repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 27px, rgba(70,90,130,0.22) 27px 28px)';
 
 /** «Розклад сил»: the character's working notebook. One index tab per magnate; the page holds his file, his shops and the moves open against him. */
-function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['city']>; selR: string; onSel: (id: string) => void; children: React.ReactNode }) {
+function PowerSheet({ c, when, selR, onSel, children }: { c: NonNullable<GameState['city']>; when: { era: number; year: number }; selR: string; onSel: (id: string) => void; children: React.ReactNode }) {
   const rv = c.rivals.find((r) => r.id === selR) || c.rivals[0];
   const f = G.rivalFile(rv);
   const held = G.holdings(c, rv.id), lamps = Math.min(3, Math.round(rv.heat / 3.3));
@@ -538,7 +551,7 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
         {/* the house inside, pasted at the head of the page: who works there and how the house lives */}
         {/* the house photo with the head of the house clipped to its top left corner */}
         <div style={{ position: 'relative', margin: '6px 0 10px' }}>
-          <img key={rv.id} src={`art/interiors/${rv.id}.jpg`} alt={HOUSE[rv.id] || ''} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+          <img key={rv.id} src={interiorSrc(when, rv.id)} alt={(when.era === 2 && when.year >= 1922 ? HOUSE2 : HOUSE)[rv.id] || ''} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             style={{ display: 'block', width: '100%', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 42%', border: `2px solid ${INK}`, boxShadow: '2px 4px 8px rgba(0,0,0,0.4)', transform: 'rotate(0.6deg)', filter: 'sepia(0.12) contrast(1.03)' }} />
           <span role="img" aria-label={rv.name} style={{ position: 'absolute', left: -10, top: -6, width: 86, height: 114, background: `url(${G.rivalPortrait(rv)}) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: '4px solid #FBF6E6', outline: `1px solid ${INK}`, boxShadow: '3px 6px 12px rgba(0,0,0,0.55)', transform: 'rotate(-4deg)' }}>
             {/* the paperclip holding the portrait to the photo */}
@@ -760,7 +773,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       {panel !== null && (
         <div key={panel} className="m-sheet" style={{ flexShrink: 0, maxHeight: panel === 'riv' ? '93%' : '64%', display: 'flex', flexDirection: 'column', margin: '0 4px', padding: '8px 8px 8px', background: 'linear-gradient(180deg, rgba(26,18,10,0.97), rgba(20,13,7,0.99))', border: '1.5px solid #6E531E', borderBottom: 'none', boxShadow: '0 -10px 24px rgba(0,0,0,0.6)' }}>
           <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 2px 4px' }}>
-            {panel === 'riv' ? <PowerSheet c={c} selR={selR} onSel={setSelR}>{null}</PowerSheet> : <>{card}{actions}</>}
+            {panel === 'riv' ? <PowerSheet c={c} when={s} selR={selR} onSel={setSelR}>{null}</PowerSheet> : <>{card}{actions}</>}
           </div>
           {rivMode && rv && (used ? <div style={{ flexShrink: 0, paddingTop: 8, fontSize: 14, fontStyle: 'italic', color: '#E9E1C2' }}>{doneT}</div> : (
             <div style={{ flexShrink: 0, paddingTop: 8 }}>

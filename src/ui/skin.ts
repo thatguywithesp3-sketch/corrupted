@@ -76,3 +76,16 @@ export const SKIN: Record<Skin, {
 
 /** the skin for a state (Era I and everything outside Era II keep the empire's) */
 export const skin = (s: { era: number; year: number }) => SKIN[skinOf(s)];
+
+// ---- Era II art by power: the same places, the same scenes, drawn anew once the old order is gone
+const y = (s: { era: number; year: number }) => (s.era === 2 ? s.year : 0);
+/** the institutions change hands in 1918 (дитбудинок, губчека, «Трибуна праці», the market); the magnates' houses
+ *  with the settled state in 1922 */
+export const interiorSrc = (s: { era: number; year: number }, id: string) =>
+  `art/interiors/${id}${y(s) >= (id.charAt(0) === 'r' ? 1922 : 1918) ? '-e2' : ''}.jpg`;
+/** map buildings redrawn for Era II: red flags from 1918, the trust and the communal flats from 1922 */
+const MAP_E2: Record<string, number> = { ratusha: 1918, gendarm: 1918, orphanage: 1918, press: 1918, market: 1918, station: 1918, foundry: 1922, weisman: 1922 };
+export const mapArt = (s: { era: number; year: number }, art: string) => (MAP_E2[art] && y(s) >= MAP_E2[art] ? art + '-e2' : art);
+/** Era II newspaper sketches: the same scene names, drawn for 1914–1930 (public/art/news/e2) */
+const NEWS_E2 = new Set(['garrison', 'docks', 'court', 'quarantine', 'bourse', 'harbour', 'council', 'raid', 'bank', 'heir', 'delegates', 'gendarmes', 'fair', 'fire', 'press', 'estate']);
+export const newsSrc = (era: number, scene: string) => (era === 2 && NEWS_E2.has(scene) ? `art/news/e2/${scene}.jpg` : `art/news/${scene}.jpg`);

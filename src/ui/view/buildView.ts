@@ -311,18 +311,21 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', arms: s.era === 1 || (s.era === 2 && s.year < G.REGIME_FROM.provisional), bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
-    const photo = w.kind === 'rival' ? (s.era === 1 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
+    const photo = w.kind === 'rival' ? (s.era <= 2 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s, w.kind);
     if (photo) Object.assign(v.dg, { photo, photoOn: true, silOn: false, ovalFilter: 'none' });
     const says: Record<string, string> = { kid: 'Нам треба поговорити.', acc: 'Треба поговорити. Без свідків.', journo: 'Кілька запитань для завтрашнього номера. Коментар дасте?', boss: 'Маю до вас делікатне прохання.' };
     const g = dc.gist || dc.q.replace(/^[^«]*«/, '').replace(/»\.?$/, '');
-    const hh = 20 + (s.served % 3), mm = 10 + ((s.served * 7) % 49), md = dlgW.medium;
+    const hh = 20 + (s.served % 3), mm = 10 + ((s.served * 7) % 49), md = dlgW.medium, ph = md === 'phone';
     Object.assign(v.dg, {
-      isLetter: md === 'letter', isCall: md === 'call', isChat: md === 'chat', say: dc.say || says[kd], gist: g, sign: v.dg.name, initial: v.dg.name.replace(/^(Пан|Пані|Писар) /, '').charAt(0),
-      hatOn: md === 'letter' && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: w.kind === 'rival' ? 'передав посильний' : dlgW.place ? dlgW.place[kd] : '',
+      isLetter: md === 'letter' || ph, isCall: md === 'call', isChat: md === 'chat', say: dc.say || says[kd], gist: g, sign: v.dg.name, initial: v.dg.name.replace(/^(Пан|Пані|Писар) /, '').charAt(0),
+      hatOn: (md === 'letter' || ph) && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: w.kind === 'rival' ? (ph ? 'дзвонить сам' : 'передав посильний') : dlgW.place ? dlgW.place[kd] : '',
+      // Era II: the call is written down in the reception as a telephonogram — a numbered form with the time,
+      // who passed it and who took it; the photograph is clipped to it from the file
+      isPhone: ph, notPhone: !ph, phNo: String(40 + s.served * 3 + s.doc), phTime: hh + ':' + mm, studio: ph ? 'З ОСОБОВОЇ СПРАВИ' : 'ФОТОАТЕЛЬЄ «АУРУМ»', signLine: ph ? 'Прийняв черговий секретар' : '— ' + v.dg.name,
       device: kd === 'kid' && md === 'call' ? (s.era >= 5 ? 'Мобільний · дзвонить родина' : 'Домашній телефон') : dlgW.device || '', timer: '00:' + (10 + ((s.served * 13) % 49)),
       glow: dlgW.glow || '#1D2A3A', accent: dlgW.accent || '#4F8BE0', status: kd === 'journo' ? 'друкує…' : 'в мережі', app: dlgW.app || '', chatNote: dlgW.note || '', time1: hh + ':' + mm, time2: hh + ':' + (mm + 1),
-      screenBg: md === 'letter' ? '#2A1A10' : md === 'chat' ? '#0E1621' : '#0D1117', optsBg: md === 'letter' ? '#2A1A10' : md === 'chat' ? '#17212B' : '#0D1117',
-      optsLabelC: md === 'letter' ? '#D9B870' : '#9AA6B2', optsFont: md === 'letter' ? 'inherit' : "-apple-system, 'Segoe UI', Roboto, sans-serif", replyLabel: dlgW.reply
+      screenBg: md === 'letter' || ph ? '#2A1A10' : md === 'chat' ? '#0E1621' : '#0D1117', optsBg: md === 'letter' || ph ? '#2A1A10' : md === 'chat' ? '#17212B' : '#0D1117',
+      optsLabelC: md === 'letter' || ph ? '#D9B870' : '#9AA6B2', optsFont: md === 'letter' || ph ? 'inherit' : "-apple-system, 'Segoe UI', Roboto, sans-serif", replyLabel: dlgW.reply
     });
   }
   v.q = ''; v.apOpts = []; v.opts = []; v.accNote = ''; v.gainPills = []; v.schemeOpts = [];

@@ -8,8 +8,8 @@ import type { GameState } from '../../engine';
 import { CityMap } from './CityMap';
 import { T } from './Ledger';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
-import { sceneCaption, sceneSrc } from '../scenes';
-import { skin } from '../skin';
+import { sceneCaption } from '../scenes';
+import { newsSrc, skin } from '../skin';
 
 type Run = (f: (x: GameState) => GameState) => void;
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,7 +20,7 @@ const ColHead = ({ t }: { t: string }) => <div style={{ fontSize: 10, fontWeight
 /** a newspaper engraving: the artist's sketch of the scene (art/news), or a piece of the city view until there is one */
 function Engraving({ era, seed, scene }: { era: number; seed: number; scene?: string | null }) {
   const [missing, setMissing] = useState<string | null>(null);
-  const sketch = era <= 2 && scene && missing !== scene ? sceneSrc(scene) : null;
+  const sketch = era <= 2 && scene && missing !== scene ? newsSrc(era, scene) : null;
   const x = 15 + ((seed * 37) % 70), y = 30 + ((seed * 53) % 50);
   return (
     <figure style={{ margin: 0 }}>
