@@ -307,9 +307,9 @@ const STYLE_T: Record<string, string> = { expander: 'Скуповує закла
 
 /** each magnate's house inside, with nobody in it: the room outlives every head of the house (public/art/interiors/<rival id>.jpg) */
 const HOUSE: Record<string, string> = {
-  r1: 'Порожня контора Солонарів над складами: книга боргів, рахівниця, сигара ще димить, мапа гавані з прапорцями, гравюра ливарні, модель пароплава, сейф прочинений, у вікні крани й щогли.',
+  r1: 'Порожня контора Солонарів над складами: стіна досягнень — від ятки з бочкою до ливарні, перша банкнота в слоїку, соляна бочка під скляним ковпаком, старі чоботи у вітрині, перші ваги, гільдійська грамота, книга боргів і сигара, що ще димить.',
   r2: 'Порожня вітальня-редакція Бергів: оксамитове крісло з мундштуком, що тліє, карикатури сохнуть на мотузках, чай із коньяком і стос конвертів, верстат біля вікна.',
-  r3: 'Порожня зала замку Кречетових-Задонських: портрети предків, світлі плями від проданих картин, стіл накрито на двох для почесного гостя, ловчий сокіл, холодний камін.'
+  r3: 'Порожня зала замку Кречетових-Задонських: родовий герб із кречетом над каміном, спільний портрет предка з імператором на полюванні й голова оленя з того полювання, родове дерево з короною на вершині, портрети предків, плями від проданих картин, стіл на двох для почесного гостя.'
 };
 function RivalCard({ r, c, wide }: { r: Rival; c: NonNullable<GameState['city']>; wide: boolean }) {
   const held = G.holdings(c, r.id), lamps = Math.min(3, Math.round(r.heat / 3.3));
@@ -481,13 +481,19 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
 
         {children}
         {/* the house inside, pasted at the head of the page: who works there and how the house lives */}
-        <img key={rv.id} src={`art/interiors/${rv.id}.jpg`} alt={HOUSE[rv.id] || ''} onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          style={{ display: 'block', width: '100%', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 42%', margin: '0 0 12px', border: `2px solid ${INK}`, boxShadow: '2px 4px 8px rgba(0,0,0,0.4)', transform: 'rotate(0.6deg)', filter: 'sepia(0.12) contrast(1.03)' }} />
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          {/* the portrait, pinned in photo corners */}
-          <span style={{ position: 'relative', width: 100, height: 132, flexShrink: 0, background: `url(${G.rivalPortrait(rv)}) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: `2px solid ${INK}`, boxShadow: '2px 5px 10px rgba(0,0,0,0.5)', transform: 'rotate(-2.5deg)' }}>
-            {[{ top: -3, left: -3, r: 0 }, { top: -3, right: -3, r: 90 }, { bottom: -3, right: -3, r: 180 }, { bottom: -3, left: -3, r: 270 }].map((s, i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', ...s, width: 15, height: 15, background: '#F1E6C8', border: `1px solid ${INK}`, clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: `rotate(${s.r}deg)` } as CSSProperties} />)}
+        {/* the house photo with the head of the house clipped to its top left corner */}
+        <div style={{ position: 'relative', margin: '6px 0 10px' }}>
+          <img key={rv.id} src={`art/interiors/${rv.id}.jpg`} alt={HOUSE[rv.id] || ''} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+            style={{ display: 'block', width: '100%', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 42%', border: `2px solid ${INK}`, boxShadow: '2px 4px 8px rgba(0,0,0,0.4)', transform: 'rotate(0.6deg)', filter: 'sepia(0.12) contrast(1.03)' }} />
+          <span role="img" aria-label={rv.name} style={{ position: 'absolute', left: -10, top: -6, width: 86, height: 114, background: `url(${G.rivalPortrait(rv)}) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: '4px solid #FBF6E6', outline: `1px solid ${INK}`, boxShadow: '3px 6px 12px rgba(0,0,0,0.55)', transform: 'rotate(-4deg)' }}>
+            {/* the paperclip holding the portrait to the photo */}
+            <svg aria-hidden="true" viewBox="0 0 18 46" width="18" height="46" style={{ position: 'absolute', left: 30, top: -22, overflow: 'visible', transform: 'rotate(6deg)', filter: 'drop-shadow(1px 2px 1.5px rgba(0,0,0,0.55))' }}>
+              <path d="M6 32 V9 a4.5 4.5 0 0 1 9 0 V36 a6.5 6.5 0 0 1 -13 0 V13" fill="none" stroke="#7D838B" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M6 32 V9 a4.5 4.5 0 0 1 9 0 V36 a6.5 6.5 0 0 1 -13 0 V13" fill="none" stroke="#E4E8EC" strokeWidth=".8" strokeLinecap="round" transform="translate(-.5 -.5)" />
+            </svg>
           </span>
+        </div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.6, color: rv.ally ? T.clean.ink : RED, fontWeight: 700 }}>{rv.ally ? 'РОДИЧ · СОЮЗНИК' : 'СУПЕРНИК'}</span>
             <span style={{ display: 'block', fontFamily: HAND, fontSize: 28, lineHeight: 1.02 }}>{rv.name}</span>
