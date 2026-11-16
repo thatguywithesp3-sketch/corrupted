@@ -261,7 +261,16 @@ export function buildView(ctx: Ctx): any {
   v.hasStamp = !!st; v.stampT = st ? (L.stampWords || {})[st.t] || st.t : ''; v.stampC = st ? st.c : '#8E2A1F';
   const last = R.length - 1;
   const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : s.estate ? 'маєток уже належить роду — збережіть його до кінця служби' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
-  v.dreamText = C.dreams[s.dream].t + ': ' + dreamProg + '.';
+  // Era II goals speak of the trust and the new power, not of the manor and the doge
+  const T = G.RULES.trust;
+  const dreamProg2 = [s.industry ? 'трест «Аурумсталь» ваш — втримайте його до кінця служби' : s.year < T.from ? 'трест «Аурумсталь» роздаватимуть лише за влади рад (з ' + T.from + ')' : s.rank < T.rank ? 'спершу треба дорости до третього рівня — зараз ' + G.rankName(s).toLowerCase() : fmt(s.clean) + ' з ' + fmt(T.price) + ' чистими на крісло директора',
+    s.year < T.from ? 'зараз ' + G.rankName(s).toLowerCase() + '; головне — дожити до влади, що встоїть' : s.rank >= 1 ? 'ви вже в апараті рад: ' + G.rankName(s).toLowerCase() + ' — тепер лише не впасти' : 'зараз ' + G.rankName(s).toLowerCase() + ', треба хоча б на рівень вище',
+    'увага органів ' + tv + ' — на пенсії має бути менше ' + G.RULES.dreamCleanThreat,
+    'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — генеральний секретар партії'][s.dream] || '';
+  v.dreamText = C.dreams[s.dream].t + ': ' + (s.era === 2 ? dreamProg2 : dreamProg) + '.';
+  v.paperName = G.paperOf(s);
+  // the imperial arms belong on the letterhead only while there is an empire
+  v.armsDisp = s.era === 1 || (s.era === 2 && s.year < G.REGIME_FROM.provisional) ? 'block' : 'none';
   v.toOffice = () => run(G.toOffice);
 
   // ---- office
@@ -296,7 +305,7 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'хоче поставити вам кілька запитань', kindLabel: 'ЖУРНАЛІСТ', bg: 'linear-gradient(180deg, #7FAEE3, #2A3A6A)', sil: '#141C30', hasBadge: true, badge: 'ПРЕСА', badgeBg: '#8E2A1F', mood: tv >= 60 ? 'Має докази' : 'Шукає докази', moodBg: tv >= 60 ? '#F08A6E' : '#F2DFA8', pills: [pill('threat', 'ризик ' + tv, tv >= 60 ? 'bad' : 'neu')] });
     } else {
       kd = 'boss';
-      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', arms: s.era === 1, bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
+      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', arms: s.era === 1 || (s.era === 2 && s.year < G.REGIME_FROM.provisional), bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
     const photo = w.kind === 'rival' ? (s.era === 1 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);

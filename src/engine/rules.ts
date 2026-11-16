@@ -35,7 +35,11 @@ export const RULES = {
   /** the day ends when the player says so (after the last document), not by itself */
   dayEnd: { manual: true },
   /** the chronicle of 1914–1920 between Era I and Era II; Era II then begins in firstYear */
-  chronicle: { on: true, firstYear: 1921 },
+  chronicle: { on: true },
+  /** an era ends by the calendar too: the service stops when the next era's year comes (Era II ends in 1941) */
+  eraByCalendar: true,
+  /** Era II goal «Господар промисловості»: the post of the «Аурумсталь» trust, offered under the soviets from this rank */
+  trust: { price: 6000, from: 1922, rank: 2 },
   /** city moves a year: base + one per rank */
   cityMoves: { base: 3, perRank: 1 },
   endings: {
@@ -83,6 +87,7 @@ export const PROTOTYPE_PATCH = {
     deck: { on: false },
     dayEnd: { manual: false },
     chronicle: { on: false },
+    eraByCalendar: false,
     dreamCleanThreat: 30,
     campaign: { rivalStart: 45 },
     cityMoves: { base: 1e9 },

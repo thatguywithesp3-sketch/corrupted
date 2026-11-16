@@ -37,7 +37,8 @@ import v7 from '../data/views/era7.json';
 interface EraView { fonts: string[]; css: string; root: DcNode }
 const VIEWS = [v1, v2, v3, v4, v5, v6, v7] as unknown as EraView[];
 /** Eras whose evening / night / family are hand-built React scenes plugged into the template. */
-const SCENE_ERAS = new Set([1]);
+/** eras that run on Era I's skeleton: its view template with the React scenes slotted in (the era's own theme and texts on top) */
+const SCENE_ERAS = new Set([1, 2]);
 
 /** Replace template blocks with slots for the React scenes (evening ledger, night report, HUD family rail). */
 function withSlots(root: DcNode): DcNode {
@@ -138,7 +139,8 @@ function withSlots(root: DcNode): DcNode {
 const SLOTTED = new Map<number, DcNode>();
 const rootFor = (era: number) => {
   if (!SCENE_ERAS.has(era)) return VIEWS[era - 1].root;
-  if (!SLOTTED.has(era)) SLOTTED.set(era, withSlots(VIEWS[era - 1].root));
+  // every scene era shares Era I's template (the skeleton); the era brings its own look values (theme.look) and CSS
+  if (!SLOTTED.has(era)) SLOTTED.set(era, withSlots(VIEWS[0].root));
   return SLOTTED.get(era)!;
 };
 

@@ -27,7 +27,12 @@ export const CITY_RULES = {
     article: { cost: 200, calm: 6, odds: 0.75 },
     share: { cost: 1500, calmYr: 1, smearCut: 0.5 },
     whisper: { cost: 120, calmYr: 2, peopleYr: 1 },
-    silence: { cost: 350, calm: 10, odds: 0.8, backfire: 4, people: 2 }
+    silence: { cost: 350, calm: 10, odds: 0.8, backfire: 4, people: 2 },
+    // Era II, the organs (губчека → ДПУ → НКВС): a denunciation hits a magnate hard but the organs remember the
+    // informer; buying yourself off is dear and not for ever; being useful keeps your file at the bottom of the drawer
+    denounce: { cost: 300, power: 14, heat: 3, odds: 0.75, mark: 5 },
+    buyoff: { cost: 900, calm: 16, odds: 0.7, backfire: 6 },
+    useful: { calm: 8, people: 5 }
   }
 };
 
@@ -43,7 +48,7 @@ const RIVAL_CASES: Record<string, { gen: string; dat: string; acc: string; ins: 
   r2: { gen: 'Пані Берг', dat: 'Пані Берг', acc: 'Пані Берг', ins: 'Пані Берг' },
   r3: { gen: 'Графа Кречетова-Задонського', dat: 'Графу Кречетову-Задонському', acc: 'Графа Кречетова-Задонського', ins: 'Графом Кречетовим-Задонським' }
 };
-export const rivalCase = (r: Rival, k: 'gen' | 'dat' | 'acc' | 'ins') => (r.gen && r.gen > 1 ? RIVAL_HEIRS[r.id]?.cases[k] : RIVAL_CASES[r.id]?.[k]) || r.name;
+export const rivalCase = (r: Rival, k: 'gen' | 'dat' | 'acc' | 'ins') => r.cases?.[k] || (r.gen && r.gen > 1 ? RIVAL_HEIRS[r.id]?.cases[k] : RIVAL_CASES[r.id]?.[k]) || r.name;
 /** a shop owner is a woman when she is «Пані …» */
 const ow = (b: { owner: string }, m: string, f: string) => (b.owner.startsWith('Пані') ? f : m);
 /** «відкриває візницьку біржу»: feminine kinds take the accusative */
@@ -59,7 +64,7 @@ export type BizAct = 'inspect' | 'seal' | 'roof' | 'outbid';
 export type RivalAct = 'bribe' | 'expose' | 'marry';
 /** the four ways to whitewash a name: charity, the press, whisperers in the taverns, the gendarmerie */
 export type InstId = 'charity' | 'press' | 'whisper' | 'okhrana';
-export type InstAct = 'donate' | 'fund' | 'article' | 'share' | 'hire' | 'dismiss' | 'silence';
+export type InstAct = 'donate' | 'fund' | 'article' | 'share' | 'hire' | 'dismiss' | 'silence' | 'denounce' | 'buyoff' | 'useful';
 export type RivalStyle = 'expander' | 'smear' | 'informer';
 
 /** A local magnate: wants the same shops and roofs we do, and hunts us when he is angry. */
@@ -72,6 +77,10 @@ export interface Rival {
   last: string; // what he did last night
   /** 2 once the house has passed to the next generation (with ours) */
   gen?: number;
+  /** Era II: the same house under another power — its own case forms, file and portrait (regime.ts) */
+  cases?: { gen: string; dat: string; acc: string; ins: string };
+  file?: RivalFile;
+  portrait?: string;
 }
 
 export interface Biz {
@@ -510,8 +519,8 @@ export function renameLegacy(raw: string): string {
 
 /** heirs of the magnates whose portraits exist in public/art/rivals/<id>-g2.jpg */
 export const RIVAL_HEIR_PORTRAITS = new Set<string>(['r1', 'r2', 'r3']);
-export const rivalFile = (r: Rival): RivalFile => (r.gen && r.gen > 1 && RIVAL_HEIRS[r.id] ? RIVAL_HEIRS[r.id].file : RIVAL_FILE[r.id]);
-export const rivalPortrait = (r: Rival) => `art/rivals/${r.id}${r.gen && r.gen > 1 && RIVAL_HEIR_PORTRAITS.has(r.id) ? '-g2' : ''}.jpg`;
+export const rivalFile = (r: Rival): RivalFile => r.file || (r.gen && r.gen > 1 && RIVAL_HEIRS[r.id] ? RIVAL_HEIRS[r.id].file : RIVAL_FILE[r.id]);
+export const rivalPortrait = (r: Rival) => r.portrait || `art/rivals/${r.id}${r.gen && r.gen > 1 && RIVAL_HEIR_PORTRAITS.has(r.id) ? '-g2' : ''}.jpg`;
 
 /** The city the heir takes over (same era): the shops, our roofs, the magnates and their grudges stay;
  *  each magnate's house passes to its own heir. A collapse loses our roofs: owners stop paying a fallen family. */
@@ -678,7 +687,17 @@ function instActsRaw(s: GameState, id: InstId): ActOption[] {
     case 'whisper': return fm.whisper
       ? [{ act: 'dismiss', t: 'Розпустити шептунів', sub: `Заощадите ${fmt(F.whisper.cost)} кр. на рік, але чутки підуть без нагляду.`, can: true, risk: 0, odds: 1, gain: 0, gainT: `−${fmt(F.whisper.cost)} кр. витрат` }]
       : [{ act: 'hire', t: 'Найняти шептунів', sub: `${fmt(F.whisper.cost)} кр. щороку брудними. Щороку ризик −${F.whisper.calmYr}, народ +${F.whisper.peopleYr}.`, can: dirtyTotal(s) >= F.whisper.cost, why: `Бракує брудних: потрібно ${fmt(F.whisper.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.whisper.calmYr} щороку`, cost: F.whisper.cost, perYear: true }];
-    case 'okhrana': return [
+    case 'okhrana':
+      // from 1918 the same building belongs to the organs: other moves, other prices
+      if (s.era === 2 && s.year >= 1918) {
+        const top = (s.city?.rivals || []).filter((r) => !r.ally).sort((a, z) => z.power - a.power)[0];
+        return [
+          { act: 'denounce', t: 'Замовити донос', sub: top ? `Анонімний лист про «колишнього» — ${rivalCase(top, 'acc')}. Вплив суперника −${F.denounce.power}, але органи запам’ятають і вас: ризик +${F.denounce.mark}.` : 'Нема на кого.', can: !!top && dirtyTotal(s) >= F.denounce.cost, why: top ? `Бракує брудних: потрібно ${fmt(F.denounce.cost)} кр.` : 'Суперників немає', risk: F.denounce.mark, odds: F.denounce.odds, gain: 0, gainT: `вплив суперника −${F.denounce.power}`, cost: F.denounce.cost },
+          { act: 'buyoff', t: 'Відкупитися', sub: `Ваша справа вже в папці. Конверт слідчому — і папка худне. Дорого й не назавжди; якщо слідчий чесний — ризик +${F.buyoff.backfire}.`, can: dirtyTotal(s) >= F.buyoff.cost, why: `Бракує брудних: потрібно ${fmt(F.buyoff.cost)} кр.`, risk: 0, odds: F.buyoff.odds, gain: 0, gainT: `ризик −${F.buyoff.calm}`, cost: F.buyoff.cost, calm: F.buyoff.calm },
+          { act: 'useful', t: 'Стати корисним', sub: `Передавати відомості про апарат. Ваша папка лежить на дні шухляди, доки ви потрібні. Місто здогадується: народ −${F.useful.people}.`, can: true, why: '', risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.useful.calm}`, cost: 0, calm: F.useful.calm }
+        ];
+      }
+      return [
       { act: 'silence', t: 'Заткнути критиків', sub: `Ротмістр «поговорить» із тими, хто скаржиться. Образи власників зникнуть, але місто це відчує. Якщо ротмістр передумає — ризик +${F.silence.backfire}.`, can: dirtyTotal(s) >= F.silence.cost, why: `Бракує брудних: потрібно ${fmt(F.silence.cost)} кр.`, risk: 0, odds: F.silence.odds, gain: 0, gainT: `ризик −${F.silence.calm}`, cost: F.silence.cost, calm: F.silence.calm }
     ];
   }
@@ -714,6 +733,28 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
       res.title = 'Критики замовкли'; res.text = 'Двоє крамарів забрали скарги, автор листа до газети раптом поїхав до родичів. Місто стало тихішим — і трохи наляканим.';
     } else { res.ok = false; n.threat += F.silence.backfire; res.d.i = F.silence.backfire; res.title = 'Ротмістр узяв гроші й записав вас'; res.text = 'Конверт зник у шухляді, а ваше прізвище — у його записнику. Тепер він знає про вас більше.'; }
   }
+  else if (act === 'denounce') {
+    const top = c.rivals.filter((r) => !r.ally).sort((a, z) => z.power - a.power)[0];
+    n.threat += F.denounce.mark; res.d.i = F.denounce.mark;
+    if (top && crand(c) < F.denounce.odds) {
+      top.power = Math.max(5, top.power - F.denounce.power); top.heat = Math.min(10, top.heat + F.denounce.heat);
+      res.title = `${cap(rivalCase(top, 'acc'))} викликали «на розмову»`; res.text = 'Повернувся під ранок, сивіший. Його люди тепер обходять його кабінет. А ваш лист лежить у тій самій папці — з вашим почерком.';
+    } else { res.ok = false; res.title = 'Донос не спрацював'; res.text = 'Слідчий прочитав, усміхнувся й поклав лист у теку. Не в ту, на яку ви розраховували.'; }
+  } else if (act === 'buyoff') {
+    if (crand(c) < F.buyoff.odds) { calm(F.buyoff.calm); res.title = 'Папка схудла'; res.text = 'Слідчий узяв конверт і кілька аркушів із вашої справи. Інші аркуші лишилися — на згадку.'; }
+    else { res.ok = false; n.threat += F.buyoff.backfire; res.d.i = F.buyoff.backfire; res.title = 'Слідчий виявився чесним'; res.text = 'Конверт додано до справи як речовий доказ. Тепер у папці на одну сторінку більше.'; }
+  } else if (act === 'useful') {
+    calm(F.useful.calm); n.people = clamp100(n.people - F.useful.people); res.d.n = -F.useful.people;
+    res.title = 'Ви тепер «свій» в органах'; res.text = 'Щотижня — коротка записка про апарат. Ваша папка лягла на дно шухляди. Чужі — нагорі.';
+  }
   c.last = res; (c.today ||= []).push(res);
   return n;
+}
+
+/** Era I → Era II: the city goes on into 1914 with its shops, roofs and the same magnates (no new generation);
+ *  only what belongs to the old year is cleared. */
+export function carryCity(old: CityState): CityState {
+  const c: CityState = JSON.parse(JSON.stringify(old));
+  c.done = []; c.today = []; c.last = null; c.tribute = 0; c.news = [];
+  return c;
 }
