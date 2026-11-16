@@ -17,6 +17,7 @@ const inRange = (v: number, r?: [number, number]) => !r || (v >= r[0] && v <= r[
 export function condOk(s: GameState, c: DocCond | undefined, flags: Record<string, number> = s.deck?.flags || {}): boolean {
   if (!c) return true;
   if (!inRange(s.rank, c.rank) || !inRange(s.served, c.year)) return false;
+  if ((c.since !== undefined && s.year < c.since) || (c.until !== undefined && s.year > c.until)) return false;
   if (!inRange(s.patron, c.patron) || !inRange(s.people, c.people) || !inRange(s.system, c.system) || !inRange(s.threat, c.threat)) return false;
   if (c.flag && !c.flag.every((f) => f in flags)) return false;
   if (c.noFlag && c.noFlag.some((f) => f in flags)) return false;

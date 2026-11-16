@@ -1,6 +1,7 @@
 import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
+import { startChronicle } from './chronicle';
 import { CITY_V, cityEvening, cityMorning, inheritCity, initCity } from './city';
 import { applyStory, cardById, dealYear, deckOf } from './deck';
 import { clamp100, fmt, fk, kinFor, mapText } from './text';
@@ -784,6 +785,8 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   // the same era's documents are not dealt again to the second generation; a new era starts a fresh deck
   if (!e.eraOver && s.deck) n.deck = { today: [], seen: [...s.deck.seen], flags: {}, queue: [] };
   dealYear(n);
+  // Era I → Era II passes through the chronicle of the war and the revolution
+  if (e.eraOver && s.era === 1 && RULES.chronicle.on) startChronicle(n);
   return n;
 }
 

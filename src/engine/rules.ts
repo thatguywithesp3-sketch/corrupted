@@ -34,6 +34,8 @@ export const RULES = {
   deck: { on: true },
   /** the day ends when the player says so (after the last document), not by itself */
   dayEnd: { manual: true },
+  /** the chronicle of 1914–1920 between Era I and Era II; Era II then begins in firstYear */
+  chronicle: { on: true, firstYear: 1921 },
   /** city moves a year: base + one per rank */
   cityMoves: { base: 3, perRank: 1 },
   endings: {
@@ -80,6 +82,7 @@ export const PROTOTYPE_PATCH = {
     estate: { on: false },
     deck: { on: false },
     dayEnd: { manual: false },
+    chronicle: { on: false },
     dreamCleanThreat: 30,
     campaign: { rivalStart: 45 },
     cityMoves: { base: 1e9 },
