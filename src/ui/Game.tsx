@@ -146,7 +146,7 @@ const W = 390, H = 844;
 
 const newSeed = () => (Date.now() ^ (Math.random() * 1e9)) >>> 0;
 function readSave(): GameState | null {
-  try { const raw = localStorage.getItem(SAVE_KEY); if (raw) { const s = JSON.parse(raw); if (s && s.v === 1) return s; } } catch { /* no storage */ }
+  try { const raw = localStorage.getItem(SAVE_KEY); if (raw) { const s = JSON.parse(G.renameLegacy(raw)); if (s && s.v === 1) return s; } } catch { /* no storage */ }
   return null;
 }
 

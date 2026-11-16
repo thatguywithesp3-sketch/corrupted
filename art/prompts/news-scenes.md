@@ -19,7 +19,7 @@
    - Квілл — молодий репортер, кашкет, блокнот і олівець, жилет, червона краватка;
    - ротмістр — жандармський офіцер, блакитний мундир, кашкет, навощені вуса;
    - губернатор — літній генерал, сиві бакенбарди, зелений мундир, золоті еполети, червона стрічка;
-   - Вайсман, Берг, граф — як у `art/STYLE.md` → «Суперники».
+   - Солонар, Берг, граф — як у `art/STYLE.md` → «Суперники».
 3. **Без тексту й без символів реальних держав** (загальні правила `STYLE.md`). Прапори: імперський — горизонтальні смуги червона, біла, жовта (на суднах без герба; над Ратушею й губернаторським палацом — з чорним двоголовим орлом у білій смузі, орел тримає якір і ключ); монети — з тим самим орлом; вальдорський — блакитна, чорна, жовта, і до Епохи IV (1990) він заборонений: ніколи не висить відкрито, лише в криївці, у жандармів у руках або фарбою на стіні.
 4. **Тон** — газетна хроніка без моралі: сатира в деталі (конверт, зайва опора, позолота, що облізла), а не в плакаті.
 
@@ -72,7 +72,7 @@ No text, no letters, no numbers, no signage, no captions, no coats of arms or sy
 | `portrait` | парадний портрет | a painter's studio, a grand gilded portrait of an anonymous official in heroic pose on the easel, the painter mixing gold paint, an envelope sticking out of the portrait's pocket |
 | `poetry` | вечір поезії | students reading poetry from handwritten sheets in a candle-lit hall full of young people, a policeman listening at the window |
 | `berg` | Пані Берг | a gossip newspaper printing shop: a thin widow with a sharp nose, feather in her hair bun, mourning silk and a long cigarette holder, inspecting fresh caricature sheets coming off the press |
-| `dinner` | Вайсман | a private dining room of the Grand restaurant: a stout bald merchant with a sea-captain beard, pince-nez and a cigar paying the bill with a gold coin, waiters bowing, a city map on the table split in two |
+| `dinner` | Солонар | a private dining room of the Grand restaurant: a stout bald merchant with a sea-captain beard, pince-nez and a cigar paying the bill with a gold coin, waiters bowing, a city map on the table split in two |
 | `count` | граф | a crumbling castle on the hill, a withered old count with a walrus moustache, monocle and patched faded uniform sealing a letter with red wax; a bank clerk waits with an auction notice |
 | `gendarmes` | список «неблагонадійних» | gendarmes in blue uniforms searching a student garret at night, heaps of handwritten poems on the floor, a waxed-moustache officer holding a list |
 | `delegates` | делегати до столиці | a delegation of merchants in fur coats boarding a train to the capital with a rolled petition, citizens waving them off on the platform |

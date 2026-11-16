@@ -108,7 +108,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
     items.push({ y: h.y, el: (
       <g key={r.id} {...asBtn(r.name, () => onRival(r.id))} className="mp-hit">
         <Sprite art={h.art} x={h.x} y={h.y} w={HOME_W[h.art]} />
-        <Plaque x={h.x} y={h.y + 2.8} t={r.name.replace(/^Граф (\S+ )?/, '').replace(/^(Пан|Пані) \S+ (\S+)$/, '$1 $2')} color={r.color} />
+        <Plaque x={h.x} y={h.y + 2.8} t={/^Граф /.test(r.name) ? 'Граф ' + (r.name.split(' ').pop() || '').split('-')[0] : r.name.replace(/^(Пан|Пані) \S+ (\S+)$/, '$1 $2')} color={r.color} />
         <rect x={h.x - 8} y={h.y - 17} width="16" height="21" fill="transparent" />
       </g>
     ) });
@@ -305,6 +305,12 @@ function ActCard({ o, on, locked, onPick }: { o: ActOption; on: boolean; locked:
 
 const STYLE_T: Record<string, string> = { expander: 'Скуповує заклади й перебиває чужі дахи', smear: 'Брудна преса: б’є по народу й по ризику', informer: 'Доноси губернатору: б’є по покровителю' };
 
+/** each magnate's house inside, with nobody in it: the room outlives every head of the house (public/art/interiors/<rival id>.jpg) */
+const HOUSE: Record<string, string> = {
+  r1: 'Порожня контора Солонарів над складами: книга боргів, рахівниця, сигара ще димить, мапа гавані з прапорцями, гравюра ливарні, модель пароплава, сейф прочинений, у вікні крани й щогли.',
+  r2: 'Порожня вітальня-редакція Бергів: оксамитове крісло з мундштуком, що тліє, карикатури сохнуть на мотузках, чай із коньяком і стос конвертів, верстат біля вікна.',
+  r3: 'Порожня зала замку Кречетових-Задонських: портрети предків, світлі плями від проданих картин, стіл накрито на двох для почесного гостя, ловчий сокіл, холодний камін.'
+};
 function RivalCard({ r, c, wide }: { r: Rival; c: NonNullable<GameState['city']>; wide: boolean }) {
   const held = G.holdings(c, r.id), lamps = Math.min(3, Math.round(r.heat / 3.3));
   return (
@@ -453,7 +459,7 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
   const f = G.rivalFile(rv);
   const held = G.holdings(c, rv.id), lamps = Math.min(3, Math.round(rv.heat / 3.3));
   const [page, setPage] = useState<'deal' | 'bio'>('deal');
-  const surname = (n: string) => n.split(' ').pop() || n; // «Пані Ельза Берг» → «Берг»
+  const surname = (n: string) => (n.split(' ').pop() || n).split('-')[0]; // «Пані Ельза Берг» → «Берг», «Граф Кречетов-Задонський» → «Кречетов»
   return (
     <div style={{ position: 'relative', color: INK }}>
       {/* index tabs sticking out of the top edge of the pages */}
@@ -474,6 +480,9 @@ function PowerSheet({ c, selR, onSel, children }: { c: NonNullable<GameState['ci
         {[18, 110, 202, 294].map((y) => <span key={y} aria-hidden="true" style={{ position: 'absolute', left: 7, top: y, width: 12, height: 12, borderRadius: '50%', background: '#2A1D12', boxShadow: 'inset 0 2px 3px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.4)' }} />)}
 
         {children}
+        {/* the house inside, pasted at the head of the page: who works there and how the house lives */}
+        <img key={rv.id} src={`art/interiors/${rv.id}.jpg`} alt={HOUSE[rv.id] || ''} onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          style={{ display: 'block', width: '100%', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 42%', margin: '0 0 12px', border: `2px solid ${INK}`, boxShadow: '2px 4px 8px rgba(0,0,0,0.4)', transform: 'rotate(0.6deg)', filter: 'sepia(0.12) contrast(1.03)' }} />
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           {/* the portrait, pinned in photo corners */}
           <span style={{ position: 'relative', width: 100, height: 132, flexShrink: 0, background: `url(${G.rivalPortrait(rv)}) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: `2px solid ${INK}`, boxShadow: '2px 5px 10px rgba(0,0,0,0.5)', transform: 'rotate(-2.5deg)' }}>
