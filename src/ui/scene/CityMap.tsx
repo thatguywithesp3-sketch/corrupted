@@ -239,6 +239,13 @@ function Blank({ b, wide, rv }: { b: Biz; wide: boolean; rv: Rival | null }) {
 }
 
 /** the card of a place where the name is washed: the building, what it does, what already works for us */
+/** who is inside each institution: the alt text of its picture (public/art/interiors/<id>.jpg) */
+const INTERIOR: Record<G.InstId, string> = {
+  charity: 'Усередині: ігуменя з книгою пожертв, черниці біля казана, сироти над юшкою. На стіні — дошка благодійників, під нею скринька.',
+  press: 'Усередині: редактор за обідом приймає конверт, репортер Квілл пише в блокнот, цензор із Ратуші креслить червоним олівцем.',
+  whisper: 'Усередині: перекупки, вантажники й шинкар. За кілька монет вони щодня розповідають на ринку, яка ви порядна людина.',
+  okhrana: 'Усередині: ротмістр над досьє, донощик мне шапку, у кутку — вилучені вальдорські прапори з бирками.'
+};
 function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   const fm = s.city?.fame || {}, F = G.CITY_RULES.fame;
   const works: string[] = [];
@@ -247,22 +254,23 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   if (p.id === 'whisper' && fm.whisper) works.push(`Шептуни працюють: щороку ризик −${F.whisper.calmYr}, коштують ${G.fmt(F.whisper.cost)} кр.`);
   return (
     <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 12px 12px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: 'rotate(-0.3deg)', zIndex: 2, borderTop: '6px solid #B8913C' }}>
+      {/* what it looks like inside: the engraving heads the card edge to edge and speaks for itself */}
+      <img src={`art/interiors/${p.id}.jpg`} alt={INTERIOR[p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        style={{ display: 'block', width: 'calc(100% + 24px)', margin: '-20px -12px 10px', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 40%', filter: 'sepia(0.12) contrast(1.03)', borderBottom: `3px double ${INK}` }} />
       <Clip side="top" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <img src={`art/map/${p.art}.webp`} alt="" style={{ width: 84, height: 72, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(1px 2px 2px rgba(0,0,0,0.35))' }} />
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.4, color: MUTE }}>ДОБРЕ ІМ’Я · {p.place.toUpperCase()}</span>
           <span style={{ display: 'block', fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{p.t}</span>
           <span style={{ display: 'block', fontSize: 12, fontStyle: 'italic', color: MUTE, lineHeight: 1.25, marginTop: 2 }}>{p.sub}</span>
         </span>
       </div>
-      <Seg title="ГОЛОВНЕ">
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Fact label="ВАШ РИЗИК ЗАРАЗ" tone={s.threat >= 60 ? T.risk : undefined}><span style={{ fontFamily: HAND, fontSize: 28, lineHeight: 1 }}>{Math.round(s.threat)}<span style={{ fontSize: 14 }}>/100</span></span></Fact>
-          <Fact label="ГРОШІ"><span style={{ display: 'block', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>брудні {G.fk(G.dirtyTotal(s))}<br />чисті {G.fk(s.clean)}</span></Fact>
-        </div>
-        {works.map((w) => <div key={w} style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: T.clean.ink, background: T.clean.note, padding: '2px 8px', border: `1px solid ${T.clean.pen}` }}>✓ {w}</div>)}
-      </Seg>
+      {/* one line instead of a block: the picture above already takes the room */}
+      <div style={{ marginTop: 6, paddingTop: 4, borderTop: `1px solid rgba(31,26,20,0.3)`, display: 'flex', alignItems: 'baseline', gap: 12, fontSize: 13, fontWeight: 700 }}>
+        <span style={{ color: s.threat >= 60 ? T.risk.ink : INK }}>Ризик <span style={{ fontFamily: HAND, fontSize: 20 }}>{Math.round(s.threat)}</span>/100</span>
+        <span style={{ marginLeft: 'auto', color: MUTE }}>брудні {G.fk(G.dirtyTotal(s))} · чисті {G.fk(s.clean)}</span>
+      </div>
+      {works.map((w) => <div key={w} style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: T.clean.ink, background: T.clean.note, padding: '2px 8px', border: `1px solid ${T.clean.pen}` }}>✓ {w}</div>)}
     </div>
   );
 }
