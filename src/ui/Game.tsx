@@ -18,6 +18,7 @@ import { Panorama, type PanoKind } from './scene/Panorama';
 import { Chronicle } from './scene/Chronicle';
 import { MeterPops } from './scene/MeterPops';
 import { DeskProps } from './scene/DeskProps';
+import { skin, skinOf } from './skin';
 import { CityMap } from './scene/CityMap';
 import { PauseFolio } from './scene/PauseFolio';
 import { DayDone } from './scene/DayDone';
@@ -115,7 +116,7 @@ function withSlots(root: DcNode): DcNode {
   tok(r);
   // the blotter is real leather: a painted tile in the same engraving style, over the old dotted colour
   const blot = r.ch[0];
-  if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: linear-gradient(rgba(10,20,12,0.18), rgba(10,20,12,0.18)), url(art/desk/leather.jpg); background-size: 100% 100%, 200px 200px;"); });
+  if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: {{deskImg}}; background-size: {{deskSize}};"); });
   // the prototype's inkwell peeked out from under the HUD as a black circle at the right edge (the desk props replace it)
   const ink = (n: DcNode) => { if (n.t !== 'x') { n.ch = n.ch.filter((c) => !(c.t === 'e' && /top: \{\{inkTop\}\}/.test(c.a.style || ''))); n.ch.forEach(ink); } };
   ink(r);
@@ -228,13 +229,13 @@ export function Game() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
+      <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era) + ' skin-' + skinOf(s)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
         {mode === 'menu' ? (
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { try { localStorage.removeItem('corrupted.form.step'); } catch { /* no storage */ } setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : s.screen === 'chronicle' ? <Chronicle key="chron" s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
-            {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
+            {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps props={skin(s).props} />}
             {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
         )}

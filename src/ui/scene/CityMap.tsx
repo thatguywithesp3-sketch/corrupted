@@ -20,6 +20,7 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 // Only what matters to us is painted, like the monuments on a pictorial city map: the places where the family
 // name is washed, the magnates' houses, our own house, the shops we can touch. The rest of the city stays a
 // quiet engraved wash underneath. Sprites are hand-tinted engravings (public/art/map), anchored by their base.
+import { skin } from '../skin';
 import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops } from './mapLayout';
 
 /** a painted building standing on a little clearing; its base sits on (x, y) */
@@ -77,6 +78,43 @@ const Mark = ({ x, y, ok }: { x: number; y: number; ok: boolean }) => (
 );
 
 /** the plan: the quiet engraving underneath, the painted places and the shops on top */
+/** what each power leaves on the official's plan of the city: pencil notes by the institutions and the stamp of
+ *  whoever approved the plan this year (src/ui/skin.ts). Ink and pencil only: nothing here can be pressed. */
+function PowerMarks({ when }: { when: { era: number; year: number } }) {
+  const k = skin(when);
+  if (!k.mapStamp && !k.mapNotes.length) return null;
+  const st = k.mapStamp;
+  return (
+    <g style={{ pointerEvents: 'none' }} aria-hidden="true">
+      {k.mapNotes.map((n) => {
+        const p = G.INSTS.find((i) => i.id === n.at)!, w = INST_W[n.at];
+        return (
+          <g key={n.at} opacity=".82">
+            {/* a quick pencil loop around the building, not quite closed */}
+            {n.ring && <path d={`M${p.x - w * 0.6} ${p.y + 1} C${p.x - w * 0.75} ${p.y - w * 0.9}, ${p.x + w * 0.7} ${p.y - w * 0.95}, ${p.x + w * 0.66} ${p.y} C${p.x + w * 0.62} ${p.y + w * 0.3}, ${p.x - w * 0.45} ${p.y + w * 0.32}, ${p.x - w * 0.5} ${p.y - w * 0.12}`} fill="none" stroke={n.col} strokeWidth=".45" strokeLinecap="round" />}
+            <text x={p.x + n.dx} y={p.y + n.dy} textAnchor="middle" fontFamily={HAND} fontSize="3.4" fill={n.col} transform={`rotate(-5 ${p.x + n.dx} ${p.y + n.dy})`}>{n.t}</text>
+          </g>
+        );
+      })}
+      {st && (
+        <g transform="translate(30 166) rotate(-9)" opacity=".62" fill="none" stroke={st.col}>
+          {st.round ? <>
+            <circle r="13" strokeWidth=".7" /><circle r="11.4" strokeWidth=".35" />
+            <path id={'ps-' + st.t.length} d="M-9.6 0 A9.6 9.6 0 1 1 9.6 0 A9.6 9.6 0 1 1 -9.6 0" />
+            <text fontSize="2.4" fontWeight="700" fontFamily="PT Sans, sans-serif" fill={st.col} stroke="none"><textPath href={'#ps-' + st.t.length} textLength="59" lengthAdjust="spacing">{st.t}</textPath></text>
+            <path d="M-7 -2.6 H7 M-7 2.2 H7" strokeWidth=".35" />
+            <text y=".8" textAnchor="middle" fontSize="2.4" fontWeight="700" fontFamily="PT Sans, sans-serif" fill={st.col} stroke="none" letterSpacing=".1">{st.sub}</text>
+          </> : <>
+            <rect x="-15" y="-7" width="30" height="14" rx="1" strokeWidth=".8" /><rect x="-13.6" y="-5.6" width="27.2" height="11.2" strokeWidth=".35" />
+            <text y="-.6" textAnchor="middle" fontSize="4.2" fontWeight="700" fontFamily="PT Sans, sans-serif" fill={st.col} stroke="none" letterSpacing=".4">{st.t}</text>
+            <text y="3.6" textAnchor="middle" fontSize="2.6" fontWeight="700" fontFamily="PT Sans, sans-serif" fill={st.col} stroke="none" letterSpacing=".3">{st.sub}</text>
+          </>}
+        </g>
+      )}
+    </g>
+  );
+}
+
 function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival, live, when }: { when: { era: number; year: number }; live: Set<string>; biz: Biz[]; sel: string | null; onPick: (id: string) => void; zoom: number; rivals: Rival[]; marks: { biz: string; ok: boolean }[]; selInst: string | null; onInst: (id: G.InstId) => void; onRival: (id: string) => void }) {
   const colOf = (id?: string | null) => rivals.find((r) => r.id === id)?.color;
   const ctl = G.control({ biz, rivals } as never);
@@ -157,6 +195,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
         return <g key={k} transform={`translate(${lx - (dots.length * 2.6) / 2 + 1.3} ${ly + 2.6})`}>{dots.map((col, i) => <circle key={i} cx={i * 2.6} r="1" fill={col || '#F2E9D0'} stroke={INK} strokeWidth=".25" />)}</g>;
       })}
       {items.map((it) => it.el)}
+      <PowerMarks when={when} />
     </svg>
   );
 }
@@ -689,7 +728,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       {flash && last && <StampFlash res={last} s={s} onDone={() => setFlash(false)} />}
       {/* the whole plan; it shrinks only while a card is open */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, margin: 0, display: 'flex', flexDirection: 'column' }}>
-        <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
+        <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none', filter: skin(s).mapFilter }}>
           <Plan when={s} live={live} marks={marks} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} selInst={panel === 'inst' ? selI : null} onInst={(id) => { setSelI(id); setPanel('inst'); }} onRival={(id) => { setSelR(id); setPanel('riv'); }} />
         </div>
         {/* floating furniture: small pills in the top left (moves, then the purse), close, zoom, legend.

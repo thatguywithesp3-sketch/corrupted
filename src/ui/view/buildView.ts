@@ -6,6 +6,7 @@
 import * as G from '../../engine';
 import type { Delta, GameState, Kin } from '../../engine';
 import { kinPortrait, npcPortrait } from '../people';
+import { skin } from '../skin';
 
 export interface UiState {
   pend: string | null;
@@ -269,6 +270,8 @@ export function buildView(ctx: Ctx): any {
     'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — генеральний секретар партії'][s.dream] || '';
   v.dreamText = C.dreams[s.dream].t + ': ' + (s.era === 2 ? dreamProg2 : dreamProg) + '.';
   v.paperName = G.paperOf(s);
+  // the blotter under the papers: leather under the empire, plywood in the civil war, red baize under the councils
+  const dk = skin(s).desk; v.deskImg = dk.img; v.deskSize = dk.size;
   // the imperial arms belong on the letterhead only while there is an empire
   v.armsDisp = s.era === 1 || (s.era === 2 && s.year < G.REGIME_FROM.provisional) ? 'block' : 'none';
   v.toOffice = () => run(G.toOffice);

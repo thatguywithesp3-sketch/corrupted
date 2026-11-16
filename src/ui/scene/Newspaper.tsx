@@ -9,11 +9,11 @@ import { CityMap } from './CityMap';
 import { T } from './Ledger';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
 import { sceneCaption, sceneSrc } from '../scenes';
+import { skin } from '../skin';
 
 type Run = (f: (x: GameState) => GameState) => void;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const NEWS = '#EFE7D2';
 const Rule = ({ double }: { double?: boolean }) => <div style={{ borderTop: double ? `3px double ${INK}` : `1px solid ${INK}`, margin: '4px 0' }} />;
 const ColHead = ({ t }: { t: string }) => <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.8, textAlign: 'center', borderTop: `1.5px solid ${INK}`, borderBottom: `1px solid ${INK}`, padding: '2px 0', margin: '2px 0 4px' }}>{t}</div>;
 
@@ -36,6 +36,8 @@ function Engraving({ era, seed, scene }: { era: number; seed: number; scene?: st
 }
 
 export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run; v: any; fresh?: boolean }) {
+  // the paper changes with the power: masthead, motto, price (the crown falls with each government)
+  const pp = skin(s).paper;
   useEffect(() => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); }, [s.city, run]);
   const [map, setMap] = useState<string | null | false>(false);
   const c = s.city;
@@ -55,15 +57,15 @@ export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run;
         <span style={{ fontWeight: 400, letterSpacing: 0.4, color: stage === 3 ? '#E8603F' : '#E6D9BC' }}>{['дрібна замітка', 'про вас пишуть', 'ВИ НА ПЕРШІЙ ШПАЛЬТІ'][stage - 1]}</span>
       </div>
 
-      <div key={String(fresh)} className={'tx-paper' + (fresh ? ' m-paper-in' : '')} style={{ position: 'relative', flex: 1, minHeight: 0, background: NEWS, transform: 'rotate(-0.8deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.18)', display: 'flex', flexDirection: 'column' }}>
+      <div key={String(fresh)} className={'tx-paper' + (fresh ? ' m-paper-in' : '')} style={{ position: 'relative', flex: 1, minHeight: 0, background: pp.bg, transform: 'rotate(-0.8deg)', boxShadow: '0 14px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(150,110,50,0.18)', display: 'flex', flexDirection: 'column' }}>
         {/* the fold */}
         <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'linear-gradient(90deg, rgba(0,0,0,0.08), rgba(255,255,255,0.4))', pointerEvents: 'none' }} />
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 12px 8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTE }}><span>Т. XIV · № {v.issueNo} · Ранок, {s.year}</span><span>Ціна 5 кр.</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTE }}><span>{pp.vol.replace('{n}', String(s.year - 1919))} · № {v.issueNo} · Ранок, {s.year}</span><span>{pp.price}</span></div>
           <Rule />
-          <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 28, textAlign: 'center', lineHeight: 1 }}>{G.paperOf(s)}</div>
-          <Rule double />
-          <div style={{ fontSize: 10, letterSpacing: 2, textAlign: 'center', color: MUTE }}>МІСТО · ТОРГІВЛЯ · ГРОМАДСЬКІ РОБОТИ · ВИХОДИТЬ ЩОРАНКУ</div>
+          <div style={{ fontFamily: pp.headFont, fontSize: pp.headSize, fontWeight: pp.headFont.includes('PT Sans') ? 700 : 400, letterSpacing: pp.headFont.includes('PT Sans') ? 1 : 0, textTransform: pp.headFont.includes('PT Sans') ? 'uppercase' : 'none', color: pp.head, textAlign: 'center', lineHeight: 1 }}>{G.paperOf(s)}</div>
+          <div style={{ borderTop: `3px double ${pp.rule}`, margin: '4px 0' }} />
+          <div style={{ fontSize: 10, letterSpacing: 2, textAlign: 'center', color: pp.rule === INK ? MUTE : pp.rule }}>{pp.motto}</div>
           <Rule />
 
           {/* front page */}
