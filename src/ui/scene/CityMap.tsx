@@ -656,6 +656,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const doneT = rv ? `З ${rv.f ? 'нею' : 'ним'} цього року вже говорили. Наступна розмова — наступного року.` : inst ? 'Тут цього року вже були. Знову — наступного року.' : 'Цей заклад цього року вже відвідували. Знову — наступного року.';
   const doneNote = used ? <div style={{ fontSize: 14, fontStyle: 'italic', color: rivMode ? INK : '#E9E1C2', padding: '4px 2px' }}>{doneT}</div> : null;
   const hostile = c.rivals.filter((r) => !r.ally && r.heat >= 5).length;
+  const PILL_W = 128;
+  const pill: CSSProperties = { display: 'flex', alignItems: 'center', boxSizing: 'border-box', height: 30, padding: '0 9px', borderRadius: 15, background: 'linear-gradient(180deg, rgba(46,32,18,0.9), rgba(26,18,10,0.9))', border: '1px solid #6E531E', boxShadow: '0 2px 6px rgba(0,0,0,0.5)', color: '#F1E6C8' };
     const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
 
   const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : inst ? <>{<InstCard p={inst} s={s} />}{G.resultFor(c, 'i:' + inst.id) && <div style={{ background: '#F5EDD7', padding: '0 8px 8px', marginTop: -8 }}><TodayMark res={G.resultFor(c, 'i:' + inst.id)!} /></div>}</> : b ? <>{<Blank b={b} wide={false} rv={bRival} />}{G.resultFor(c, b.id) && <div style={{ background: '#F5EDD7', padding: '0 8px 8px', marginTop: -8 }}><TodayMark res={G.resultFor(c, b.id)!} /></div>}</> : <div style={{ fontSize: 14, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
@@ -674,21 +676,22 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
         <div ref={sheet} className="tx-paper" style={{ flex: 1, minHeight: 0, overflow: 'auto', background: PAPER, border: 'none', scrollbarWidth: 'none' }}>
           <Plan live={live} marks={marks} biz={c.biz} sel={panel === 'biz' ? sel : null} onPick={(id) => { setSel(id); setPanel('biz'); }} zoom={zoom} rivals={c.rivals} selInst={panel === 'inst' ? selI : null} onInst={(id) => { setSelI(id); setPanel('inst'); }} onRival={(id) => { setSelR(id); setPanel('riv'); }} />
         </div>
-        {/* floating furniture: title plaque, close, zoom, legend */}
-        <div style={{ position: 'absolute', left: 10, top: 10, right: 62, display: 'flex', alignItems: 'center', gap: 8, ...plaque, padding: '4px 8px', pointerEvents: 'none' }}>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontFamily: "'Ruslan Display', serif", fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Порт-Аурум</span>
-            <span style={{ display: 'block', fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', whiteSpace: 'nowrap' }}>{left > 0 ? `ХОДИ НА РІК: ${left} / ${most}` : 'ХОДИ НА РІК ВИЧЕРПАНО'}</span>
+        {/* floating furniture: small pills in the top left (moves, then the purse), close, zoom, legend.
+            No title bar: the map keeps its top edge, district names and buildings stay visible. */}
+        <div style={{ position: 'absolute', left: 8, top: 8, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 5, pointerEvents: 'none' }}>
+          <span aria-label={left > 0 ? `Ходів на рік: ${left} з ${most}` : 'Ходи на рік вичерпано'} style={{ ...pill, minWidth: PILL_W, gap: 6 }}>
+            <span style={{ fontSize: 10, letterSpacing: 1.2, color: '#D9C79B', fontWeight: 700 }}>ХОДИ</span>
+            <span aria-hidden="true" style={{ display: 'flex', gap: 3 }}>{Array.from({ length: most }, (_, i) => <span key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: i < left ? 'radial-gradient(circle at 35% 30%, #FFE7A0, #C9962E)' : 'rgba(255,255,255,0.12)', border: '1px solid rgba(240,215,140,0.55)', boxShadow: i < left ? '0 0 4px rgba(255,200,90,0.6)' : 'none' }} />)}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: left > 0 ? '#F1E6C8' : '#A89A7A' }}>{left}/{most}</span>
           </span>
           {/* the purse: dirty pays for most moves, clean for charity */}
-          <span key={`${G.dirtyTotal(s)}-${s.clean}`} className="m-pop" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
-            {([['БРУДНІ', G.dirtyTotal(s), '#E3B866'], ['ЧИСТІ', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
-              <span key={l} style={{ textAlign: 'center', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(240,215,140,0.35)', borderRadius: 2 }}>
-                <span style={{ display: 'block', fontSize: 10, letterSpacing: 1, color: '#CDBB8E' }}>{l}</span>
-                <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>{G.fmt(v)}</span>
-              </span>
-            ))}
-          </span>
+          {([['брудні', G.dirtyTotal(s), '#E3B866'], ['чисті', s.clean, '#9FD3A8']] as const).map(([l, v, col]) => (
+            <span key={l + v} className="m-pop" aria-label={`${l}: ${G.fmt(v)} кр.`} style={{ ...pill, width: PILL_W, gap: 5, paddingLeft: 3 }}>
+              <img src="art/brand/crown.png" alt="" aria-hidden="true" style={{ width: 22, height: 22, filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))' }} />
+              <span style={{ minWidth: 36, fontSize: 15, fontWeight: 700, color: col, whiteSpace: 'nowrap' }}>{G.fk(v)}</span>
+              <span style={{ fontSize: 10, letterSpacing: 0.6, color: '#CDBB8E' }}>{l}</span>
+            </span>
+          ))}
         </div>
         <button onClick={onClose} aria-label="Згорнути план" style={{ position: 'absolute', right: 10, top: 10, width: 40, height: 40, ...plaque, fontSize: 22, fontWeight: 700, cursor: 'pointer', borderRadius: 4 }}>✕</button>
         {panel === null && <div style={{ position: 'absolute', left: 10, bottom: 12 }}><NotebookBtn rivals={c.rivals} hostile={hostile} onClick={() => setPanel('riv')} /></div>}
