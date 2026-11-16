@@ -6,6 +6,7 @@ import { useState, type CSSProperties } from 'react';
 import * as G from '../../engine';
 import type { GameState } from '../../engine';
 import { INK, MUTE, RED, SERIF } from './parts';
+import { ARMS_INK, newsSrc } from '../skin';
 
 type Run = (f: (x: GameState) => GameState) => void;
 
@@ -46,10 +47,10 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
         {/* masthead */}
         <div style={{ flexShrink: 0, padding: '12px 12px 8px', background: P.band || 'transparent', color: P.band ? P.ink : INK, textAlign: 'center', borderBottom: `3px double ${P.band ? '#3A0E08' : INK}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            {page.paper === 'visnyk' && <img src="art/brand/romei-arms.png" alt="" style={{ height: 34 }} />}
+            {page.paper === 'visnyk' && <img src="art/brand/romei-arms.png" alt="" style={{ height: 34 }} />}{page.paper === 'tribuna' && <img src="art/brand/srs-emblem.png" alt="" style={{ height: 34, filter: ARMS_INK }} />}
             {page.paper === 'pravda' && <span aria-hidden="true" title="герб вирізано" style={{ width: 26, height: 34, border: '1.5px dashed rgba(31,26,20,.45)', borderRadius: '40% 40% 50% 50%' }} />}
             <span style={{ fontFamily: P.font, fontSize: page.paper === 'pravda' ? 24 : 20, fontWeight: 700, letterSpacing: page.paper === 'pravda' ? 1 : 0.3, lineHeight: 1.05, whiteSpace: 'nowrap' }}>{P.title}</span>
-            {page.paper === 'visnyk' && <img src="art/brand/romei-arms.png" alt="" style={{ height: 34 }} />}
+            {page.paper === 'visnyk' && <img src="art/brand/romei-arms.png" alt="" style={{ height: 34 }} />}{page.paper === 'tribuna' && <img src="art/brand/srs-emblem.png" alt="" style={{ height: 34, filter: ARMS_INK }} />}
           </div>
           <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between', fontSize: 10, letterSpacing: 1.5, opacity: 0.8 }}>
             <span>{P.sub}</span><span>{page.year}</span>
@@ -60,7 +61,7 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700, color: RED }}>{page.kicker}</div>
           <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.12 }}>{page.h}</div>
-          <img src={`art/news/${page.art}.jpg`} alt="" style={{ width: '100%', aspectRatio: '2.2 / 1', objectFit: 'cover', border: `1px solid ${INK}`, filter: `grayscale(${0.15 + step * 0.22}) sepia(${0.35 + step * 0.1}) contrast(1.05)` }} />
+          <img src={newsSrc({ era: 2, year: page.year }, page.art)} alt="" style={{ width: '100%', aspectRatio: '2.2 / 1', objectFit: 'cover', border: `1px solid ${INK}`, filter: `grayscale(${0.15 + step * 0.22}) sepia(${0.35 + step * 0.1}) contrast(1.05)` }} />
           <div style={{ fontSize: 14, lineHeight: 1.35 }}>{page.lead}</div>
 
           {o === null ? (

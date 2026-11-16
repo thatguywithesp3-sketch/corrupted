@@ -143,6 +143,13 @@ function withSlots(root: DcNode): DcNode {
     return n.ch.some(phone);
   };
   phone(r);
+  // the state's sign on letterheads and the patron's letters follows the power (stateArms in skin.ts)
+  const armsOf = (n: DcNode) => {
+    if (n.t === 'x') { if (n.v === 'КАНЦЕЛЯРІЯ ГУБЕРНАТОРА ВАЛЬДОРІЇ') n.v = '{{armsLabel}}'; return; }
+    if (n.t === 'e' && n.n === 'img' && n.a.src === 'art/brand/romei-arms.png') { n.a.src = '{{armsSrc}}'; n.a.alt = '{{armsAlt}}'; n.a.style = (n.a.style || '') + '; filter: {{armsFilter}}'; }
+    n.ch.forEach(armsOf);
+  };
+  armsOf(r);
   // the prototype's inkwell peeked out from under the HUD as a black circle at the right edge (the desk props replace it)
   const ink = (n: DcNode) => { if (n.t !== 'x') { n.ch = n.ch.filter((c) => !(c.t === 'e' && /top: \{\{inkTop\}\}/.test(c.a.style || ''))); n.ch.forEach(ink); } };
   ink(r);

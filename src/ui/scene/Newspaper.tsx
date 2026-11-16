@@ -9,7 +9,7 @@ import { CityMap } from './CityMap';
 import { T } from './Ledger';
 import { DeskBtn, HAND, INK, Ic, MUTE, RED, SERIF } from './parts';
 import { sceneCaption } from '../scenes';
-import { newsSrc, skin } from '../skin';
+import { ARMS_INK, newsSrc, skin } from '../skin';
 
 type Run = (f: (x: GameState) => GameState) => void;
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -18,9 +18,9 @@ const Rule = ({ double }: { double?: boolean }) => <div style={{ borderTop: doub
 const ColHead = ({ t }: { t: string }) => <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.8, textAlign: 'center', borderTop: `1.5px solid ${INK}`, borderBottom: `1px solid ${INK}`, padding: '2px 0', margin: '2px 0 4px' }}>{t}</div>;
 
 /** a newspaper engraving: the artist's sketch of the scene (art/news), or a piece of the city view until there is one */
-function Engraving({ era, seed, scene }: { era: number; seed: number; scene?: string | null }) {
+function Engraving({ era, year, seed, scene }: { era: number; year: number; seed: number; scene?: string | null }) {
   const [missing, setMissing] = useState<string | null>(null);
-  const sketch = era <= 2 && scene && missing !== scene ? newsSrc(era, scene) : null;
+  const sketch = era <= 2 && scene && missing !== scene ? newsSrc({ era, year }, scene) : null;
   const x = 15 + ((seed * 37) % 70), y = 30 + ((seed * 53) % 50);
   return (
     <figure style={{ margin: 0 }}>
@@ -63,7 +63,12 @@ export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run;
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 12px 8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTE }}><span>{pp.vol.replace('{n}', String(s.year - 1919))} · № {v.issueNo} · Ранок, {s.year}</span><span>{pp.price}</span></div>
           <Rule />
-          <div style={{ fontFamily: pp.headFont, fontSize: pp.headSize, fontWeight: pp.headFont.includes('PT Sans') ? 700 : 400, letterSpacing: pp.headFont.includes('PT Sans') ? 1 : 0, textTransform: pp.headFont.includes('PT Sans') ? 'uppercase' : 'none', color: pp.head, textAlign: 'center', lineHeight: 1 }}>{G.paperOf(s)}</div>
+          {/* the party paper carries the СРС anchor and hammer on both sides of its name */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {G.paperOf(s) === 'Трибуна праці' && <img src="art/brand/srs-emblem.png" alt="" style={{ height: 30, filter: ARMS_INK }} />}
+            <div style={{ fontFamily: pp.headFont, fontSize: pp.headSize, fontWeight: pp.headFont.includes('PT Sans') ? 700 : 400, letterSpacing: pp.headFont.includes('PT Sans') ? 1 : 0, textTransform: pp.headFont.includes('PT Sans') ? 'uppercase' : 'none', color: pp.head, textAlign: 'center', lineHeight: 1 }}>{G.paperOf(s)}</div>
+            {G.paperOf(s) === 'Трибуна праці' && <img src="art/brand/srs-emblem.png" alt="" style={{ height: 30, filter: ARMS_INK, transform: 'scaleX(-1)' }} />}
+          </div>
           <div style={{ borderTop: `3px double ${pp.rule}`, margin: '4px 0' }} />
           <div style={{ fontSize: 10, letterSpacing: 2, textAlign: 'center', color: pp.rule === INK ? MUTE : pp.rule }}>{pp.motto}</div>
           <Rule />
@@ -84,7 +89,7 @@ export function Newspaper({ s, run, v, fresh = true }: { s: GameState; run: Run;
             </div>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ width: '46%', flexShrink: 0 }}><Engraving era={s.era} seed={s.year + s.served} scene={s.art} /></div>
+            <div style={{ width: '46%', flexShrink: 0 }}><Engraving era={s.era} year={s.year} seed={s.year + s.served} scene={s.art} /></div>
             <p style={{ margin: 0, fontSize: 12, lineHeight: 1.35, textAlign: 'justify', hyphens: 'auto' }}><span style={{ float: 'left', fontFamily: "'Ruslan Display', serif", fontSize: 28, lineHeight: 0.9, marginRight: 2 }}>{s.body.charAt(0)}</span>{s.body.slice(1)}</p>
           </div>
           <Rule double />

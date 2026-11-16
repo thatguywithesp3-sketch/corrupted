@@ -79,13 +79,69 @@ export const skin = (s: { era: number; year: number }) => SKIN[skinOf(s)];
 
 // ---- Era II art by power: the same places, the same scenes, drawn anew once the old order is gone
 const y = (s: { era: number; year: number }) => (s.era === 2 ? s.year : 0);
-/** the institutions change hands in 1918 (дитбудинок, губчека, «Трибуна праці», the market); the magnates' houses
- *  with the settled state in 1922 */
-export const interiorSrc = (s: { era: number; year: number }, id: string) =>
-  `art/interiors/${id}${y(s) >= (id.charAt(0) === 'r' ? 1922 : 1918) ? '-e2' : ''}.jpg`;
-/** map buildings redrawn for Era II: red flags from 1918, the trust and the communal flats from 1922 */
-const MAP_E2: Record<string, number> = { ratusha: 1918, gendarm: 1918, orphanage: 1918, press: 1918, market: 1918, station: 1918, foundry: 1922, weisman: 1922 };
+/** which drawing of a place to show. Era I: the 1870s. Era II: the war years 1914–1917 (-e2a; the gendarmerie under
+ *  the empire, the people's militia from 1917, -e2p), then the institutions under the councils from 1918 and the
+ *  magnates' houses under the settled state from 1922 (-e2) */
+export function interiorPeriod(s: { era: number; year: number }, id: string): '' | '-e2a' | '-e2p' | '-e2' {
+  if (s.era !== 2) return '';
+  if (id.charAt(0) === 'r') return s.year >= 1922 ? '-e2' : '-e2a';
+  if (s.year >= 1918) return '-e2';
+  return id === 'okhrana' && s.year >= 1917 ? '-e2p' : '-e2a';
+}
+export const interiorSrc = (s: { era: number; year: number }, id: string) => `art/interiors/${id}${interiorPeriod(s, id)}.jpg`;
+/** map buildings redrawn for Era II: red flags from the revolution of 1917 (town hall, militia, the paper), the trust and the communal flats from 1922 */
+const MAP_E2: Record<string, number> = { ratusha: 1917, gendarm: 1917, orphanage: 1918, press: 1917, market: 1918, station: 1918, foundry: 1922, weisman: 1922, graf: 1922, cathedral: 1922, customs: 1922, univ: 1922, shop1: 1922, shop2: 1922, shop3: 1922, shop4: 1922 };
 export const mapArt = (s: { era: number; year: number }, art: string) => (MAP_E2[art] && y(s) >= MAP_E2[art] ? art + '-e2' : art);
 /** Era II newspaper sketches: the same scene names, drawn for 1914–1930 (public/art/news/e2) */
-const NEWS_E2 = new Set(['garrison', 'docks', 'court', 'quarantine', 'bourse', 'harbour', 'council', 'raid', 'bank', 'heir', 'delegates', 'gendarmes', 'fair', 'fire', 'press', 'estate']);
-export const newsSrc = (era: number, scene: string) => (era === 2 && NEWS_E2.has(scene) ? `art/news/e2/${scene}.jpg` : `art/news/${scene}.jpg`);
+const NEWS_E2 = new Set(['garrison', 'docks', 'court', 'quarantine', 'bourse', 'harbour', 'council', 'raid', 'bank', 'heir', 'delegates', 'gendarmes', 'fair', 'fire', 'press', 'estate', 'family', 'contractor', 'insider', 'scandal', 'promo', 'portrait']);
+/** scenes whose Era II drawing belongs to the new order: before this year the paper prints the war-years drawing
+ *  (public/art/news/e2a, the empire 1914–1916: troop trains, the duma, the imperial court, gendarmes) */
+const NEWS_FROM: Record<string, number> = { delegates: 1918, council: 1918, court: 1918, raid: 1918, bank: 1918, estate: 1918, heir: 1918, gendarmes: 1917, fair: 1921, harbour: 1919, bourse: 1917, portrait: 1917 };
+export function newsSrc(s: { era: number; year: number }, scene: string): string {
+  if (s.era !== 2 || !NEWS_E2.has(scene)) return `art/news/${scene}.jpg`;
+  return NEWS_FROM[scene] && s.year < NEWS_FROM[scene] ? `art/news/e2a/${scene}.jpg` : `art/news/e2/${scene}.jpg`;
+}
+
+/** a shop inside: public/art/interiors/biz/<slug>.jpg (Era I, the 1870s) and <slug>-e2.jpg (Era II, 1914–1930s) */
+const BIZ_SLUG: Record<string, string> = {
+  'бакалійна лавка': 'grocery', 'аптека': 'pharmacy', 'шинок': 'tavern', 'кравецька майстерня': 'tailor', 'пекарня': 'bakery',
+  'ювелірна крамниця': 'jeweller', 'друкарня': 'printshop', 'винний склад': 'winestore', 'цукерня': 'confectioner',
+  'годинникова майстерня': 'watchmaker', 'ломбард': 'pawnshop', 'кав’ярня': 'cafe', 'готель': 'hotel', 'тютюнова крамниця': 'tobacco',
+  'зерновий склад': 'granary', 'лазня': 'bathhouse', 'книгарня': 'bookshop', 'залізничний буфет': 'buffet', 'вугільний склад': 'coalyard',
+  'ливарня': 'foundry', 'візницька біржа': 'cabstand', 'фотоательє': 'photo'
+};
+export const bizInterior = (s: { era: number }, kind: string) => (s.era <= 2 && BIZ_SLUG[kind] ? `art/interiors/biz/${BIZ_SLUG[kind]}${s.era === 2 ? '-e2' : ''}.jpg` : null);
+
+/** the printed plan itself, by power: the paper, the ink, the lettering, the district names, what is in the harbour.
+ *  The empire's plan is Era I's; the civil war scrawls barricades and burnt blocks over it; the councils reprint it
+ *  in 1922 as a cheaper municipal edition with new names. */
+export type PlanLook = {
+  paper: string; ink: string; roofs: string[]; font: string; caps: boolean; steam: boolean; war: boolean;
+  title: string; sub: string; names: Partial<Record<string, string>>; places: Partial<Record<string, string>>;
+};
+const PLAN_OLD: PlanLook = { paper: '#E8DBB8', ink: '#2A2014', roofs: ['#D9C39C', '#D0B58E', '#C8C0A8'], font: 'Old Standard TT, serif', caps: false, steam: false, war: false, title: 'ПОРТ-АУРУМ', sub: 'план міста', names: {}, places: {} };
+const PLAN_SOVIET: PlanLook = {
+  paper: '#E2DDC8', ink: '#232A30', roofs: ['#CFC6AE', '#C4BDA8', '#BDBAAE'], font: "'PT Sans', sans-serif", caps: true, steam: true, war: false,
+  title: 'ПОРТ-АУРУМ', sub: 'план міста · губкомунгосп', names: { hill: 'Пагорб Свободи', podil: 'Червоний Поділ', sloboda: 'Робітнича слобода' },
+  places: { Ратуша: 'Міськвиконком', Ливарня: '«Аурумсталь»', Собор: 'Собор (зачинено)' }
+};
+const PLAN_1914: PlanLook = { ...PLAN_OLD, steam: true, sub: 'план міста · 1914' };
+const PLAN_CIVIL: PlanLook = { ...PLAN_OLD, steam: true, war: true, sub: 'план міста · зі штабу' };
+/** one object per power, so the memoised plan only redraws when the power changes */
+export function planLook(s: { era: number; year: number }): PlanLook {
+  if (s.era !== 2) return PLAN_OLD;
+  const reg = G.regimeOf(s);
+  return reg === 'soviet' ? PLAN_SOVIET : reg === 'civil' ? PLAN_CIVIL : PLAN_1914;
+}
+
+/** the state's sign on letterheads and official letters (art/LORE.md → «Символіка»): the empire's falcon until 1917,
+ *  nothing under the Provisional Government, the СРС anchor and hammer in the civil war, the СТСД arms from 1922 */
+/** gold on red needs a red ground: on paper the new state's signs are printed in black ink */
+export const ARMS_INK = 'brightness(0) opacity(0.82)';
+export function stateArms(s: { era: number; year: number }): { src: string; alt: string; label: string; ink?: boolean } | null {
+  const reg = s.era === 1 ? 'empire' : G.regimeOf(s);
+  if (reg === 'empire') return { src: 'art/brand/romei-arms.png', alt: 'Герб Ромейської імперії', label: 'КАНЦЕЛЯРІЯ ГУБЕРНАТОРА ВАЛЬДОРІЇ' };
+  if (reg === 'civil') return { src: 'art/brand/srs-emblem.png', alt: 'Емблема Союзу Ромейських Соціалістів: якір і молот', label: 'ГУБЕРНСЬКИЙ РЕВКОМ', ink: true };
+  if (reg === 'soviet') return { src: 'art/brand/ststd-arms.png', alt: 'Герб Союзу Трудових Соціалістичних Держав', label: 'ГУБВИКОНКОМ · СТСД', ink: true };
+  return null;
+}

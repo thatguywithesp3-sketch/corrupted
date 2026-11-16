@@ -20,7 +20,7 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 // Only what matters to us is painted, like the monuments on a pictorial city map: the places where the family
 // name is washed, the magnates' houses, our own house, the shops we can touch. The rest of the city stays a
 // quiet engraved wash underneath. Sprites are hand-tinted engravings (public/art/map), anchored by their base.
-import { skin, interiorSrc, mapArt } from '../skin';
+import { skin, interiorSrc, interiorPeriod, mapArt, bizInterior, planLook } from '../skin';
 import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops } from './mapLayout';
 
 /** a painted building standing on a little clearing; its base sits on (x, y) */
@@ -122,7 +122,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
   // everything painted is drawn back to front, so nearer buildings overlap farther ones
   type Item = { y: number; el: React.ReactNode };
   const items: Item[] = [];
-  DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} src={mapArt(when, p.art)} x={p.x} y={p.y} w={p.w} quiet />{p.t && <Plaque x={p.x} y={p.y + 2.2} t={p.t} quiet />}</g> }));
+  DECOR.forEach((p, i) => items.push({ y: p.y, el: <g key={'d' + i} style={{ pointerEvents: 'none' }}><Sprite art={p.art} src={mapArt(when, p.art)} x={p.x} y={p.y} w={p.w} quiet />{p.t && <Plaque x={p.x} y={p.y + 2.2} t={planLook(when).places[p.t] || p.t} quiet />}</g> }));
   items.push({ y: OUR_HOME.y, el: <g key="home" style={{ pointerEvents: 'none' }}><Sprite art={OUR_HOME.art} x={OUR_HOME.x} y={OUR_HOME.y} w={HOME_W.grabs} /><Plaque x={OUR_HOME.x} y={OUR_HOME.y + 2.6} t="Ваш дім" color="#3F8A5A" /></g> });
   G.INSTS.forEach((p) => {
     const on = selInst === p.id, mk = markOf('i:' + p.id), w = INST_W[p.id], h = spriteH(p.art, w), lit = live.has(p.id);
@@ -158,7 +158,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
     items.push({ y: b.y + (on ? 50 : 0), el: (
       <g key={b.id} {...asBtn(`${b.name}, ${b.kind}`, () => onPick(b.id))} className="mp-hit">
         {on && <ellipse cx={b.x} cy={b.y + 4.2} rx="6.6" ry="2.6" fill="none" stroke={RED} strokeWidth=".6" strokeDasharray="1.3 .7" />}
-        <Sprite art={shopArt(b.id)} x={b.x} y={b.y + 4.2} w={9.5} dim={closed} />
+        <Sprite art={shopArt(b.id)} src={mapArt(when, shopArt(b.id))} x={b.x} y={b.y + 4.2} w={9.5} dim={closed} />
         {/* the shop sign hangs above the roof: enamel medallion with the trade's emblem */}
         <g transform={`translate(${b.x} ${b.y - 9.6})`}>
           <g style={{ transform: on ? 'scale(1.2)' : 'none', transition: 'transform .2s' }}>
@@ -187,7 +187,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
         <style>{'.mp-hit:focus-visible > *:first-child { stroke: #8E1F12; stroke-width: .8; stroke-dasharray: 1.3 .7 }'}</style>
         <radialGradient id="mp-head" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#fff" stopOpacity=".85" /><stop offset=".35" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".35" /></radialGradient>
       </defs>
-      <PlanArt />
+      <PlanArt look={planLook(when)} />
       {/* who holds each district: one dot per shop under us (green), under a rival (his colour), or free */}
       {(Object.keys(G.DISTRICTS) as G.District[]).map((k) => {
         const d = ctl[k], dots = [...Array(d.me).fill('#3F8A5A'), ...rivals.flatMap((r) => Array(d.rivals[r.id]).fill(r.color)), ...Array(d.free).fill('')];
@@ -240,12 +240,16 @@ const Fact = ({ label, children, tone }: { label: string; children: React.ReactN
   </span>
 );
 
-function Blank({ b, wide, rv }: { b: Biz; wide: boolean; rv: Rival | null }) {
+function Blank({ b, wide, rv, when }: { b: Biz; wide: boolean; rv: Rival | null; when: { era: number; year: number } }) {
+  const inside = bizInterior(when, b.kind);
   const statusT = b.status === 'closed' ? 'Закрито' : b.status === 'roof' ? 'Під вашим «дахом»' : b.grudge >= 2 ? 'Озлоблений' : b.pressure ? 'Під тиском' : 'Не чіпали';
   const stCol = b.status === 'roof' ? T.clean : b.status === 'closed' ? T.neu : b.grudge >= 2 ? T.risk : b.pressure ? T.dirty : T.neu;
   return (
     <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 12px 12px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: `rotate(${wide ? 0.5 : -0.3}deg)`, zIndex: 2 }}>
       <Clip side={wide ? 'left' : 'top'} />
+      {/* the shop inside, edge to edge at the head of the card, like the institutions */}
+      {inside && <img src={inside} alt={`Усередині: ${b.kind} «${b.name}».`} onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        style={{ display: 'block', width: 'calc(100% + 24px)', margin: '-20px -12px 10px', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 40%', filter: 'sepia(0.12) contrast(1.03)', borderBottom: `3px double ${INK}` }} />}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ width: 58, height: 58, flexShrink: 0, borderRadius: '50%', border: `2px solid ${INK}`, outline: `1px solid ${INK}`, outlineOffset: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FBF4DC', boxShadow: 'inset 0 0 0 4px rgba(212,154,58,0.25)', transform: 'rotate(-6deg)' }}><BizIcon kind={b.kind} size={36} paper="#FBF4DC" /></span>
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -284,6 +288,14 @@ const INTERIOR: Record<G.InstId, string> = {
   whisper: 'Усередині: перекупки, вантажники й шинкар. За кілька монет вони щодня розповідають на ринку, яка ви порядна людина.',
   okhrana: 'Усередині: ротмістр над досьє, донощик мне шапку, у кутку — вилучені вальдорські прапори з бирками.'
 };
+/** Era II, the war years 1914–1917 (and the people's militia of 1917) */
+const INTERIOR_WAR: Record<G.InstId, string> = {
+  charity: 'Усередині: сироти війни над юшкою, ігуменя з книгою пожертв, товстий постачальник позує фотографу з одним мішком борошна, поранений солдат на милицях біля дверей.',
+  press: 'Усередині: репортери за друкарськими машинками, мапа фронту в шпильках, телеграфна стрічка, редактор приймає конверт від постачальника, цензор у мундирі замазує рядки.',
+  whisper: 'Усередині: черга солдаток по хліб, торговець ховає цукор під прилавок, інвалід продає сірники, перекупки шепочуться, посередник у котелку сипле монети під столом.',
+  okhrana: 'Усередині: жандармський ротмістр говорить по телефону, писар друкує, мапа фронту, справи «шпигунів»; на стіні портрет імператора й червоно-біло-жовтий прапор.'
+};
+const MILITIA = 'Усередині: студенти-міліціонери з білими пов’язками й старими гвинтівками, на стіні світлий прямокутник від портрета імператора, сам портрет лежить долілиць; начальник з червоним бантом палить жандармські справи в грубці.';
 /** Era II, from 1918: the same buildings under the new order (public/art/interiors/<id>-e2.jpg) */
 const INTERIOR2: Record<G.InstId, string> = {
   charity: 'Усередині: колишня трапезна монастиря, ікони забілено. Сироти в сірому над юшкою, завідувачка з журналом, завгосп виносить мішок борошна чорним ходом.',
@@ -317,7 +329,7 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   return (
     <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 12px 12px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: 'rotate(-0.3deg)', zIndex: 2, borderTop: '6px solid #B8913C' }}>
       {/* what it looks like inside: the engraving heads the card edge to edge and speaks for itself */}
-      <img src={interiorSrc(s, p.id)} alt={(s.era === 2 && s.year >= 1918 ? INTERIOR2 : INTERIOR)[p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      <img src={interiorSrc(s, p.id)} alt={({ '': INTERIOR, '-e2a': INTERIOR_WAR, '-e2p': { ...INTERIOR_WAR, okhrana: MILITIA }, '-e2': INTERIOR2 } as const)[interiorPeriod(s, p.id)][p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
         style={{ display: 'block', width: 'calc(100% + 24px)', margin: '-20px -12px 10px', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 40%', filter: 'sepia(0.12) contrast(1.03)', borderBottom: `3px double ${INK}` }} />
       <Clip side="top" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -372,6 +384,12 @@ const HOUSE: Record<string, string> = {
   r1: 'Порожня контора Солонарів над складами: стіна досягнень — від ятки з бочкою до ливарні, перша банкнота в слоїку, соляна бочка під скляним ковпаком, старі чоботи у вітрині, перші ваги, гільдійська грамота, книга боргів і сигара, що ще димить.',
   r2: 'Порожня вітальня-редакція Бергів: оксамитове крісло з мундштуком, що тліє, карикатури сохнуть на мотузках, чай із коньяком і стос конвертів, верстат біля вікна.',
   r3: 'Порожня зала замку Кречетових-Задонських: родовий герб із кречетом над каміном, спільний портрет предка з імператором на полюванні й голова оленя з того полювання, родове дерево з короною на вершині, портрети предків, плями від проданих картин, стіл на двох для почесного гостя.'
+};
+/** Era II, 1914–1921: the second generation of each house in the war years */
+const HOUSE_WAR: Record<string, string> = {
+  r1: 'Порожня контора молодого промисловця: телефон і електрична лампа, армійський контракт під сургучем, світлини ливарні й пароплавів, модель гармати, біржовий телеграф, батькові ваги й рахівниця під скляним ковпаком.',
+  r2: 'Порожня редакція-квартира молодої видавчині: друкарська машинка, телефон, дамський велосипед, стіна світлин і вирізок на червоних нитках, материне оксамитове крісло з траурною шаллю, фотоапарат на штативі.',
+  r3: 'Порожня зала замку в занепаді: картковий стіл із розписками, неоплачені рахунки на срібній таці, родовий герб над каміном, плями від проданих картин, шабля й польовий кашкет на кріслі, напівзібраний дорожній кофр.'
 };
 /** Era II under the councils (from 1922): the same houses nationalised or traded for an office */
 const HOUSE2: Record<string, string> = {
@@ -551,7 +569,7 @@ function PowerSheet({ c, when, selR, onSel, children }: { c: NonNullable<GameSta
         {/* the house inside, pasted at the head of the page: who works there and how the house lives */}
         {/* the house photo with the head of the house clipped to its top left corner */}
         <div style={{ position: 'relative', margin: '6px 0 10px' }}>
-          <img key={rv.id} src={interiorSrc(when, rv.id)} alt={(when.era === 2 && when.year >= 1922 ? HOUSE2 : HOUSE)[rv.id] || ''} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+          <img key={rv.id} src={interiorSrc(when, rv.id)} alt={(interiorPeriod(when, rv.id) === '-e2' ? HOUSE2 : interiorPeriod(when, rv.id) === '-e2a' ? HOUSE_WAR : HOUSE)[rv.id] || ''} onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             style={{ display: 'block', width: '100%', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 42%', border: `2px solid ${INK}`, boxShadow: '2px 4px 8px rgba(0,0,0,0.4)', transform: 'rotate(0.6deg)', filter: 'sepia(0.12) contrast(1.03)' }} />
           <span role="img" aria-label={rv.name} style={{ position: 'absolute', left: -10, top: -6, width: 86, height: 114, background: `url(${G.rivalPortrait(rv)}) center top / cover, radial-gradient(circle at 40% 30%, ${rv.color}, #1F1A14 190%)`, border: '4px solid #FBF6E6', outline: `1px solid ${INK}`, boxShadow: '3px 6px 12px rgba(0,0,0,0.55)', transform: 'rotate(-4deg)' }}>
             {/* the paperclip holding the portrait to the photo */}
@@ -728,7 +746,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const pill: CSSProperties = { display: 'flex', alignItems: 'center', boxSizing: 'border-box', height: 30, padding: '0 9px', borderRadius: 15, background: 'linear-gradient(180deg, rgba(46,32,18,0.9), rgba(26,18,10,0.9))', border: '1px solid #6E531E', boxShadow: '0 2px 6px rgba(0,0,0,0.5)', color: '#F1E6C8' };
     const plaque: CSSProperties = { background: 'linear-gradient(180deg, rgba(46,32,18,0.94), rgba(26,18,10,0.94))', border: '1.5px solid #6E531E', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', color: '#F1E6C8' };
 
-  const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : inst ? <>{<InstCard p={inst} s={s} />}{G.resultFor(c, 'i:' + inst.id) && <div style={{ background: '#F5EDD7', padding: '0 8px 8px', marginTop: -8 }}><TodayMark res={G.resultFor(c, 'i:' + inst.id)!} /></div>}</> : b ? <>{<Blank b={b} wide={false} rv={bRival} />}{G.resultFor(c, b.id) && <div style={{ background: '#F5EDD7', padding: '0 8px 8px', marginTop: -8 }}><TodayMark res={G.resultFor(c, b.id)!} /></div>}</> : <div style={{ fontSize: 14, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
+  const card = panel === 'riv' ? (rv ? <RivalCard r={rv} c={c} wide={false} /> : null) : inst ? <>{<InstCard p={inst} s={s} />}{G.resultFor(c, 'i:' + inst.id) && <div style={{ background: '#F5EDD7', padding: '0 8px 8px', marginTop: -8 }}><TodayMark res={G.resultFor(c, 'i:' + inst.id)!} /></div>}</> : b ? <>{<Blank b={b} wide={false} rv={bRival} when={s} />}{G.resultFor(c, b.id) && <div style={{ background: '#F5EDD7', padding: '0 8px 8px', marginTop: -8 }}><TodayMark res={G.resultFor(c, b.id)!} /></div>}</> : <div style={{ fontSize: 14, fontStyle: 'italic', color: '#E9E1C2' }}>Торкніться закладу на плані.</div>;
   const actions = used
     ? doneNote
     : rv && rv.ally ? <div style={{ fontSize: 14, fontStyle: 'italic', color: (rivMode ? INK : '#E9E1C2'), padding: '4px 2px' }}>Дім скріплено шлюбом. Він більше не полює на вас.</div>

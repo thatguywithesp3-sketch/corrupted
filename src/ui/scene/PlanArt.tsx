@@ -2,13 +2,13 @@
 // landmarks, labels. Drawn once from the generated plan; the interactive pins sit on top of it.
 import { memo } from 'react';
 import * as G from '../../engine';
+import type { PlanLook } from '../skin';
 
 const INK = '#2A2014', PAPER = '#E8DBB8', ROAD = '#F0E6C6';
 
 // Ordinary houses, precomputed once into a handful of paths (thousands of houses, so no per-house elements):
 // the wall is the footprint pushed down-right (light from the upper left), the roof is hipped, its sunlit
 // slope a touch lighter. Three muted roof tones: warm tile, faded tile, slate.
-const ROOF_TONES = ['#D9C39C', '#D0B58E', '#C8C0A8'];
 const HOUSES = (() => {
   const plan = G.getPlan();
   const wall: string[] = [], roofs: string[][] = [[], [], []], ridge: string[] = [], lit: string[] = [];
@@ -29,6 +29,16 @@ const HOUSES = (() => {
   });
   return { wall: wall.join(''), roofs: roofs.map((r) => r.join('')), ridge: ridge.join(''), lit: lit.join('') };
 })();
+// Era II: steamers instead of sailing ships, a funnel and a smoke trail
+const STEAMER = (x: number, y: number, s: number, ink: string, flip = false) => (
+  <g transform={`translate(${x} ${y}) scale(${flip ? -s : s} ${s})`} stroke={ink} strokeWidth=".25" strokeLinejoin="round">
+    <path d="M-4.5 0 L4.5 0 L3.6 1.6 L-3.6 1.6 Z" fill="#4A4440" />
+    <rect x="-3" y="-1.4" width="5.4" height="1.4" fill="#E9E2CC" />
+    <rect x="-.6" y="-3.6" width="1.3" height="2.2" fill="#8E2A1F" />
+    <path d="M.1 -3.8 q1.5 -1.2 3.4 -.8 q1.6 .3 3 -.6" fill="none" stroke="#7A7468" strokeWidth=".45" strokeLinecap="round" opacity=".6" />
+    <path d="M-3.4 -1.4 V-4" fill="none" />
+  </g>
+);
 const SHIP = (x: number, y: number, s = 1, flip = false) => (
   <g transform={`translate(${x} ${y}) scale(${flip ? -s : s} ${s})`} stroke={INK} strokeWidth=".25" strokeLinejoin="round">
     <path d="M-4 0 L4 0 L3 1.6 L-3 1.6 Z" fill="#6B5A3C" />
@@ -38,11 +48,13 @@ const SHIP = (x: number, y: number, s = 1, flip = false) => (
   </g>
 );
 
-const Label = ({ x, y, t, size = 2.1, italic = true, rot = 0 }: { x: number; y: number; t: string; size?: number; italic?: boolean; rot?: number }) => (
-  <text x={x} y={y} textAnchor="middle" fontFamily="Old Standard TT, serif" fontSize={size} fontStyle={italic ? 'italic' : 'normal'} fill={INK} stroke={PAPER} strokeWidth=".6" paintOrder="stroke" transform={rot ? `rotate(${rot} ${x} ${y})` : undefined}>{t}</text>
+const Label = ({ x, y, t, size = 2.1, italic = true, rot = 0, font = 'Old Standard TT, serif', ink = INK, paper = PAPER }: { x: number; y: number; t: string; size?: number; italic?: boolean; rot?: number; font?: string; ink?: string; paper?: string }) => (
+  <text x={x} y={y} textAnchor="middle" fontFamily={font} fontSize={size} fontStyle={italic && !font.includes('PT Sans') ? 'italic' : 'normal'} fill={ink} stroke={paper} strokeWidth=".6" paintOrder="stroke" transform={rot ? `rotate(${rot} ${x} ${y})` : undefined}>{t}</text>
 );
 
-function PlanArtInner() {
+function PlanArtInner({ look }: { look: PlanLook }) {
+  const ink = look.ink, paper = look.paper;
+  const Lbl = (p: Parameters<typeof Label>[0]) => <Label {...p} font={look.font} ink={ink} paper={paper} />;
   const polyD = (p: G.Pt[]) => 'M' + p.map((q) => q.join(' ')).join(' L') + ' Z';
   const oldRing = polyD(G.DISTRICTS.old.poly);
   // the ordinary city is one quiet wash: only the places that matter to us are painted (see CityMap landmarks)
@@ -59,7 +71,7 @@ function PlanArtInner() {
         <radialGradient id="pa-stain" cx=".5" cy=".5" r=".5"><stop offset=".78" stopColor="#8A6A30" stopOpacity="0" /><stop offset=".9" stopColor="#8A6A30" stopOpacity=".3" /><stop offset="1" stopColor="#8A6A30" stopOpacity="0" /></radialGradient>
         <radialGradient id="pa-vig" cx=".5" cy=".5" r=".75"><stop offset=".6" stopColor="#7A5A20" stopOpacity="0" /><stop offset="1" stopColor="#7A5A20" stopOpacity=".28" /></radialGradient>
       </defs>
-      <rect x="-4" y="-4" width="208" height="228" fill={PAPER} />
+      <rect x="-4" y="-4" width="208" height="228" fill={paper} />
       <rect x="-4" y="-4" width="208" height="228" filter="url(#pa-paper)" />
 
       {/* ground washes per district */}
@@ -73,10 +85,12 @@ function PlanArtInner() {
       <path d="M-4 128 C20 122 40 134 70 126 S120 130 150 124 S172 124 181 120" fill="none" stroke="#CFD8D2" strokeWidth="5.2" />
       <path d="M-4 128 C20 122 40 134 70 126 S120 130 150 124 S172 124 181 120" fill="none" stroke="url(#pa-water)" strokeWidth="5.2" />
       {[28, 50, 74, 98, 148, 172, 196].map((y) => (
-        <g key={y}><rect x="176" y={y - 1} width="16" height="2.2" fill="#8C7A54" stroke={INK} strokeWidth=".2" />{[180, 184, 188, 191].map((x) => <circle key={x} cx={x} cy={y - 1} r=".35" fill={INK} />)}</g>
+        <g key={y}><rect x="176" y={y - 1} width="16" height="2.2" fill="#8C7A54" stroke={ink} strokeWidth=".2" />{[180, 184, 188, 191].map((x) => <circle key={x} cx={x} cy={y - 1} r=".35" fill={ink} />)}</g>
       ))}
-      {SHIP(192, 150, 0.9)}{SHIP(196, 186, 1, true)}{SHIP(188, 168, 0.8)}{SHIP(192, 38, 1)}{SHIP(196, 86, 0.9, true)}{SHIP(188, 64, 0.8)}{SHIP(194, 112, 0.8)}
-      <g transform="translate(186 12)"><path d="M-4 0 L4 0 L3 1.6 L-3 1.6 Z" fill="#4A4036" stroke={INK} strokeWidth=".2" /><rect x="-1" y="-2.4" width="2" height="2.4" fill="#C8C0A8" stroke={INK} strokeWidth=".2" /><rect x="-.5" y="-5" width="1" height="2.6" fill="#2A2014" /><path d="M0 -5 c1 -1.2 2 -1 3 -2 c1 -1 2 -1 3 -2" fill="none" stroke="#6A6A66" strokeWidth=".8" opacity=".5" strokeLinecap="round" /></g>
+      {look.steam
+        ? <>{STEAMER(192, 150, 0.9, ink)}{STEAMER(196, 186, 1, ink, true)}{STEAMER(192, 38, 1, ink)}{STEAMER(196, 86, 0.9, ink, true)}{SHIP(188, 64, 0.8)}{look.war ? <g opacity=".85">{/* a steamer sunk at its berth: only the masts and the funnel stick out */}<path d="M188 168 V162 M191 168 V163.5" stroke={ink} strokeWidth=".35" /><rect x="189" y="164.5" width="1.4" height="3.5" fill="#3A3430" /><path d="M185 168.2 q5 -1.2 9 0" fill="none" stroke="#3E5A70" strokeWidth=".3" /></g> : STEAMER(188, 168, 0.8, ink)}{STEAMER(194, 112, 0.8, ink)}</>
+        : <>{SHIP(192, 150, 0.9)}{SHIP(196, 186, 1, true)}{SHIP(188, 168, 0.8)}{SHIP(192, 38, 1)}{SHIP(196, 86, 0.9, true)}{SHIP(188, 64, 0.8)}{SHIP(194, 112, 0.8)}</>}
+      <g transform="translate(186 12)"><path d="M-4 0 L4 0 L3 1.6 L-3 1.6 Z" fill="#4A4036" stroke={ink} strokeWidth=".2" /><rect x="-1" y="-2.4" width="2" height="2.4" fill="#C8C0A8" stroke={ink} strokeWidth=".2" /><rect x="-.5" y="-5" width="1" height="2.6" fill="#2A2014" /><path d="M0 -5 c1 -1.2 2 -1 3 -2 c1 -1 2 -1 3 -2" fill="none" stroke="#6A6A66" strokeWidth=".8" opacity=".5" strokeLinecap="round" /></g>
 
       {/* the green ring where the old walls were */}
       <path d={oldRing} fill="none" stroke="#9DB07A" strokeOpacity=".5" strokeWidth="3" strokeLinejoin="round" />
@@ -90,16 +104,16 @@ function PlanArtInner() {
 
       {/* the houses: quiet, but solid: a shaded wall under a hipped roof with its ridge, in muted tones */}
       <path d={HOUSES.wall} fill="#9A8460" fillOpacity=".8" />
-      {HOUSES.roofs.map((d, i) => <path key={i} d={d} fill={ROOF_TONES[i]} stroke="#8A7854" strokeWidth=".13" strokeLinejoin="round" />)}
+      {HOUSES.roofs.map((d, i) => <path key={i} d={d} fill={look.roofs[i]} stroke="#8A7854" strokeWidth=".13" strokeLinejoin="round" />)}
       <path d={HOUSES.ridge} fill="none" stroke="#8A7854" strokeWidth=".12" strokeOpacity=".9" />
       <path d={HOUSES.lit} fill="#FFF8E4" fillOpacity=".28" />
 
       {/* rails to the harbour */}
-      <path d="M144 18 L145 112" stroke={INK} strokeWidth=".35" fill="none" /><path d="M144.9 18 L145.9 112" stroke={INK} strokeWidth=".35" fill="none" />
-      <path d="M143.5 18 L144.5 112" stroke={INK} strokeWidth="1.6" fill="none" strokeDasharray=".25 1.1" opacity=".7" />
+      <path d="M144 18 L145 112" stroke={ink} strokeWidth=".35" fill="none" /><path d="M144.9 18 L145.9 112" stroke={ink} strokeWidth=".35" fill="none" />
+      <path d="M143.5 18 L144.5 112" stroke={ink} strokeWidth="1.6" fill="none" strokeDasharray=".25 1.1" opacity=".7" />
 
-      <path d="M136 160 L146 156 L146 118" stroke={INK} strokeWidth=".35" fill="none" /><path d="M136 161 L147 157 L147 118" stroke={INK} strokeWidth=".35" fill="none" />
-      <path d="M82 154 H136 M82 156 H136 M82 158 H136" stroke={INK} strokeWidth=".25" fill="none" opacity=".8" />
+      <path d="M136 160 L146 156 L146 118" stroke={ink} strokeWidth=".35" fill="none" /><path d="M136 161 L147 157 L147 118" stroke={ink} strokeWidth=".35" fill="none" />
+      <path d="M82 154 H136 M82 156 H136 M82 158 H136" stroke={ink} strokeWidth=".25" fill="none" opacity=".8" />
       {/* avenues, over the blocks */}
       {G.ROADS.map((d, i) => <g key={i}><path d={d} fill="none" stroke="#5A4A30" strokeWidth="1.7" strokeLinejoin="round" opacity=".65" /><path d={d} fill="none" stroke={ROAD} strokeWidth="1.1" strokeLinejoin="round" /></g>)}
 
@@ -114,22 +128,29 @@ function PlanArtInner() {
       <ellipse cx="107" cy="201" rx="13" ry="6" fill="url(#pa-park)" stroke="#4A6A38" strokeWidth=".25" />
       <ellipse cx="30" cy="171" rx="4.5" ry="4" fill={ROAD} stroke="#5A4A30" strokeWidth=".3" />
       <g>{/* the stone bridge over the river */}
-        <path d="M96 124.8 h16 l.4 2.6 h-16.8z" fill="#CDBD90" stroke={INK} strokeWidth=".4" />
-        {[99, 104, 109].map((x) => <path key={x} d={`M${x - 1.6} 127.4 a1.6 1.6 0 0 1 3.2 0`} fill="none" stroke={INK} strokeWidth=".25" />)}
+        <path d="M96 124.8 h16 l.4 2.6 h-16.8z" fill="#CDBD90" stroke={ink} strokeWidth=".4" />
+        {[99, 104, 109].map((x) => <path key={x} d={`M${x - 1.6} 127.4 a1.6 1.6 0 0 1 3.2 0`} fill="none" stroke={ink} strokeWidth=".25" />)}
       </g>
 
+      {/* the civil war on the plan: barricades drawn in by hand at the bridge, the station and the port gate,
+          burnt blocks hatched over in charcoal */}
+      {look.war && <g style={{ pointerEvents: 'none' }}>
+        {[[30, 108, 7], [158, 96, 6], [118, 166, 5], [52, 186, 5]].map(([x, y, r], i) => <g key={i}><ellipse cx={x} cy={y} rx={r} ry={r * 0.7} fill="#3A3430" fillOpacity=".45" /><ellipse cx={x} cy={y} rx={r} ry={r * 0.7} fill="url(#pa-roof)" opacity=".7" /></g>)}
+        {['M94 121.5 l2 -1.4 l2 1.4 l2 -1.4 l2 1.4 l2 -1.4 l2 1.4 l2 -1.4 l2 1.4 l2 -1.4', 'M94 131 l2 1.4 l2 -1.4 l2 1.4 l2 -1.4 l2 1.4 l2 -1.4 l2 1.4 l2 -1.4 l2 1.4', 'M96 145 l2 -1.3 l2 1.3 l2 -1.3 l2 1.3 l2 -1.3 l2 1.3', 'M146 60 l1.3 2 l-1.3 2 l1.3 2 l-1.3 2 l1.3 2'].map((d, i) => <path key={i} d={d} fill="none" stroke="#8E2A1F" strokeWidth=".55" strokeLinejoin="round" />)}
+      </g>}
+
       {/* labels */}
-      {(Object.keys(G.DISTRICTS) as G.District[]).map((k) => <Label key={k} x={G.DISTRICTS[k].label[0]} y={G.DISTRICTS[k].label[1]} t={G.DISTRICTS[k].t.toUpperCase()} size={3.3} italic={false} />)}
+      {(Object.keys(G.DISTRICTS) as G.District[]).map((k) => <Lbl key={k} x={G.DISTRICTS[k].label[0]} y={G.DISTRICTS[k].label[1]} t={(look.names[k] || G.DISTRICTS[k].t).toUpperCase()} size={3.3} italic={false} />)}
       
-      <Label x={26} y={99.4} t="Сквер" size={1.9} /><Label x={104} y={133.4} t="Кам’яний міст" size={1.9} />
-      <Label x={60} y={125.6} t="р. Аурумка" size={2.3} rot={-4} />
-      <Label x={192} y={78} t="Гавань" size={2.6} rot={90} />
-      <Label x={192} y={178} t="Заводська пристань" size={2.2} rot={90} />
+      <Lbl x={26} y={99.4} t="Сквер" size={1.9} /><Lbl x={104} y={133.4} t="Кам’яний міст" size={1.9} />
+      <Lbl x={60} y={125.6} t="р. Аурумка" size={2.3} rot={-4} />
+      <Lbl x={192} y={78} t="Гавань" size={2.6} rot={90} />
+      <Lbl x={192} y={178} t="Заводська пристань" size={2.2} rot={90} />
 
       {/* compass, scale, cartouche */}
-      <g transform="translate(192 214)"><circle r="5" fill="none" stroke={INK} strokeWidth=".3" /><path d="M0 -4.8 L1.1 0 L0 4.8 L-1.1 0 Z" fill={INK} /><path d="M-4.8 0 L0 -1.1 L4.8 0 L0 1.1 Z" fill="none" stroke={INK} strokeWidth=".25" /><text y="-6.2" textAnchor="middle" fontSize="2.2" fontFamily="serif">Пн</text></g>
-      <g transform="translate(12 218)"><path d="M0 0 H22 M0 -1 V1 M11 -.8 V.8 M22 -1 V1" stroke={INK} strokeWidth=".35" /><rect x="0" y="-.5" width="11" height="1" fill={INK} /><text x="11" y="3.4" textAnchor="middle" fontSize="2" fontFamily="Old Standard TT, serif" fontStyle="italic">100 сажнів</text></g>
-      <g transform="translate(184 4)"><rect width="16" height="6.6" fill={PAPER} fillOpacity=".7" stroke={INK} strokeWidth=".3" /><rect x=".6" y=".6" width="14.8" height="5.4" fill="none" stroke={INK} strokeWidth=".15" /><text x="8" y="3.2" textAnchor="middle" fontSize="1.9" fontFamily="Ruslan Display, serif" fill={INK}>ПОРТ-АУРУМ</text><text x="8" y="5.2" textAnchor="middle" fontSize="1.2" fontFamily="Old Standard TT, serif" fontStyle="italic">план міста</text></g>
+      <g transform="translate(192 214)"><circle r="5" fill="none" stroke={ink} strokeWidth=".3" /><path d="M0 -4.8 L1.1 0 L0 4.8 L-1.1 0 Z" fill={ink} /><path d="M-4.8 0 L0 -1.1 L4.8 0 L0 1.1 Z" fill="none" stroke={ink} strokeWidth=".25" /><text y="-6.2" textAnchor="middle" fontSize="2.2" fontFamily="serif">Пн</text></g>
+      <g transform="translate(12 218)"><path d="M0 0 H22 M0 -1 V1 M11 -.8 V.8 M22 -1 V1" stroke={ink} strokeWidth=".35" /><rect x="0" y="-.5" width="11" height="1" fill={ink} /><text x="11" y="3.4" textAnchor="middle" fontSize="2" fontFamily="Old Standard TT, serif" fontStyle="italic">100 сажнів</text></g>
+      <g transform="translate(184 4)"><rect width="16" height="6.6" fill={paper} fillOpacity=".7" stroke={ink} strokeWidth=".3" /><rect x=".6" y=".6" width="14.8" height="5.4" fill="none" stroke={ink} strokeWidth=".15" /><text x="8" y="3.2" textAnchor="middle" fontSize="1.9" fontFamily={look.caps ? look.font : "Ruslan Display, serif"} fontWeight={look.caps ? 700 : 400} fill={ink}>{look.title}</text><text x="8" y="5.2" textAnchor="middle" fontSize={look.sub.length > 14 ? 0.9 : 1.2} fontFamily={look.font} fontStyle={look.caps ? "normal" : "italic"} fill={ink}>{look.sub}</text></g>
 
       {/* the folds the sheet came in, a coffee ring, aged edges */}
       <circle cx="40" cy="104" r="6" fill="url(#pa-stain)" /><circle cx="150" cy="190" r="5" fill="url(#pa-stain)" />
