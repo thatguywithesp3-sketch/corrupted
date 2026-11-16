@@ -268,9 +268,9 @@ describe('Era I texts and lore (QA 14.11)', () => {
     expect(r.title).toMatch(/Пані Мельник («віддячила»|не зрозуміла натяку)/);
     const held = { ...shop, id: 'bx', rival: 'r1', pressure: 0, status: 'open' as const };
     const acts = G.bizActs({ ...s, city: { ...c, biz: [...c.biz, held] } }, held);
-    expect(acts[0].sub).toContain('під рукою Пана Вайсмана');
-    expect(acts[1].sub).toContain('ніж платить Пану Вайсману');
-    expect(G.rivalCase(c.rivals[2], 'ins')).toBe('Графом Ґжеґожевським');
+    expect(acts[0].sub).toContain('під рукою Пана Солонара');
+    expect(acts[1].sub).toContain('ніж платить Пану Солонару');
+    expect(G.rivalCase(c.rivals[2], 'ins')).toBe('Графом Кречетовим-Задонським');
   });
 
   it('no president or mayor is left in Era I strings', () => {
@@ -358,9 +358,9 @@ describe('generations in the city and the end of the day', () => {
     expect(h.city!.biz.find((x) => x.id === roofId)!.status).toBe('roof');
     const r1 = h.city!.rivals.find((r) => r.id === 'r1')!;
     expect(r1.gen).toBe(2);
-    expect(r1.name).toBe('Пан Леопольд Вайсман');
+    expect(r1.name).toBe('Пан Северин Солонар');
     expect(r1.heat).toBe(3); // old grudges cool off by half
-    expect(G.rivalCase(r1, 'dat')).toBe('Пану Леопольду Вайсману');
+    expect(G.rivalCase(r1, 'dat')).toBe('Пану Северину Солонару');
     expect(G.rivalFile(r1).age).toBe(31);
     expect(h.city!.news.some((x) => x.kind === 'rival' && /сина/.test(x.head))).toBe(true);
   });
@@ -385,5 +385,19 @@ describe('generations in the city and the end of the day', () => {
     const e = G.endDay(s);
     expect(e.screen).toBe('evening');
     expect(() => G.endDay(G.toOffice(G.signForm(G.newGame(43))))).toThrow();
+  });
+});
+
+describe('renamed magnates (16.11)', () => {
+  it('an old save gets the new names and titles once, a new save is untouched', () => {
+    const old = JSON.stringify({ rivals: [{ name: 'Пан Леопольд Вайсман', title: 'син купця, господар пароплавства' }, { name: 'Граф Ґжеґожевський', title: 'старий рід із Замкового пагорба' }], news: ['Склади Вайсмана', 'з Графом Казимиром Ґжеґожевським'] });
+    const m = G.renameLegacy(old);
+    expect(m).not.toMatch(/Вайсман|Ґжеґ|Казимир|Леопольд/);
+    expect(m).toContain('Пан Северин Солонар');
+    expect(m).toContain('Графом Анатолієм Кречетовим-Задонським');
+    expect(m).toContain('старий рід, рідня двору');
+    expect(G.renameLegacy(m)).toBe(m);
+    const fresh = JSON.stringify(G.newGame(5));
+    expect(G.renameLegacy(fresh)).toBe(fresh);
   });
 });
