@@ -87,6 +87,8 @@ export interface DocCond {
   rank?: [number, number];
   /** years already served */
   year?: [number, number];
+  /** the calendar: the card only comes from this year on (and until that year) */
+  since?: number; until?: number;
   patron?: [number, number]; people?: [number, number]; system?: [number, number]; threat?: [number, number];
   /** story flags that must be set / must not be set */
   flag?: string[]; noFlag?: string[];
@@ -137,7 +139,7 @@ export interface EraContent {
 
 export type Gender = 'm' | 'f';
 export type Meter = 'patron' | 'people' | 'system' | 'threat';
-export type Screen = 'form' | 'morning' | 'office' | 'evening' | 'night' | 'campaign' | 'elect' | 'ending' | 'victory';
+export type Screen = 'form' | 'morning' | 'office' | 'evening' | 'night' | 'campaign' | 'elect' | 'ending' | 'victory' | 'chronicle';
 
 export interface Kin {
   id: string; // k1.. for children, s… for siblings
@@ -247,6 +249,8 @@ export interface GameState {
   report: ReportLine[];
   offers: Offer[];
   ending: Ending | null;
+  /** the chronicle between Era I and Era II: the page we are on, the options picked, what they mean */
+  chron?: { step: number; picks: number[]; marks: string[] };
   heirs: Heir[];
   lastStamp: StampKind | null;
   lastDec: { t: string; d: Delta } | null;

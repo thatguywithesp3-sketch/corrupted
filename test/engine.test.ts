@@ -401,3 +401,26 @@ describe('renamed magnates (16.11)', () => {
     expect(G.renameLegacy(fresh)).toBe(fresh);
   });
 });
+
+describe('the chronicle between Era I and Era II', () => {
+  it('four front pages with a decision each, then Era II starts in 1921 with their marks', () => {
+    let found = 0;
+    for (let seed = 1; seed < 40 && !found; seed++) {
+      let s = G.newGame(seed); const r = botRng(seed * 31 + 7);
+      for (let i = 0; i < 40000 && s.era === 1; i++) s = botStep(s, r, STYLES.careful);
+      if (s.era !== 2 || s.screen !== 'chronicle') continue;
+      found = seed;
+      expect(s.year).toBe(1914);
+      const years: number[] = [];
+      while (s.screen === 'chronicle') { years.push(s.year); s = G.chronPick(s, s.chron!.step === 3 ? 0 : 2); }
+      expect(years).toEqual([1914, 1917, 1918, 1920]);
+      expect(s.screen).toBe('morning');
+      expect(s.year).toBe(1921);
+      expect(s.estate).toBe(false);
+      expect(s.chron!.marks).toContain('commissar');
+      expect(s.headline).toContain('Трибуна праці');
+      expect(() => G.chronPick(s, 0)).toThrow();
+    }
+    expect(found).toBeGreaterThan(0);
+  });
+});

@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, officeDone, endDay, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal
+  isFatal, schemeDelta, officeDone, endDay, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal, chronPick
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -106,6 +106,7 @@ function smartStep(s: GameState, st: BotStyle): GameState {
     }
     case 'campaign': return campaignAct(s, totalMoney(s) > 2500 ? 'media' : 'rally');
     case 'elect': return electionNight(s, false);
+    case 'chronicle': return chronPick(s, 0);
     case 'ending':
       if (!s.heirs.length) return s;
       return pickHeir(s, [...s.heirs].sort((a, b) => (b.prep + b.l + (b.age >= 16 ? 50 : 0)) - (a.prep + a.l + (a.age >= 16 ? 50 : 0)))[0].id);
@@ -146,6 +147,7 @@ export function botStep(s: GameState, r: () => number, st: BotStyle): GameState 
       return sleep(s);
     case 'campaign': return campaignAct(s, ['rally', 'media', 'gift', 'kompromat', 'admin'][Math.floor(r() * 5)]);
     case 'elect': return electionNight(s, r() < st.darkRate);
+    case 'chronicle': return chronPick(s, Math.floor(r() * 3));
     case 'ending':
       if (s.heirs.length) return pickHeir(s, s.heirs[Math.floor(r() * s.heirs.length)].id);
       return s;

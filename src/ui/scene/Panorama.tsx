@@ -257,9 +257,9 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           {night && <span aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,16,44,.45), rgba(10,16,44,.15) 60%, rgba(10,16,44,.35))', mixBlendMode: 'multiply', opacity: 0, animation: 'pano-fadein 6s ease-in 2s forwards' }} />}
 
           {/* street lamps go out (morning) or come on (evening) as the camera reaches them */}
-          {LAMPS.map(([x, y, r], i) => <Lamp key={i} x={x} y={y} r={r} on={night} at={night ? lampOnAt(x) : seenAt(x) + 0.4} />)}
+          {era === 1 && LAMPS.map(([x, y, r], i) => <Lamp key={i} x={x} y={y} r={r} on={night} at={night ? lampOnAt(x) : seenAt(x) + 0.4} />)}
           {/* windows light up in a wave in the evening */}
-          {night && WINDOWS.map(([x, y, , k], i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 4 * k, height: 6 * k, background: '#FFCB6B', boxShadow: '0 0 8px 2px rgba(255,190,90,.7)', mixBlendMode: 'screen', opacity: 0, animation: `pano-win .6s ease-out ${seenAt(x) + (i % 4) * 0.25}s forwards` }} />)}
+          {night && era === 1 && WINDOWS.map(([x, y, , k], i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 4 * k, height: 6 * k, background: '#FFCB6B', boxShadow: '0 0 8px 2px rgba(255,190,90,.7)', mixBlendMode: 'screen', opacity: 0, animation: `pano-win .6s ease-out ${seenAt(x) + (i % 4) * 0.25}s forwards` }} />)}
 
           {/* the sky */}
           {morning && <>
@@ -285,10 +285,10 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           </>}
 
           {/* the city's life */}
-          {(night ? EVENING_LIFE : MORNING_LIFE).map((f, i) => <Figure key={i} f={f} night={night} />)}
+          {era === 1 && (night ? EVENING_LIFE : MORNING_LIFE).map((f, i) => <Figure key={i} f={f} night={night} />)}
           {/* the lamplighter crosses the square lighting the lamps one by one */}
-          {night && <Figure f={{ id: 'w-lamplighter', x0: LL.x0, x1: LL.x1, y: 56.9, ground: 'square', lantern: 'pole', at: LL.d, dur: LL.dur }} night />}
-          {morning && <>
+          {night && era === 1 && <Figure f={{ id: 'w-lamplighter', x0: LL.x0, x1: LL.x1, y: 56.9, ground: 'square', lantern: 'pole', at: LL.d, dur: LL.dur }} night />}
+          {morning && era === 1 && <>
             <span aria-hidden="true" style={{ position: 'absolute', left: '84%', top: '60%', animation: `pano-boat ${T}s linear both` }}><svg width="26" height="8" viewBox="0 0 26 8"><path d="M0 3 H26 L22 7 H4 Z" fill={INKC} /><path d="M10 3 L6 -2 M16 3 L20 -2" stroke={INKC} strokeWidth=".8" /></svg></span>
             {/* pigeons burst off the town hall tower */}
             <span aria-hidden="true" style={{ position: 'absolute', left: '29%', top: '14%', width: 0, height: 0, animation: 'pano-flock 5s cubic-bezier(.3,.1,.6,1) 1.2s both' }}>

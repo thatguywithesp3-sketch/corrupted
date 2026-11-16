@@ -15,6 +15,7 @@ import { FamilyStrip } from './scene/FamilyStrip';
 import { FamilyAlbum, MeterInfo, MeterLegend } from './scene/Family';
 import { WindowLight, phaseOf } from './scene/WindowLight';
 import { Panorama, type PanoKind } from './scene/Panorama';
+import { Chronicle } from './scene/Chronicle';
 import { MeterPops } from './scene/MeterPops';
 import { DeskProps } from './scene/DeskProps';
 import { CityMap } from './scene/CityMap';
@@ -206,7 +207,8 @@ export function Game() {
     else if (s.screen === 'evening') setPano('evening');
   }, [s.screen, mode]);
   const view = useMemo(() => {
-    const v = buildView({ s, ui, run, setUi });
+    // the chronicle between eras has no document view of its own
+    const v = buildView({ s: s.screen === 'chronicle' ? { ...s, screen: 'morning' } : s, ui, run, setUi });
     v.openMenu = () => setPaused(true);
     if (scenes) v.slots = {
       morning: s.screen === 'morning' ? <Newspaper s={s} run={run} v={v} fresh={!pano} /> : null,
@@ -229,7 +231,7 @@ export function Game() {
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { try { localStorage.removeItem('corrupted.form.step'); } catch { /* no storage */ } setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
-            {s.screen === 'form' ? <Onboarding s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
+            {s.screen === 'form' ? <Onboarding s={s} run={run} /> : s.screen === 'chronicle' ? <Chronicle key="chron" s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
             {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
             {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
