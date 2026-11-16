@@ -275,7 +275,7 @@ export function buildView(ctx: Ctx): any {
   v.isScheme = cur.kind === 'scheme'; v.isChoice = cur.kind === 'choice';
   v.isDialog = cur.kind === 'choice' && !!cur.who; v.notDialog = !v.isDialog; v.dlgOpts = [];
   const dlgW: any = C.words.dialog;
-  v.dg = { photo: '', photoOn: false, silOn: true, ovalFilter: 'sepia(0.7)', bg: '#3D3328', sil: '#1F1A14', name: '', role: '', kindLabel: '', mood: '', moodBg: '#E6D9BC', pills: [], hasBadge: false, badge: '', badgeBg: '#8E2A1F', isLetter: false, isCall: false, isChat: false, hatOn: false, hatH: '0px', say: '', gist: '', sign: '', initial: '', place: '', device: '', timer: '', glow: '#1D2A3A', accent: '#4F8BE0', status: '', app: '', chatNote: '', time1: '', time2: '', screenBg: '#0D1117', optsBg: '#0D1117', optsLabelC: '#9AA6B2', optsFont: 'inherit', replyLabel: '' };
+  v.dg = { photo: '', photoOn: false, silOn: true, ovalFilter: 'sepia(0.7)', bg: '#3D3328', sil: '#1F1A14', name: '', role: '', kindLabel: '', mood: '', moodBg: '#E6D9BC', pills: [], hasBadge: false, badge: '', badgeBg: '#8E2A1F', arms: false, isLetter: false, isCall: false, isChat: false, hatOn: false, hatH: '0px', say: '', gist: '', sign: '', initial: '', place: '', device: '', timer: '', glow: '#1D2A3A', accent: '#4F8BE0', status: '', app: '', chatNote: '', time1: '', time2: '', screenBg: '#0D1117', optsBg: '#0D1117', optsLabelC: '#9AA6B2', optsFont: 'inherit', replyLabel: '' };
   if (cur.kind === 'choice' && cur.who) {
     const w = cur.who, dc = cur.choice;
     let kd = '';
@@ -296,7 +296,7 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'хоче поставити вам кілька запитань', kindLabel: 'ЖУРНАЛІСТ', bg: 'linear-gradient(180deg, #7FAEE3, #2A3A6A)', sil: '#141C30', hasBadge: true, badge: 'ПРЕСА', badgeBg: '#8E2A1F', mood: tv >= 60 ? 'Має докази' : 'Шукає докази', moodBg: tv >= 60 ? '#F08A6E' : '#F2DFA8', pills: [pill('threat', 'ризик ' + tv, tv >= 60 ? 'bad' : 'neu')] });
     } else {
       kd = 'boss';
-      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
+      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', arms: s.era === 1, bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
     const photo = w.kind === 'rival' ? (s.era === 1 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
