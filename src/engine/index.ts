@@ -8,4 +8,4 @@ export * from './city';
 export { deckOf, condOk, dealYear } from './deck';
 export { getPlan, CLEARINGS, ROADS, PLAN_W, PLAN_H } from './cityplan';
 export type { Bldg, Lot, Pt } from './cityplan';
-export { CHRONICLE, chronPick, type ChronPage, type ChronOption } from './chronicle';
+export { CHRONICLE, ERA2_EVENTS, chronPick, type ChronPage, type ChronOption } from './chronicle';

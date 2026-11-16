@@ -1,7 +1,7 @@
-// The chronicle between Era I and Era II: the front pages of the city paper from 1914 to 1920, one decision on each.
-// The paper itself tells the story: «Вісник Порт-Аурума» with the imperial arms, then the bare «Аурумська правда»
-// (the arms cut out, the Valdorian ribbon in 1918), then the red «Трибуна праці». Picking an option stamps the
-// consequence on the page; «Далі» turns to the next year.
+// The chronicle between Era I and Era II: front pages of the city paper with one decision on each (now the page of
+// July 1914; the same component can show the later pages). The paper tells the story by itself: «Вісник Порт-Аурума»
+// with the imperial arms, the bare «Аурумська правда» (arms cut out, the Valdorian ribbon in 1918), the red «Трибуна
+// праці». Picking an option stamps the consequence on the page; the button turns the page or starts the service.
 import { useState, type CSSProperties } from 'react';
 import * as G from '../../engine';
 import type { GameState } from '../../engine';
@@ -90,7 +90,7 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
       {/* turn the page */}
       <div style={{ flexShrink: 0, padding: '12px 12px 16px' }}>
         <button className="b3d" disabled={o === null} onClick={next} style={{ width: '100%', minHeight: 52, padding: '12px 16px', fontFamily: SERIF, fontSize: 16, fontWeight: 700, textAlign: 'center', color: o ? '#1F1A14' : '#8A7A5A', background: o ? 'linear-gradient(180deg,#E8CB7A,#B8913C 60%,#9A7630)' : 'linear-gradient(180deg,#3A2E1E,#2A2016)', border: '1.5px solid #6E531E', borderRadius: 4, cursor: o ? 'pointer' : 'default', boxShadow: o ? '0 3px 0 #5A4012' : 'none' }}>
-          {o === null ? 'Оберіть, що робить голова роду' : last ? 'Нова доба: 1921 →' : `Далі: ${G.CHRONICLE[step + 1].year} →`}
+          {o === null ? 'Оберіть, що робить голова роду' : last ? `До служби: ${page.year} →` : `Далі: ${G.CHRONICLE[step + 1].year} →`}
         </button>
       </div>
     </div>

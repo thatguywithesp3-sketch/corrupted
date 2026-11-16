@@ -283,6 +283,13 @@ function payOut(n: GameState, cost: number) {
   (['cash', 'floor', 'wh', 'clean'] as const).forEach((k) => { const c = Math.min(n[k], left); n[k] -= c; left -= c; });
 }
 
+/** how a service ends when the era itself ends under it */
+const ERA_END: Record<number, [string, string]> = {
+  0: ['Доба скінчилася', 'Світ, у якому ви служили, скінчився раніше за вашу службу.'],
+  1: ['Війна', 'Липень 1914-го. Імператор оголосив війну Конкордії, і стара служба скінчилася разом зі старим світом.'],
+  2: ['Нова війна', 'Червень 1941-го. Архіви управи палять у дворі, місто евакуюють. Служба скінчилася разом із цілою добою.']
+};
+
 function finish(n: GameState, kind: EndKind, title: string, text: string): GameState {
   const E = RULES.endings, stash = n.cash + n.floor + n.wh;
   let inherit = 0, lost = 0;
@@ -295,7 +302,8 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
   const dream = (n.dream === 0 && (RULES.estate.on ? !!n.dreamDone || (!!n.estate && kind !== 'collapse') : n.clean >= RULES.dreamCleanGoal)) || (n.dream === 1 && n.rank >= last)
     || (n.dream === 2 && kind === 'retire' && n.threat < RULES.dreamCleanThreat) || (n.dream === 3 && kind === 'summit');
   const dynastyOver = kind === 'collapse' && n.tavro;
-  const eraOver = !dynastyOver && n.gen >= RULES.gensPerEra;
+  const nextStart = n.era < ERA_COUNT ? getEra(n.era + 1).startYear : Infinity;
+  const eraOver = !dynastyOver && (n.gen >= RULES.gensPerEra || (RULES.eraByCalendar && n.year >= nextStart));
   const campaignOver = eraOver && n.era >= ERA_COUNT;
   n.ending = {
     kind, title, text, inherit, lost, dream, dynastyOver, eraOver, campaignOver,
@@ -632,6 +640,9 @@ export function lockSafe(s: GameState): GameState {
   const dead = deathOf(n);
   if (dead) return finish(n, 'collapse', dead[0], dead[1]);
   if (n.served >= RULES.careerYears) return finish(n, 'retire', S(n, 'end.twenty.t'), S(n, 'end.twenty.x'));
+  // history closes the era by the calendar: the service ends when the next era begins (1914, 1941, ...)
+  const nextStart = n.era < ERA_COUNT ? getEra(n.era + 1).startYear : Infinity;
+  if (RULES.eraByCalendar && n.year >= nextStart) { const t = ERA_END[n.era] || ERA_END[0]; return finish(n, 'retire', t[0], t[1]); }
   n.offers = offersFor(n);
   n.screen = 'night';
   return n;

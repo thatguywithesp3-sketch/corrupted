@@ -403,7 +403,7 @@ describe('renamed magnates (16.11)', () => {
 });
 
 describe('the chronicle between Era I and Era II', () => {
-  it('four front pages with a decision each, then Era II starts in 1921 with their marks', () => {
+  it('the front page of 1914 with one decision, then Era II starts in 1914 and ends by 1941', () => {
     let found = 0;
     for (let seed = 1; seed < 40 && !found; seed++) {
       let s = G.newGame(seed); const r = botRng(seed * 31 + 7);
@@ -411,16 +411,18 @@ describe('the chronicle between Era I and Era II', () => {
       if (s.era !== 2 || s.screen !== 'chronicle') continue;
       found = seed;
       expect(s.year).toBe(1914);
-      const years: number[] = [];
-      while (s.screen === 'chronicle') { years.push(s.year); s = G.chronPick(s, s.chron!.step === 3 ? 0 : 2); }
-      expect(years).toEqual([1914, 1917, 1918, 1920]);
+      s = G.chronPick(s, 2);
       expect(s.screen).toBe('morning');
-      expect(s.year).toBe(1921);
-      expect(s.estate).toBe(false);
-      expect(s.chron!.marks).toContain('commissar');
-      expect(s.headline).toContain('Трибуна праці');
+      expect(s.year).toBe(1914);
+      expect(s.chron!.marks).toContain('profiteer');
+      expect(s.headline).toContain('ешелони');
       expect(() => G.chronPick(s, 0)).toThrow();
+      // the rest of Era II: no life outlives 1941
+      let latest = 0;
+      for (let i = 0; i < 20000 && s.era === 2; i++) { s = botStep(s, r, STYLES.careful); if (s.era === 2) latest = Math.max(latest, s.year); }
+      expect(latest).toBeLessThanOrEqual(1941);
     }
     expect(found).toBeGreaterThan(0);
+    expect(G.ERA2_EVENTS.map((p) => p.year)).toEqual([1917, 1918, 1920]);
   });
 });
