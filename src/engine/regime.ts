@@ -84,8 +84,10 @@ export function dressRivals(c: { rivals: { id: string; name: string; title: stri
 }
 
 /** the four institutions' names under each power (the same buildings on the map) */
-export function instName(s: { era: number; year: number }, id: 'charity' | 'press' | 'whisper' | 'okhrana'): string {
+export function instName(s: { era: number; year: number }, id: 'charity' | 'press' | 'whisper' | 'okhrana' | 'works' | 'univ'): string {
   const reg = regimeOf(s), y = s.year;
+  if (id === 'works') return reg === 'soviet' ? '«Аурумсталь»' : 'Ливарня';
+  if (id === 'univ') return reg === 'soviet' ? 'Робфак' : 'Університет';
   if (id === 'press') return '«' + paperOf(s).replace('Порт-Аурума', '').trim() + '»';
   if (id === 'charity') return reg === 'civil' || reg === 'soviet' ? 'Дитбудинок' : 'Сиротинець';
   if (id === 'whisper') return reg === 'soviet' && y < 1929 ? 'Непманський ринок' : 'Ринок';

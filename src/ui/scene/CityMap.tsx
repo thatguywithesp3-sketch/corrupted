@@ -53,7 +53,11 @@ const INST_GLYPH: Record<G.InstId, string> = {
   charity: 'M0 2.2 C-2.6 .4 -2.6 -1.9 -1.2 -1.9 C-.5 -1.9 0 -1.3 0 -.9 C0 -1.3 .5 -1.9 1.2 -1.9 C2.6 -1.9 2.6 .4 0 2.2 Z',
   press: 'M1.9 -2.1 C.2 -1.4 -1 .2 -1.5 1.9 M1.9 -2.1 C1.4 -.4 .2 .6 -1.1 1.1 M-1.5 1.9 L-1.9 2.3',
   whisper: 'M-2 -1.4 H2 V.9 H-.2 L-1.3 2 V.9 H-2 Z M-1 -.3 H-.6 M-.2 -.3 H.2 M.6 -.3 H1',
-  okhrana: 'M-1.9 -1.9 L1.9 1.9 M1.9 -1.9 L-1.9 1.9 M-2.2 -1 L-1 -2.2 M2.2 -1 L1 -2.2'
+  okhrana: 'M-1.9 -1.9 L1.9 1.9 M1.9 -1.9 L-1.9 1.9 M-2.2 -1 L-1 -2.2 M2.2 -1 L1 -2.2',
+  // an anvil
+  works: 'M-2.3 -1.2 H1.6 C2.2 -1.2 2.4 -.8 2.4 -.6 H.9 V.2 C.9 .5 1.3 .9 1.6 1.2 H-1.4 C-1.1 .9 -.7 .5 -.7 .2 V-.6 C-1.6 -.6 -2.3 -.8 -2.3 -1.2 Z M-1.8 1.9 H2.2',
+  // an open book
+  univ: 'M0 -1.2 C-.8 -1.9 -1.8 -1.9 -2.3 -1.6 V1.5 C-1.8 1.2 -.8 1.2 0 1.9 C.8 1.2 1.8 1.2 2.3 1.5 V-1.6 C1.8 -1.9 .8 -1.9 0 -1.2 Z M0 -1.2 V1.9'
 };
 function InstSign({ id, x, y, on }: { id: G.InstId; x: number; y: number; on: boolean }) {
   const fill = id === 'charity' || id === 'okhrana';
@@ -97,7 +101,7 @@ function PowerMarks({ when }: { when: { era: number; year: number } }) {
         );
       })}
       {st && (
-        <g transform="translate(30 166) rotate(-9)" opacity=".62" fill="none" stroke={st.col}>
+        <g transform="translate(40 336) rotate(-9)" opacity=".62" fill="none" stroke={st.col}>
           {st.round ? <>
             <circle r="13" strokeWidth=".7" /><circle r="11.4" strokeWidth=".35" />
             <path id={'ps-' + st.t.length} d="M-9.6 0 A9.6 9.6 0 1 1 9.6 0 A9.6 9.6 0 1 1 -9.6 0" />
@@ -180,7 +184,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
   });
   items.sort((a, z) => a.y - z.y);
   return (
-    <svg viewBox="-4 -4 208 228" style={{ display: 'block', width: 1040 * zoom, height: 1140 * zoom, flexShrink: 0 }} aria-label="План Порт-Аурума">
+    <svg viewBox={`-4 -4 ${G.PLAN_W + 8} ${G.PLAN_H + 8}`} style={{ display: 'block', width: (G.PLAN_W + 8) * 5 * zoom, height: (G.PLAN_H + 8) * 5 * zoom, flexShrink: 0 }} aria-label="План Порт-Аурума">
       <defs>
         <filter id="mp-sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx=".5" dy=".9" stdDeviation=".5" floodColor="#000" floodOpacity=".55" /></filter>
         <linearGradient id="mp-brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F6E3A1" /><stop offset=".5" stopColor="#D9B45C" /><stop offset="1" stopColor="#A67F2E" /></linearGradient>
@@ -286,14 +290,18 @@ const INTERIOR: Record<G.InstId, string> = {
   charity: 'Усередині: ігуменя з книгою пожертв, черниці біля казана, сироти над юшкою. На стіні — дошка благодійників, під нею скринька.',
   press: 'Усередині: редактор за обідом приймає конверт, репортер Квілл пише в блокнот, цензор із Ратуші креслить червоним олівцем.',
   whisper: 'Усередині: перекупки, вантажники й шинкар. За кілька монет вони щодня розповідають на ринку, яка ви порядна людина.',
-  okhrana: 'Усередині: ротмістр над досьє, донощик мне шапку, у кутку — вилучені вальдорські прапори з бирками.'
+  okhrana: 'Усередині: ротмістр над досьє, донощик мне шапку, у кутку — вилучені вальдорські прапори з бирками.',
+  works: 'Усередині: ливарники біля печі, розплавлений чавун тече у форми; у конторі на антресолі Солонар і чиновник з міської управи підписують кошторис.',
+  univ: 'Усередині: актова зала з колонами, професор у мантії приймає вступний іспит, батько абітурієнта тисне руку ректорові довше, ніж треба.'
 };
 /** Era II, the war years 1914–1917 (and the people's militia of 1917) */
 const INTERIOR_WAR: Record<G.InstId, string> = {
   charity: 'Усередині: сироти війни над юшкою, ігуменя з книгою пожертв, товстий постачальник позує фотографу з одним мішком борошна, поранений солдат на милицях біля дверей.',
   press: 'Усередині: репортери за друкарськими машинками, мапа фронту в шпильках, телеграфна стрічка, редактор приймає конверт від постачальника, цензор у мундирі замазує рядки.',
   whisper: 'Усередині: черга солдаток по хліб, торговець ховає цукор під прилавок, інвалід продає сірники, перекупки шепочуться, посередник у котелку сипле монети під столом.',
-  okhrana: 'Усередині: жандармський ротмістр говорить по телефону, писар друкує, мапа фронту, справи «шпигунів»; на стіні портрет імператора й червоно-біло-жовтий прапор.'
+  okhrana: 'Усередині: жандармський ротмістр говорить по телефону, писар друкує, мапа фронту, справи «шпигунів»; на стіні портрет імператора й червоно-біло-жовтий прапор.',
+  works: 'Усередині: жінки й підлітки точать снарядні гільзи, ряди готових снарядів, армійський приймальник у шинелі з управителем рахують ящики.',
+  univ: 'Усередині: аудиторія перетворена на шпиталь, ліжка між лавами, сестри милосердя; кілька студентів у кутку над книгами.'
 };
 const MILITIA = 'Усередині: студенти-міліціонери з білими пов’язками й старими гвинтівками, на стіні світлий прямокутник від портрета імператора, сам портрет лежить долілиць; начальник з червоним бантом палить жандармські справи в грубці.';
 /** Era II, from 1918: the same buildings under the new order (public/art/interiors/<id>-e2.jpg) */
@@ -301,12 +309,16 @@ const INTERIOR2: Record<G.InstId, string> = {
   charity: 'Усередині: колишня трапезна монастиря, ікони забілено. Сироти в сірому над юшкою, завідувачка з журналом, завгосп виносить мішок борошна чорним ходом.',
   press: 'Усередині: редакторка з синім олівцем над коректурою, цензор у френчі креслить червоним, друкарка, портрет повернуто до стіни.',
   whisper: 'Усередині: непман у хутряному комірі рахує гроші, спекулянт продає годинники з-під поли, міліціонер дивиться вбік, черга з хлібними картками.',
-  okhrana: 'Усередині: напівпідвал під голою лампочкою, слідчий у шкірянці, наган біля склянки чаю, колишній купець мне капелюх, у кутку вилучене срібло з бирками.'
+  okhrana: 'Усередині: напівпідвал під голою лампочкою, слідчий у шкірянці, наган біля склянки чаю, колишній купець мне капелюх, у кутку вилучене срібло з бирками.',
+  works: 'Усередині: цех тресту з гаслами на кумачі, дошка показників виконання плану, червоний директор показує цех комісії, постачальник з артілі чекає біля контори.',
+  univ: 'Усередині: робфак — дорослі робітники в косоворотках за партами, викладач біля дошки з формулами, портрет на стіні, секретарка приймальної комісії з товстою папкою анкет.'
 };
 /** the institution's full name under the power in charge (Era II renames the same buildings) */
 function instTitle(s: GameState, p: G.Inst): string {
   const n = G.instName(s, p.id);
   if (s.era !== 2) return p.t;
+  if (p.id === 'works') return s.year >= 1922 ? 'Трест «Аурумсталь»' : p.t;
+  if (p.id === 'univ') return s.year >= 1922 ? 'Робітничий факультет' : s.year >= 1918 ? 'Народний університет' : p.t;
   return p.id === 'press' ? 'Редакція ' + n : p.id === 'charity' ? (n === 'Сиротинець' ? p.t : 'Дитячий будинок імені Паризької комуни')
     : p.id === 'okhrana' ? ({ Жандармерія: p.t, Міліція: 'Народна міліція', Губчека: 'Губернська надзвичайна комісія', ДПУ: 'Губвідділ ДПУ', НКВС: 'Управління НКВС' } as Record<string, string>)[n] || n : n === 'Ринок' ? p.t : 'Непманський ринок';
 }
@@ -317,6 +329,9 @@ function instSub(s: GameState, p: G.Inst): string {
   if (p.id === 'okhrana' && n !== 'Жандармерія') return n === 'Міліція' ? 'Народна міліція замість поліції. Ті самі люди, нові кокарди.' : 'Тут знають усе про всіх. І про вас теж: ваша папка лежить у тій самій шафі.';
   if (p.id === 'charity' && n === 'Дитбудинок') return 'Дитячий будинок у колишньому маєтку. Пожертви тепер звуться «шефською допомогою».';
   if (p.id === 'press' && s.year >= 1917) return 'Газета пише те, що треба. Питання лише — кому треба.';
+  if (p.id === 'works' && s.year >= 1922) return 'Ливарню Солонарів націоналізовано. Тепер це трест, і постачання йде через «свої» артілі.';
+  if (p.id === 'works' && s.year < 1918) return 'Ливарня працює на фронт. Армійські замовлення — найщедріші в місті.';
+  if (p.id === 'univ' && s.year >= 1918) return 'Двері відчинено «робітникам і селянам». Довідку про походження можна купити.';
   if (p.id === 'whisper' && n === 'Непманський ринок') return 'Непмани й перекупники знають, хто в місті береться за справи.';
   return p.sub;
 }
@@ -325,6 +340,9 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   const works: string[] = [];
   if (p.id === 'charity' && fm.fund) works.push(`Фонд роду: щороку ризик −${F.fund.calmYr}, народ +${F.fund.peopleYr}`);
   if (p.id === 'press' && fm.share) works.push(`Ваш пай: щороку ризик −${F.share.calmYr}, нападки преси вдвічі слабші`);
+  if (p.id === 'works' && fm.stake) works.push(`Ваш пай: щороку +${G.fmt(F.stake.incomeYr)} кр. чистими`);
+  if (p.id === 'univ' && fm.diploma) works.push('Ваш диплом висить у кабінеті');
+  if (p.id === 'univ') (fm.uni || []).forEach((id) => { const k = s.kids.find((x) => x.id === id); if (k && !k.gone) works.push(`${k.first} вчиться тут`); });
   if (p.id === 'whisper' && fm.whisper) works.push(`Шептуни працюють: щороку ризик −${F.whisper.calmYr}, коштують ${G.fmt(F.whisper.cost)} кр.`);
   return (
     <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 12px 12px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: 'rotate(-0.3deg)', zIndex: 2, borderTop: '6px solid #B8913C' }}>
@@ -694,7 +712,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const [key, setKey] = useState(false);
   const fitted = useRef(false);
   // the sheet must always cover the viewport: no bare desk below the plan
-  const minZ = () => { const el = sheet.current || root.current; return el ? Math.max(0.36, +(el.clientHeight / 1140).toFixed(2), +(el.clientWidth / 1040).toFixed(2)) : 0.7; };
+  const minZ = () => { const el = sheet.current || root.current; return el ? Math.max(0.25, +(el.clientHeight / ((G.PLAN_H + 8) * 5)).toFixed(2), +(el.clientWidth / ((G.PLAN_W + 8) * 5)).toFixed(2)) : 0.7; };
   const b = c.biz.find((x) => x.id === sel) || null;
   const rv = panel === 'riv' ? c.rivals.find((r) => r.id === selR) || null : null;
   const bRival = b ? c.rivals.find((r) => r.id === b.rival) || null : null;
@@ -715,8 +733,8 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
     const tm = setTimeout(() => {
       const w = sc.scrollWidth, h = sc.scrollHeight;
       const bp = b ? layoutShops(c.biz)[b.id] || b : null;
-      const px = bp && panel === 'biz' ? bp.x : inst ? inst.x : 100, py = bp && panel === 'biz' ? bp.y : inst ? inst.y - 6 : 110;
-      sc.scrollTo({ left: ((px + 4) / 208) * w - sc.clientWidth / 2, top: ((py + 4) / 228) * h - sc.clientHeight / 2, behavior: 'smooth' });
+      const px = bp && panel === 'biz' ? bp.x : inst ? inst.x : 160, py = bp && panel === 'biz' ? bp.y : inst ? inst.y - 6 : 140;
+      sc.scrollTo({ left: ((px + 4) / (G.PLAN_W + 8)) * w - sc.clientWidth / 2, top: ((py + 4) / (G.PLAN_H + 8)) * h - sc.clientHeight / 2, behavior: 'smooth' });
     }, 60);
     return () => clearTimeout(tm);
   }, [sel, selI, panel, zoom]);

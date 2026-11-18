@@ -116,17 +116,21 @@ export const bizInterior = (s: { era: number }, kind: string) => (s.era <= 2 && 
  *  The empire's plan is Era I's; the civil war scrawls barricades and burnt blocks over it; the councils reprint it
  *  in 1922 as a cheaper municipal edition with new names. */
 export type PlanLook = {
+  /** 'engraving' — the hand-tinted plan of Era I; 'plan' — the municipal survey of Era II (flat tints, grid) */
+  style: 'engraving' | 'plan';
   paper: string; ink: string; roofs: string[]; font: string; caps: boolean; steam: boolean; war: boolean;
   title: string; sub: string; names: Partial<Record<string, string>>; places: Partial<Record<string, string>>;
 };
-const PLAN_OLD: PlanLook = { paper: '#E8DBB8', ink: '#2A2014', roofs: ['#D9C39C', '#D0B58E', '#C8C0A8'], font: 'Old Standard TT, serif', caps: false, steam: false, war: false, title: 'ПОРТ-АУРУМ', sub: 'план міста', names: {}, places: {} };
+const PLAN_OLD: PlanLook = { style: 'engraving', paper: '#E8DBB8', ink: '#2A2014', roofs: ['#D9C39C', '#D0B58E', '#C8C0A8'], font: 'Old Standard TT, serif', caps: false, steam: false, war: false, title: 'ПОРТ-АУРУМ', sub: 'план міста', names: {}, places: {} };
 const PLAN_SOVIET: PlanLook = {
-  paper: '#E2DDC8', ink: '#232A30', roofs: ['#CFC6AE', '#C4BDA8', '#BDBAAE'], font: "'PT Sans', sans-serif", caps: true, steam: true, war: false,
+  style: 'plan', paper: '#E6E1CF', ink: '#232A30', roofs: ['#CFC6AE', '#C4BDA8', '#BDBAAE'], font: "'PT Sans', sans-serif", caps: true, steam: true, war: false,
   title: 'ПОРТ-АУРУМ', sub: 'план міста · губкомунгосп', names: { hill: 'Пагорб Свободи', podil: 'Червоний Поділ', sloboda: 'Робітнича слобода' },
   places: { Ратуша: 'Міськвиконком', Ливарня: '«Аурумсталь»', Собор: 'Собор (зачинено)' }
 };
-const PLAN_1914: PlanLook = { ...PLAN_OLD, steam: true, sub: 'план міста · 1914' };
-const PLAN_CIVIL: PlanLook = { ...PLAN_OLD, steam: true, war: true, sub: 'план міста · зі штабу' };
+// Era II is a survey plan throughout; the empire's edition keeps the old names, the councils rename the city
+const PLAN_E2 = { style: 'plan' as const, paper: '#E9E4D2', ink: '#262626', font: "'PT Sans', sans-serif", caps: true, steam: true };
+const PLAN_1914: PlanLook = { ...PLAN_OLD, ...PLAN_E2, title: 'ПОРТ-АУРУМ', sub: 'план міста · управа · 1914' };
+const PLAN_CIVIL: PlanLook = { ...PLAN_OLD, ...PLAN_E2, war: true, title: 'ПОРТ-АУРУМ', sub: 'план міста · зі штабу' };
 /** one object per power, so the memoised plan only redraws when the power changes */
 export function planLook(s: { era: number; year: number }): PlanLook {
   if (s.era !== 2) return PLAN_OLD;
