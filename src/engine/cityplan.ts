@@ -1,6 +1,7 @@
 // The engraved plan of Port-Aurum, generated in code: districts, blocks, houses, avenues, landmarks and
 // the lots on which small businesses stand. Deterministic (own seed), so every game and every save sees the
-// same city, and the plan never touches the game's random stream. Coordinates: 200 × 140 units, sea to the east.
+// same city, and the plan never touches the game's random stream. Coordinates: 300 × 360 units, sea to the east;
+// the bay cuts into the city and the town hall stands on its shore, as on the panorama.
 // Composite of Kyiv (hill, Podil), Odesa (grid, harbour), Lviv (market square, town hall), Kraków (green ring
 // round the old town) and Prague (river bend with a stone bridge).
 
@@ -10,19 +11,30 @@ export type Pt = [number, number];
 export interface Bldg { x: number; y: number; w: number; h: number; r: number; k: 0 | 1 | 2 }
 export interface Lot { id: number; x: number; y: number; r: number; w: number; h: number; district: District }
 
-export const PLAN_W = 200, PLAN_H = 220;
+export const PLAN_W = 300, PLAN_H = 360;
+
+/** the sea and the bay (Аурумська затока): the coast from the north edge round the bay to the south edge */
+export const COAST: Pt[] = [[258, -4], [252, 30], [246, 58], [232, 76], [205, 88], [186, 100], [178, 118], [176, 140], [180, 165], [188, 190], [205, 200], [228, 206], [248, 214], [262, 240], [264, 280], [266, 320], [270, 364]];
+/** the lighthouse island in the mouth of the bay */
+export const ISLAND: Pt = [266, 150];
+/** the river Aurumka, from the west into the bay's south-western corner; the stone bridge carries the avenue over it */
+export const RIVER = 'M-4 262 C30 258 70 266 100 262 S130 252 146 243 S170 220 186 190';
+export const BRIDGE: Pt = [147, 243];
 
 export const DISTRICTS: Record<District, { t: string; poly: Pt[]; label: Pt; /** rough centre, for rivals' influence */ c: Pt }> = {
-  hill: { t: 'Замковий пагорб', poly: [[8, 12], [62, 7], [70, 34], [60, 54], [22, 58], [6, 36]], label: [34, 4.5], c: [36, 32] },
-  old: { t: 'Старе місто', poly: [[76, 13], [134, 10], [138, 50], [128, 64], [80, 64], [72, 40]], label: [104, 7], c: [105, 37] },
-  market: { t: 'Ринок', poly: [[74, 72], [132, 70], [136, 112], [78, 116]], label: [104, 77], c: [105, 92] },
-  podil: { t: 'Поділ', poly: [[6, 68], [60, 64], [66, 98], [58, 120], [10, 122]], label: [33, 72], c: [34, 94] },
-  port: { t: 'Порт', poly: [[142, 12], [176, 14], [179, 118], [150, 117], [146, 70]], label: [160, 8], c: [161, 66] },
-  // south of the river: the capital's newer, working half
-  zar: { t: 'Заріччя', poly: [[6, 140], [64, 138], [70, 170], [62, 204], [10, 206]], label: [34, 143], c: [36, 172] },
-  station: { t: 'Вокзал', poly: [[76, 142], [134, 140], [138, 178], [80, 182]], label: [106, 145.5], c: [107, 162] },
-  univ: { t: 'Університет', poly: [[76, 188], [134, 186], [138, 212], [80, 214]], label: [107, 191], c: [107, 202] },
-  sloboda: { t: 'Заводи', poly: [[144, 136], [174, 134], [176, 206], [148, 208]], label: [160, 140], c: [160, 172] }
+  // the castle hill with the monastery, north-west (the left of the panorama)
+  hill: { t: 'Замковий пагорб', poly: [[14, 14], [105, 12], [112, 60], [98, 104], [52, 110], [14, 92]], label: [56, 22], c: [56, 60] },
+  // the old town on the bay's north-western shore; the town hall stands on the water
+  old: { t: 'Старе місто', poly: [[114, 14], [250, 14], [246, 54], [228, 74], [200, 86], [182, 98], [172, 122], [122, 126], [110, 82], [114, 40]], label: [182, 22], c: [170, 66] },
+  market: { t: 'Ринок', poly: [[120, 132], [170, 128], [174, 150], [178, 172], [170, 196], [150, 214], [118, 210]], label: [144, 138], c: [146, 172] },
+  podil: { t: 'Поділ', poly: [[14, 100], [52, 118], [100, 112], [114, 130], [114, 206], [100, 236], [14, 244]], label: [52, 126], c: [60, 178] },
+  // the harbour on the bay's southern shore
+  port: { t: 'Порт', poly: [[184, 204], [206, 206], [228, 212], [250, 218], [260, 240], [258, 260], [196, 260], [184, 234]], label: [226, 236], c: [222, 234] },
+  // south of the river: the newer, working half
+  zar: { t: 'Заріччя', poly: [[14, 270], [100, 266], [134, 262], [132, 300], [130, 350], [14, 352]], label: [62, 278], c: [64, 310] },
+  station: { t: 'Вокзал', poly: [[140, 264], [164, 244], [182, 246], [190, 270], [192, 302], [138, 304]], label: [166, 262], c: [166, 282] },
+  univ: { t: 'Університет', poly: [[136, 310], [192, 308], [196, 352], [134, 354]], label: [166, 316], c: [166, 332] },
+  sloboda: { t: 'Заводи', poly: [[198, 268], [258, 266], [262, 300], [266, 352], [202, 354]], label: [232, 274], c: [232, 310] }
 };
 
 // ---------------------------------------------------------------- tiny seeded rng
@@ -51,33 +63,43 @@ const shrink = (poly: Pt[], k: number): Pt[] => { const c = centroid(poly); retu
 // ---------------------------------------------------------------- static decor (drawn by the map component)
 
 /** open spaces where no houses stand: squares, the castle, parks. [x, y, rx, ry] */
+// Each painted place on the map (src/ui/scene/mapLayout.ts DECOR, HOMES, OUR_HOME; INSTS in city.ts) stands in the
+// middle of its own clearing: keep these centres equal to those base points when a place moves.
 export const CLEARINGS: [number, number, number, number][] = [
-  [104, 37, 9, 7], // town-hall square
-  [104, 92, 15, 8], // market square
-  [30, 25, 9, 8], // castle
-  [50, 18, 6, 5], // monastery
-  [26, 92, 6, 5], // Podil green
-  [116, 22, 4, 4], // cathedral yard
-  [92, 52, 5, 3.5], // opera
-  [106, 151, 10, 4.5], // station square
-  [107, 201, 13, 6], // university garden
-  [30, 171, 4.5, 4], // Zarichchia church
-  [160, 150, 3, 3] // works yard
+  [170, 111, 12, 6], // the town hall on its square by the water
+  [150, 183, 16, 8], // the market hall on the market square
+  [122, 157, 12, 6], // the opera
+  [165, 291, 17, 7], // the station and its square
+  [165, 345, 15, 6], // the university in its garden
+  [200, 49, 10, 6], // the cathedral yard
+  [216, 221, 11, 5], // the customs house on the quay
+  [230, 317, 14, 6], // the works yard
+  [48, 151, 11, 6], // the orphanage
+  [88, 95, 12, 7], // the gendarmerie rock
+  [132, 61, 9, 5], // the newspaper
+  [164, 59, 9, 5], // our house
+  [228, 39, 10, 5], // the Solonars
+  [124, 33, 7, 4], // the Bergs
+  [50, 51, 10, 6], // the castle
+  [80, 30, 7, 5], // the monastery
+  [40, 205, 6, 5], // Podil green
+  [60, 312, 5, 4] // Zarichchia church
 ];
 
 /** main avenues, drawn over the blocks */
 export const ROADS: string[] = [
-  'M30 33 C38 44 56 40 72 44 L104 37 L146 40', // castle road → old town → port
-  'M104 10 L104 37 L104 66 L104 92 L104 118', // Ratushna avenue, north to south
-  'M60 92 L78 92 L104 92 L136 92 L176 92', // market street to the quay
-  'M12 70 C30 76 48 72 60 78 L78 82', // Podil lane
-  'M176 14 L177 60 L178 118', // quay promenade
-  'M40 56 L76 50', // from the hill to the opera
-  'M104 118 L104 140 L106 160 L107 212', // the avenue goes on over the bridge
-  'M8 160 C30 166 50 158 76 160 L106 160 L136 160 L176 158', // south cross street
-  'M34 138 L36 172 L34 205', // Zarichchia spine
-  'M178 130 L177 170 L178 208', // south quay
-  'M80 196 L136 194' // university row
+  'M50 54 C70 72 95 80 120 76 L165 70 L200 60 L238 46', // castle road → old town → the north headland
+  'M150 14 L150 70 L162 106 L150 150 L148 190 L146 228 L147 250', // Ratushna avenue, north to the bridge
+  'M147 250 L162 272 L165 300 L165 354', // the avenue goes on south over the bridge
+  'M56 176 L118 178 L148 178 L176 172', // market street to the bay
+  'M238 62 C214 84 192 94 182 112 C174 132 174 160 182 184', // the bay quay
+  'M18 132 C45 142 75 134 114 140', // Podil lane
+  'M70 104 L106 128 L125 150', // down from the hill to the opera
+  'M190 214 L212 222 L254 232', // harbour road
+  'M14 292 C50 298 90 290 136 292 L196 290 L260 286', // south cross street
+  'M60 272 L62 310 L60 350', // Zarichchia spine
+  'M262 246 L262 300 L266 350', // south shore road
+  'M136 330 L194 330' // university row
 ];
 
 // ---------------------------------------------------------------- the city
@@ -105,8 +127,8 @@ function build(): Plan {
   (Object.keys(CFG) as District[]).forEach((d) => {
     const cf = CFG[d], c = centroid(cf.poly), a = (cf.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
     const [bw, bh] = cf.cell, mine: Bldg[] = [];
-    for (let u = -60; u < 60; u += bw + cf.street) {
-      for (let v = -60; v < 60; v += bh + cf.street) {
+    for (let u = -100; u < 100; u += bw + cf.street) {
+      for (let v = -100; v < 100; v += bh + cf.street) {
         // each block turns a little, like a real street pattern grown over centuries
         const ja = ((rnd() - 0.5) * cf.jit * Math.PI) / 180;
         const bcx = u + bw / 2, bcy = v + bh / 2;

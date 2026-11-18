@@ -17,7 +17,8 @@ import { WindowLight, phaseOf } from './scene/WindowLight';
 import { Panorama, type PanoKind } from './scene/Panorama';
 import { Chronicle } from './scene/Chronicle';
 import { MeterPops } from './scene/MeterPops';
-import { DeskProps } from './scene/DeskProps';
+import { DeskProps, PhoneRing } from './scene/DeskProps';
+import { skin, skinOf } from './skin';
 import { CityMap } from './scene/CityMap';
 import { PauseFolio } from './scene/PauseFolio';
 import { DayDone } from './scene/DayDone';
@@ -115,7 +116,40 @@ function withSlots(root: DcNode): DcNode {
   tok(r);
   // the blotter is real leather: a painted tile in the same engraving style, over the old dotted colour
   const blot = r.ch[0];
-  if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: linear-gradient(rgba(10,20,12,0.18), rgba(10,20,12,0.18)), url(art/desk/leather.jpg); background-size: 100% 100%, 200px 200px;"); });
+  if (blot && blot.t === 'if') blot.ch.forEach((c) => { if (c.t === 'e' && /tx-leather/.test(c.a.class || '')) c.a.style = (c.a.style || '').replace(/background-image: [^;]+; background-size: [^;]+;/, "background-image: {{deskImg}}; background-size: {{deskSize}};"); });
+  // Era II: the letter becomes a telephonogram (the medium 'phone' reuses the letter's paper). The wax seal gives way
+  // to the reception's violet «ПРИЙНЯТО», a numbered heading with the time goes on top, the photo comes from the
+  // personal file, and the clerk who took the call signs it instead of the caller.
+  const phone = (n: DcNode): boolean => {
+    if (n.t === 'x') return false;
+    if (n.t === 'if' && n.v === '{{dg.isLetter}}') {
+      const paper = (n.ch[0] as Extract<DcNode, { t: 'e' }>).ch.find((c) => c.t === 'e' && /background-color: #F3E9D2/.test(c.a.style || '')) as Extract<DcNode, { t: 'e' }> | undefined;
+      if (!paper) return true;
+      const si = paper.ch.findIndex((c) => c.t === 'e' && c.ch.some((x) => x.t === 'x' && x.v === '{{dg.initial}}'));
+      if (si >= 0) {
+        const seal = paper.ch[si];
+        const stamp = E('div', 'position: absolute; right: 10px; top: 10px; padding: 2px 7px; border: 2px solid #5B3F8C; border-radius: 3px; color: #5B3F8C; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; transform: rotate(-7deg); opacity: 0.8; mix-blend-mode: multiply', [{ t: 'x', v: 'ПРИЙНЯТО' }]);
+        paper.ch.splice(si, 1, { t: 'if', v: '{{dg.notPhone}}', ch: [seal] } as DcNode, { t: 'if', v: '{{dg.isPhone}}', ch: [stamp] } as DcNode);
+      }
+      const head = E('div', 'margin: -4px 0 10px; padding-bottom: 6px; border-bottom: 1.5px solid #1F1A14; color: #1F1A14', [
+        E('div', 'font-size: 12px; font-weight: 700; letter-spacing: 2.5px', [{ t: 'x', v: 'ТЕЛЕФОНОГРАМА № {{dg.phNo}}' }]),
+        E('div', 'font-size: 11px; color: #5A4630; margin-top: 2px', [{ t: 'x', v: 'Передав: {{dg.name}} · о {{dg.phTime}}' }])
+      ]);
+      paper.ch.splice(si >= 0 ? si + 2 : 0, 0, { t: 'if', v: '{{dg.isPhone}}', ch: [head] } as DcNode);
+      const words = (m: DcNode) => { if (m.t === 'x') { if (m.v === 'ФОТОАТЕЛЬЄ «АУРУМ»') m.v = '{{dg.studio}}'; else if (m.v === '— {{dg.sign}}') m.v = '{{dg.signLine}}'; return; } m.ch.forEach(words); };
+      words(paper);
+      return true;
+    }
+    return n.ch.some(phone);
+  };
+  phone(r);
+  // the state's sign on letterheads and the patron's letters follows the power (stateArms in skin.ts)
+  const armsOf = (n: DcNode) => {
+    if (n.t === 'x') { if (n.v === 'КАНЦЕЛЯРІЯ ГУБЕРНАТОРА ВАЛЬДОРІЇ') n.v = '{{armsLabel}}'; return; }
+    if (n.t === 'e' && n.n === 'img' && n.a.src === 'art/brand/romei-arms.png') { n.a.src = '{{armsSrc}}'; n.a.alt = '{{armsAlt}}'; n.a.style = (n.a.style || '') + '; filter: {{armsFilter}}'; }
+    n.ch.forEach(armsOf);
+  };
+  armsOf(r);
   // the prototype's inkwell peeked out from under the HUD as a black circle at the right edge (the desk props replace it)
   const ink = (n: DcNode) => { if (n.t !== 'x') { n.ch = n.ch.filter((c) => !(c.t === 'e' && /top: \{\{inkTop\}\}/.test(c.a.style || ''))); n.ch.forEach(ink); } };
   ink(r);
@@ -228,13 +262,14 @@ export function Game() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
+      <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era) + ' skin-' + skinOf(s)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
         {mode === 'menu' ? (
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { try { localStorage.removeItem('corrupted.form.step'); } catch { /* no storage */ } setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : s.screen === 'chronicle' ? <Chronicle key="chron" s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
-            {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps />}
+            {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps props={skin(s).props} />}
+            {scenes && s.era === 2 && s.screen === 'office' && view.isDialog && <PhoneRing k={String(view.docKey)} />}
             {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
         )}
