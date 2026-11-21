@@ -73,6 +73,7 @@ function withSlots(root: DcNode): DcNode {
   mark(r);
   stampSlots(r);
   endingSheet(r, true);
+  dialogZones(r);
   // the objects on the desk lie inside the desk's own layer, right over the blotter and under everything else
   // (the template root is an isolated stacking context, so outside it they would paint over the HUD and the papers)
   r.ch.splice(r.ch.findIndex((n) => n.t === 'if' && n.v === '{{L.blotter}}') + 1, 0, slot('desk'));
@@ -214,11 +215,32 @@ function endingSheet(r: DcNode, shared: boolean) {
   };
   walk(r, null);
 }
-/** eras III–VII keep their own templates; only the closed-paper slips and the final sheet are adjusted */
+/** Zones of a conversation screen (letter, telephonogram, call, chat): the message area scrolls inside itself and
+ *  never paints over the answers; the answers panel is its own layer at the bottom with a soft edge above it
+ *  (a long telephonogram used to run under «Що сказати в трубку», its clerk's line showing through). */
+function dialogZones(r: DcNode) {
+  const walk = (n: DcNode) => {
+    if (n.t === 'x') return;
+    if (n.t === 'if' && n.v === '{{isDialog}}') {
+      n.ch.forEach((screen) => {
+        if (screen.t !== 'e') return;
+        screen.ch.forEach((c) => {
+          if (c.t === 'if' && /\{\{dg\.is(Letter|Call|Chat)\}\}/.test(c.v)) c.ch.forEach((area) => { if (area.t === 'e' && /flex: 1; min-height: 0/.test(area.a.style || '')) { area.a.style += '; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding-bottom: 14px'; area.ch.forEach((x) => { if (x.t === 'e' && !/flex: 1/.test(x.a.style || '')) x.a.style = (x.a.style || '') + '; flex-shrink: 0'; }); } });
+          if (c.t === 'e' && /\{\{dg\.optsBg\}\}/.test(c.a.style || '')) c.a.style += '; position: relative; z-index: 1; box-shadow: 0 -10px 16px rgba(0,0,0,0.45)';
+        });
+      });
+      return;
+    }
+    n.ch.forEach(walk);
+  };
+  walk(r);
+}
+/** eras III–VII keep their own templates; only the closed-paper slips, the final sheet and the dialog zones are adjusted */
 function withStampSlot(root: DcNode): DcNode {
   const r = JSON.parse(JSON.stringify(root)) as DcNode;
   stampSlots(r);
   endingSheet(r, false);
+  dialogZones(r);
   return r;
 }
 const rootFor = (era: number) => {

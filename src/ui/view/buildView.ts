@@ -327,7 +327,7 @@ export function buildView(ctx: Ctx): any {
       hatOn: (md === 'letter' || ph) && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: w.kind === 'rival' ? (ph ? 'дзвонить сам' : 'передав посильний') : dlgW.place ? dlgW.place[kd] : '',
       // Era II: the call is written down in the reception as a telephonogram — a numbered form with the time,
       // who passed it and who took it; the photograph is clipped to it from the file
-      isPhone: ph, notPhone: !ph, phNo: String(40 + s.served * 3 + s.doc), phTime: hh + ':' + mm, studio: ph ? 'З ОСОБОВОЇ СПРАВИ' : 'ФОТОАТЕЛЬЄ «АУРУМ»', signLine: ph ? 'Прийняв черговий секретар' : '— ' + v.dg.name,
+      isPhone: ph, notPhone: !ph, phNo: String(40 + s.served * 3 + s.doc), phTime: hh + ':' + mm, studio: ph ? (w.kind === 'fam' ? 'ФОТО З ВАШОГО СТОЛУ' : 'З ОСОБОВОЇ СПРАВИ') : 'ФОТОАТЕЛЬЄ «АУРУМ»', signLine: ph ? 'Прийняв черговий секретар' : '— ' + v.dg.name,
       device: kd === 'kid' && md === 'call' ? (s.era >= 5 ? 'Мобільний · дзвонить родина' : 'Домашній телефон') : dlgW.device || '', timer: '00:' + (10 + ((s.served * 13) % 49)),
       glow: dlgW.glow || '#1D2A3A', accent: dlgW.accent || '#4F8BE0', status: kd === 'journo' ? 'друкує…' : 'в мережі', app: dlgW.app || '', chatNote: dlgW.note || '', time1: hh + ':' + mm, time2: hh + ':' + (mm + 1),
       screenBg: md === 'letter' || ph ? '#2A1A10' : md === 'chat' ? '#0E1621' : '#0D1117', optsBg: md === 'letter' || ph ? '#2A1A10' : md === 'chat' ? '#17212B' : '#0D1117',
