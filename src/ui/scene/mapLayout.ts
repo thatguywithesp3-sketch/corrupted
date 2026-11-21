@@ -17,6 +17,11 @@ export const OUR_HOME = { x: 164, y: 60, art: 'grabs' };
 export const shopArt = (id: string) => 'shop' + (1 + ([...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 4));
 export const spriteH = (art: string, w: number) => w * (ASPECT[art] || 1);
 
+/** the blank margin of the sheet around the plan, so the buttons over the map never hide a building or a name
+ *  (top: the money pills and ✕; bottom: «Розклад сил» and the zoom buttons) */
+export const MAP_PAD = { l: 18, t: 36, r: 18, b: 44 };
+/** the whole sheet in plan units: x, y, width, height */
+export const SHEET = { x: -4 - MAP_PAD.l, y: -4 - MAP_PAD.t, w: G.PLAN_W + 8 + MAP_PAD.l + MAP_PAD.r, h: G.PLAN_H + 8 + MAP_PAD.t + MAP_PAD.b };
 export const INST_W: Record<G.InstId, number> = { charity: 15, press: 12, whisper: 20, okhrana: 17, works: 19, univ: 21 };
 export const HOME_W: Record<string, number> = { weisman: 14, berg: 8, graf: 13, grabs: 12 };
 

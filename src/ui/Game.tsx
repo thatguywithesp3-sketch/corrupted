@@ -17,7 +17,7 @@ import { WindowLight, phaseOf } from './scene/WindowLight';
 import { Panorama, type PanoKind } from './scene/Panorama';
 import { Chronicle } from './scene/Chronicle';
 import { MeterPops } from './scene/MeterPops';
-import { DeskProps, PhoneRing } from './scene/DeskProps';
+import { DeskProps, PhoneRing, StampSlip } from './scene/DeskProps';
 import { skin, skinOf } from './skin';
 import { CityMap } from './scene/CityMap';
 import { PauseFolio } from './scene/PauseFolio';
@@ -67,10 +67,13 @@ function withSlots(root: DcNode): DcNode {
     if (n.t === 'x') return;
     if (n.t === 'e' && /transform: rotate\(\{\{L\.docRot\}\}\)/.test(n.a.style || '')) { n.a.class = ((n.a.class || '') + ' m-doc-in').trim(); n.a['data-k'] = '{{docKey}}'; }
     if (n.t === 'if' && n.v === '{{isDialog}}') n.ch.forEach((c) => { if (c.t === 'e') { c.a.class = ((c.a.class || '') + ' m-doc-in').trim(); c.a['data-k'] = '{{docKey}}'; } });
-    if (n.t === 'if' && n.v === '{{hasStamp}}') n.ch.forEach((c) => { if (c.t === 'e') { c.a.class = ((c.a.class || '') + ' m-stamp').trim(); c.a['data-k'] = '{{docKey}}'; } });
     n.ch.forEach(mark);
   };
   mark(r);
+  stampSlots(r);
+  // the objects on the desk lie inside the desk's own layer, right over the blotter and under everything else
+  // (the template root is an isolated stacking context, so outside it they would paint over the HUD and the papers)
+  r.ch.splice(r.ch.findIndex((n) => n.t === 'if' && n.v === '{{L.blotter}}') + 1, 0, slot('desk'));
   // texture pass: every pressable object gets the material it is made of (leather, paper, brass)
   const DARK = /#1F1A14|#2E261C|#14161F|#2C2C2E|#5E1A12|#3A2A1A/i, LIGHT = /#F7F0DE|#E9E1C2|#EFE4C8|#FFFDF6|#F4EAD0/i;
   const tex = (n: DcNode) => {
@@ -171,8 +174,26 @@ function withSlots(root: DcNode): DcNode {
   return r;
 }
 const SLOTTED = new Map<number, DcNode>();
+/** the closed paper: a React slip above the next document instead of the template's hidden stamped sheet, and the
+ *  same slip on the call / chat screen just above the answers (a dialog covers the papers, so it would never show) */
+function stampSlots(r: DcNode) {
+  const slot = (name: string): DcNode => ({ t: 'e', n: 'dc-slot', a: { name }, ch: [] });
+  const walk = (n: DcNode) => {
+    if (n.t === 'x') return;
+    if (n.t === 'if' && n.v === '{{hasStamp}}') { n.ch = [slot('stamp')]; return; }
+    if (n.t === 'if' && n.v === '{{isDialog}}') n.ch.forEach((c) => { if (c.t !== 'e') return; const i = c.ch.findIndex((x) => x.t === 'e' && /\{\{dg\.optsBg\}\}/.test(x.a.style || '')); if (i >= 0) c.ch.splice(i, 0, slot('stampDlg')); });
+    n.ch.forEach(walk);
+  };
+  walk(r);
+}
+/** eras III–VII keep their own templates; only the closed-paper slips are plugged in */
+function withStampSlot(root: DcNode): DcNode {
+  const r = JSON.parse(JSON.stringify(root)) as DcNode;
+  stampSlots(r);
+  return r;
+}
 const rootFor = (era: number) => {
-  if (!SCENE_ERAS.has(era)) return VIEWS[era - 1].root;
+  if (!SCENE_ERAS.has(era)) { if (!SLOTTED.has(era)) SLOTTED.set(era, withStampSlot(VIEWS[era - 1].root)); return SLOTTED.get(era)!; }
   // every scene era shares Era I's template (the skeleton); the era brings its own look values (theme.look) and CSS
   if (!SLOTTED.has(era)) SLOTTED.set(era, withSlots(VIEWS[0].root));
   return SLOTTED.get(era)!;
@@ -254,21 +275,27 @@ export function Game() {
       family: <FamilyStrip s={s} onOpen={() => setUi({ album: true })} onMap={MAP_SCREENS.has(s.screen) ? () => { if (!s.city || s.city.v !== G.CITY_V) run(G.ensureCity); setMapOpen(true); } : undefined} />,
       album: ui.album ? <FamilyAlbum s={s} onClose={() => setUi({ album: false })} /> : null,
       info: ui.info ? <MeterInfo s={s} m={ui.info} onClose={() => setUi({ info: null })} /> : null,
-      legend: <MeterLegend s={s} open={(m) => setUi({ info: m })} />
+      legend: <MeterLegend s={s} open={(m) => setUi({ info: m })} />,
+      stamp: null,
+      desk: s.screen === 'office' && !G.officeDone(s) && !v.isDialog && !ui.hudOpen && !ui.album && !ui.info ? <DeskProps props={skin(s).props} /> : null
     };
+    // the closed paper above the next one, in every era (a carbon copy, a fax, a sent mail, a chat bubble…)
+    const slip = (inline: boolean) => (v.hasStamp && s.lastDec ? <StampSlip era={s.era} no={s.doc} answer={s.lastDec.t} word={v.stampT} S={v.S} k={v.docKey} inline={inline} /> : null);
+    v.slots = { ...(v.slots || {}), stamp: slip(false), stampDlg: slip(true) };
     return v;
   }, [s, ui, run, setUi, scenes, pano]);
   useEffect(() => { if (!MAP_SCREENS.has(s.screen)) setMapOpen(false); }, [s.screen]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+    // the frame keeps its 390×844 layout box and is only scaled visually, so it overflows the screen: `clip` (and the
+    // reset on scroll for older browsers) stops focus or a scrollTo from ever scrolling the stage and shifting the game up
+    <div onScroll={(e) => { e.currentTarget.scrollTop = 0; e.currentTarget.scrollLeft = 0; }} style={{ position: 'fixed', inset: 0, background: '#0b0a08', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'clip' }}>
       <div className={'era-' + (mode === 'menu' || s.screen === 'form' ? 1 : s.era) + ' skin-' + skinOf(s)} style={{ position: 'relative', width: W, height: H, transform: `scale(${k})`, transformOrigin: 'center', flexShrink: 0 }}>
         {mode === 'menu' ? (
           <MainMenu save={hasSave ? s : null} onContinue={() => setMode('play')} onNew={() => { try { localStorage.removeItem('corrupted.form.step'); } catch { /* no storage */ } setS(G.newGame(newSeed())); setUiState(freshUi()); setMode('play'); }} />
         ) : (
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : s.screen === 'chronicle' ? <Chronicle key="chron" s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
-            {scenes && s.screen === 'office' && !G.officeDone(s) && !view.isDialog && !ui.hudOpen && !ui.album && !ui.info && !mapOpen && <DeskProps props={skin(s).props} />}
             {scenes && s.era === 2 && s.screen === 'office' && view.isDialog && <PhoneRing k={String(view.docKey)} />}
             {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>

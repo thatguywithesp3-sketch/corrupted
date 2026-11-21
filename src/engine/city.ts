@@ -536,10 +536,18 @@ export const rivalPortrait = (r: Rival) => r.portrait || `art/rivals/${r.id}${r.
 
 /** The city the heir takes over (same era): the shops, our roofs, the magnates and their grudges stay;
  *  each magnate's house passes to its own heir. A collapse loses our roofs: owners stop paying a fallen family. */
+/** a new head of the house: the diploma was the old head's own and the university list named the old head's
+ *  children; after a collapse the foundry share goes with the confiscated roofs */
+function newHead(c: CityState, collapse: boolean) {
+  if (!c.fame) return;
+  delete c.fame.diploma; delete c.fame.uni;
+  if (collapse) delete c.fame.stake;
+}
 export function inheritCity(old: CityState, collapse: boolean): CityState {
   const c: CityState = structuredClone(old);
   c.done = []; c.today = []; c.last = null; c.tribute = 0; c.news = [];
   if (collapse) c.biz.forEach((b) => { if (b.status === 'roof') { b.status = 'open'; b.tribute = 0; b.grudge = 0; } });
+  newHead(c, collapse);
   c.rivals.forEach((r) => {
     const h = RIVAL_HEIRS[r.id];
     if (!h || (r.gen && r.gen > 1)) return;
@@ -812,5 +820,6 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
 export function carryCity(old: CityState): CityState {
   const c: CityState = JSON.parse(JSON.stringify(old));
   c.done = []; c.today = []; c.last = null; c.tribute = 0; c.news = [];
+  newHead(c, false);
   return c;
 }

@@ -21,7 +21,7 @@ const short = (b: Biz) => b.kind.split(' ')[0];
 // name is washed, the magnates' houses, our own house, the shops we can touch. The rest of the city stays a
 // quiet engraved wash underneath. Sprites are hand-tinted engravings (public/art/map), anchored by their base.
 import { skin, interiorSrc, interiorPeriod, mapArt, bizInterior, planLook } from '../skin';
-import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops } from './mapLayout';
+import { DECOR, HOMES, OUR_HOME, INST_W, HOME_W, shopArt, spriteH, layoutShops, SHEET } from './mapLayout';
 
 /** a painted building standing on a little clearing; its base sits on (x, y) */
 function Sprite({ art, src, x, y, w, dim, quiet }: { art: string; src?: string; x: number; y: number; w: number; dim?: boolean; quiet?: boolean }) {
@@ -184,7 +184,7 @@ function Plan({ biz, sel, onPick, zoom, rivals, marks, selInst, onInst, onRival,
   });
   items.sort((a, z) => a.y - z.y);
   return (
-    <svg viewBox={`-4 -4 ${G.PLAN_W + 8} ${G.PLAN_H + 8}`} style={{ display: 'block', width: (G.PLAN_W + 8) * 5 * zoom, height: (G.PLAN_H + 8) * 5 * zoom, flexShrink: 0 }} aria-label="План Порт-Аурума">
+    <svg viewBox={`${SHEET.x} ${SHEET.y} ${SHEET.w} ${SHEET.h}`} style={{ display: 'block', width: SHEET.w * 5 * zoom, height: SHEET.h * 5 * zoom, flexShrink: 0 }} aria-label="План Порт-Аурума">
       <defs>
         <filter id="mp-sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx=".5" dy=".9" stdDeviation=".5" floodColor="#000" floodOpacity=".55" /></filter>
         <linearGradient id="mp-brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F6E3A1" /><stop offset=".5" stopColor="#D9B45C" /><stop offset="1" stopColor="#A67F2E" /></linearGradient>
@@ -712,7 +712,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
   const [key, setKey] = useState(false);
   const fitted = useRef(false);
   // the sheet must always cover the viewport: no bare desk below the plan
-  const minZ = () => { const el = sheet.current || root.current; return el ? Math.max(0.25, +(el.clientHeight / ((G.PLAN_H + 8) * 5)).toFixed(2), +(el.clientWidth / ((G.PLAN_W + 8) * 5)).toFixed(2)) : 0.7; };
+  const minZ = () => { const el = sheet.current || root.current; return el ? Math.max(0.25, +(el.clientHeight / (SHEET.h * 5)).toFixed(2), +(el.clientWidth / (SHEET.w * 5)).toFixed(2)) : 0.7; };
   const b = c.biz.find((x) => x.id === sel) || null;
   const rv = panel === 'riv' ? c.rivals.find((r) => r.id === selR) || null : null;
   const bRival = b ? c.rivals.find((r) => r.id === b.rival) || null : null;
@@ -734,7 +734,7 @@ export function CityMap({ s, run, focus, onClose }: { s: GameState; run: Run; fo
       const w = sc.scrollWidth, h = sc.scrollHeight;
       const bp = b ? layoutShops(c.biz)[b.id] || b : null;
       const px = bp && panel === 'biz' ? bp.x : inst ? inst.x : 160, py = bp && panel === 'biz' ? bp.y : inst ? inst.y - 6 : 140;
-      sc.scrollTo({ left: ((px + 4) / (G.PLAN_W + 8)) * w - sc.clientWidth / 2, top: ((py + 4) / (G.PLAN_H + 8)) * h - sc.clientHeight / 2, behavior: 'smooth' });
+      sc.scrollTo({ left: ((px - SHEET.x) / SHEET.w) * w - sc.clientWidth / 2, top: ((py - SHEET.y) / SHEET.h) * h - sc.clientHeight / 2, behavior: 'smooth' });
     }, 60);
     return () => clearTimeout(tm);
   }, [sel, selI, panel, zoom]);

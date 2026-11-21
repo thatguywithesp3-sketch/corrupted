@@ -469,3 +469,16 @@ describe('Era II: the city under each power', () => {
     expect(G.condOk({ ...s, year: 1925 }, nep.cond)).toBe(true);
   });
 });
+
+describe('foundry and university', () => {
+  it('a new head brings no diploma; a collapse loses the foundry share', () => {
+    const s = G.ensureCity({ ...G.toOffice(G.signForm(G.newGame(9))), clean: 5000, cash: 2000 } as GameState);
+    let n = G.actOnInst(s, 'works', 'stake');
+    n = G.actOnInst(n, 'univ', 'diploma');
+    expect(n.city!.fame!.stake && n.city!.fame!.diploma).toBe(true);
+    const heir = G.inheritCity(n.city!, false), fall = G.inheritCity(n.city!, true);
+    expect(heir.fame!.diploma).toBeUndefined();
+    expect(heir.fame!.stake).toBe(true);
+    expect(fall.fame!.stake).toBeUndefined();
+  });
+});

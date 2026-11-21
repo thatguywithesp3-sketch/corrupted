@@ -10,7 +10,7 @@
 import { memo } from 'react';
 import * as G from '../../engine';
 import type { PlanLook } from '../skin';
-import { DECOR } from './mapLayout';
+import { DECOR, SHEET } from './mapLayout';
 
 const INK = '#2A2014', PAPER = '#E8DBB8', ROAD = '#F0E6C6';
 const f = (n: number) => n.toFixed(2);
@@ -105,8 +105,8 @@ function PlanArtInner({ look }: { look: PlanLook }) {
         <radialGradient id="pa-stain" cx=".5" cy=".5" r=".5"><stop offset=".78" stopColor="#8A6A30" stopOpacity="0" /><stop offset=".9" stopColor="#8A6A30" stopOpacity=".3" /><stop offset="1" stopColor="#8A6A30" stopOpacity="0" /></radialGradient>
         <clipPath id="pa-sea"><path d={SEA} /></clipPath>
       </defs>
-      <rect x="-4" y="-4" width={W + 8} height={H + 8} fill={paper} />
-      <rect x="-4" y="-4" width={W + 8} height={H + 8} filter="url(#pa-paper)" opacity={survey ? 0.5 : 1} />
+      <rect x={SHEET.x} y={SHEET.y} width={SHEET.w} height={SHEET.h} fill={paper} />
+      <rect x={SHEET.x} y={SHEET.y} width={SHEET.w} height={SHEET.h} filter="url(#pa-paper)" opacity={survey ? 0.5 : 1} />
 
       {/* districts: an engraved wash, or a flat survey tint with hatching for the works */}
       {(Object.keys(G.DISTRICTS) as G.District[]).map((k) => (
@@ -200,10 +200,13 @@ function PlanArtInner({ look }: { look: PlanLook }) {
         <text x="19" y="8" textAnchor="middle" fontSize={look.sub.length > 18 ? 1.4 : 1.8} fontFamily={look.font} fontStyle={look.caps ? 'normal' : 'italic'} fill={ink}>{look.sub}</text>
       </g>
 
+      {/* the neat line: a double rule round the plan, the sheet's blank margin outside it */}
+      <rect x="-4" y="-4" width={W + 8} height={H + 8} fill="none" stroke={ink} strokeWidth=".55" />
+      <rect x="-5.6" y="-5.6" width={W + 11.2} height={H + 11.2} fill="none" stroke={ink} strokeWidth=".2" />
       {/* the folds the sheet came in, a coffee ring, aged edges */}
       <circle cx="44" cy="120" r="7" fill="url(#pa-stain)" opacity={survey ? 0.5 : 1} /><circle cx="210" cy="330" r="6" fill="url(#pa-stain)" opacity={survey ? 0.5 : 1} />
-      {[W / 3, (2 * W) / 3].map((x) => <g key={x}><path d={`M${x} -4 V${H + 4}`} stroke="#3A2A10" strokeOpacity=".2" strokeWidth=".18" /><path d={`M${x + 0.4} -4 V${H + 4}`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".35" /></g>)}
-      {[H / 3, (2 * H) / 3].map((y) => <g key={y}><path d={`M-4 ${y} H${W + 4}`} stroke="#3A2A10" strokeOpacity=".2" strokeWidth=".18" /><path d={`M-4 ${y + 0.4} H${W + 4}`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".35" /></g>)}
+      {[W / 3, (2 * W) / 3].map((x) => <g key={x}><path d={`M${x} ${SHEET.y} V${SHEET.y + SHEET.h}`} stroke="#3A2A10" strokeOpacity=".2" strokeWidth=".18" /><path d={`M${x + 0.4} ${SHEET.y} V${SHEET.y + SHEET.h}`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".35" /></g>)}
+      {[H / 3, (2 * H) / 3].map((y) => <g key={y}><path d={`M${SHEET.x} ${y} H${SHEET.x + SHEET.w}`} stroke="#3A2A10" strokeOpacity=".2" strokeWidth=".18" /><path d={`M${SHEET.x} ${y + 0.4} H${SHEET.x + SHEET.w}`} stroke="#FFF6DC" strokeOpacity=".45" strokeWidth=".35" /></g>)}
     </>
   );
 }
