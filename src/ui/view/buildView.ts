@@ -14,6 +14,8 @@ export interface UiState {
   hudOpen: boolean;
   info: G.Meter | null;
   album: boolean;
+  /** at the end of an era: the heir picked, waiting for the family's goal in the new era */
+  dreamFor?: string | null;
 }
 export const freshUi = (): UiState => ({ pend: null, pendD: null, hudOpen: false, info: null, album: false });
 
@@ -264,10 +266,13 @@ export function buildView(ctx: Ctx): any {
   const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : s.estate ? 'маєток уже належить роду — збережіть його до кінця служби' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
   // Era II goals speak of the trust and the new power, not of the manor and the doge
   const T = G.RULES.trust;
-  const dreamProg2 = [s.industry ? 'трест «Аурумсталь» ваш — втримайте його до кінця служби' : s.year < T.from ? 'трест «Аурумсталь» роздаватимуть лише за влади рад (з ' + T.from + ')' : s.rank < T.rank ? 'спершу треба дорости до третього рівня — зараз ' + G.rankName(s).toLowerCase() : fmt(s.clean) + ' з ' + fmt(T.price) + ' чистими на крісло директора',
-    s.year < T.from ? 'зараз ' + G.rankName(s).toLowerCase() + '; головне — дожити до влади, що встоїть' : s.rank >= 1 ? 'ви вже в апараті рад: ' + G.rankName(s).toLowerCase() + ' — тепер лише не впасти' : 'зараз ' + G.rankName(s).toLowerCase() + ', треба хоча б на рівень вище',
-    'увага органів ' + tv + ' — на пенсії має бути менше ' + G.RULES.dreamCleanThreat,
-    'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — генеральний секретар партії'][s.dream] || '';
+  // no spoilers: until the councils come (1922) the goal speaks only of what the player already knows (Max, 21.11);
+  // the trust, the apparatus and the party appear in the line once they exist in the city
+  const soon = s.year < T.from, rk = G.rankName(s).toLowerCase();
+  const dreamProg2 = [s.industry ? 'трест «Аурумсталь» ваш — втримайте його до кінця служби' : soon ? 'нагода прибрати до рук велике підприємство ще трапиться — збирайте чисті гроші' : s.rank < T.rank ? 'спершу треба дорости до третього рівня — зараз ' + rk : fmt(s.clean) + ' з ' + fmt(T.price) + ' чистими на крісло директора тресту «Аурумсталь»',
+    soon ? 'зараз ' + rk + '; головне — втриматися на службі, хоч би хто правив містом' : s.rank >= 1 ? 'ви вже в апараті рад: ' + rk + ' — тепер лише не впасти' : 'зараз ' + rk + ', треба хоча б на рівень вище',
+    (s.year < 1918 ? 'загроза ' : 'увага органів ') + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat,
+    'зараз ' + rk + ', а вершина — ' + (soon ? 'перша особа держави' : 'генеральний секретар партії')][s.dream] || '';
   v.dreamText = C.dreams[s.dream].t + ': ' + (s.era === 2 ? dreamProg2 : dreamProg) + '.';
   v.paperName = G.paperOf(s);
   // the blotter under the papers: leather under the empire, plywood in the civil war, red baize under the councils
@@ -491,11 +496,15 @@ export function buildView(ctx: Ctx): any {
     fx: h.trait === null ? (h.nephew ? 'Покровитель −10' : '—') : TR[h.trait].fx + (h.prep >= 80 ? ' · старт на посаду вище' : ''),
     stars: stars(h.prep), hasAssets: h.assets > 0, assets: '+ ' + fmt(h.assets) + ' кр. на ' + (h.g === 'f' ? 'її' : 'його') + ' ім’я',
     minor: h.age < G.RULES.heir.minorAge, minorText: 'Неповнолітн' + (h.g === 'f' ? 'я' : 'ій') + ': до повноліття опікун забере 30% статку',
-    l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => run((x) => G.pickHeir(x, h.id)),
+    l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => (e.eraOver && s.era < 7 ? setUi({ dreamFor: h.id }) : run((x) => G.pickHeir(x, h.id))),
     // a child or a teenager is shown as they look now (the same face as in the family album), an adult as the future head
     ...(() => { const kid = h.age < 18 && !h.nephew ? kinPortrait(s.era, h, false) : null; const f = kid || G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
   }));
   v.eraOver = e.eraOver; v.dynastyOver = e.dynastyOver;
+  // the closing note of an era on the shared skeleton (eras I–II); eras III–VII carry their own in their templates
+  v.eraNote = s.era === 2
+    ? { top: '1941 · Буремні роки завершено', big: 'Рід ' + s.surname + ' входить у воєнну добу', sub: 'Далі — Епоха III: з цим статком, цим іменем і всіма ворогами, яких ви нажили.' }
+    : { top: '1914 · Позолочений вік завершено', big: 'Рід ' + s.surname + ' входить у Буремні роки', sub: 'Далі — Епоха II: з цим статком, цим іменем і всіма ворогами, яких ви нажили.' };
   v.showRestart = e.dynastyOver || e.campaignOver;
   v.restart = () => run((x) => G.restart(x));
 

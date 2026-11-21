@@ -18,6 +18,7 @@ import { Panorama, type PanoKind } from './scene/Panorama';
 import { Chronicle } from './scene/Chronicle';
 import { MeterPops } from './scene/MeterPops';
 import { DeskProps, PhoneRing, StampSlip } from './scene/DeskProps';
+import { DreamPick } from './scene/DreamPick';
 import { skin, skinOf } from './skin';
 import { CityMap } from './scene/CityMap';
 import { PauseFolio } from './scene/PauseFolio';
@@ -71,6 +72,7 @@ function withSlots(root: DcNode): DcNode {
   };
   mark(r);
   stampSlots(r);
+  endingSheet(r, true);
   // the objects on the desk lie inside the desk's own layer, right over the blotter and under everything else
   // (the template root is an isolated stacking context, so outside it they would paint over the HUD and the papers)
   r.ch.splice(r.ch.findIndex((n) => n.t === 'if' && n.v === '{{L.blotter}}') + 1, 0, slot('desk'));
@@ -174,22 +176,49 @@ function withSlots(root: DcNode): DcNode {
   return r;
 }
 const SLOTTED = new Map<number, DcNode>();
-/** the closed paper: a React slip above the next document instead of the template's hidden stamped sheet, and the
- *  same slip on the call / chat screen just above the answers (a dialog covers the papers, so it would never show) */
+/** the closed paper: a React slip above the next document instead of the template's hidden stamped sheet (shown only
+ *  over a paper document: a letter, a call or a chat has no room for it, see «Зони інтерфейсу» in CLAUDE.md) */
 function stampSlots(r: DcNode) {
   const slot = (name: string): DcNode => ({ t: 'e', n: 'dc-slot', a: { name }, ch: [] });
   const walk = (n: DcNode) => {
     if (n.t === 'x') return;
     if (n.t === 'if' && n.v === '{{hasStamp}}') { n.ch = [slot('stamp')]; return; }
-    if (n.t === 'if' && n.v === '{{isDialog}}') n.ch.forEach((c) => { if (c.t !== 'e') return; const i = c.ch.findIndex((x) => x.t === 'e' && /\{\{dg\.optsBg\}\}/.test(x.a.style || '')); if (i >= 0) c.ch.splice(i, 0, slot('stampDlg')); });
     n.ch.forEach(walk);
   };
   walk(r);
 }
-/** eras III–VII keep their own templates; only the closed-paper slips are plugged in */
+/** The final sheet of a service: it scrolls inside itself when it is long (the will and the heir no longer run off the
+ *  paper), the line under the stamp is hidden when the ending has none, and the era's closing words are a note in
+ *  ink at the foot of the sheet, not a dark bar that reads like a button. On the shared skeleton (eras I–II) the
+ *  note's words come from the view (`eraNote`), so Era II does not close with Era I's «1914 · Позолочений вік». */
+function endingSheet(r: DcNode, shared: boolean) {
+  const txt = (n: DcNode): string => (n.t === 'x' ? n.v : n.ch.map(txt).join(''));
+  const walk = (n: DcNode, parent: DcNode | null) => {
+    if (n.t === 'x') return;
+    if (n.t === 'if' && n.v === '{{isEnding}}') n.ch.forEach((c) => { if (c.t === 'e') c.a.style = (c.a.style || '') + '; overflow-y: auto; overscroll-behavior: contain'; });
+    if (n.t === 'if' && n.v === '{{eraOver}}') {
+      n.ch.forEach((c) => {
+        if (c.t !== 'e' || !/margin-top: auto/.test(c.a.style || '')) return;
+        c.a.style = 'margin-top: 4px; padding: 8px 6px 2px; border-top: 1px dashed currentColor; display: flex; flex-direction: column; gap: 3px; text-align: center; opacity: 0.85';
+        const spans = c.ch.filter((x) => x.t === 'e') as Extract<DcNode, { t: 'e' }>[];
+        const look = ['font-size: 10px; letter-spacing: 2px; text-transform: uppercase', "font-style: italic; font-size: 15px; font-weight: 700", 'font-style: italic; font-size: 12px; line-height: 1.35'];
+        spans.forEach((sp, i) => { sp.a.style = look[i] || look[2]; if (shared) sp.ch = [{ t: 'x', v: ['{{eraNote.top}}', '{{eraNote.big}}', '{{eraNote.sub}}'][i] || '' }]; });
+      });
+      return;
+    }
+    // the line under the stamp (the ending's text): hidden when it is empty
+    if (n.t === 'e' && parent && parent.t !== 'x' && parent.t !== 'if' && n.ch.length === 1 && txt(n) === '{{endText}}') {
+      const i = parent.ch.indexOf(n); parent.ch[i] = { t: 'if', v: '{{endText}}', ch: [n] } as DcNode; return;
+    }
+    n.ch.forEach((c) => walk(c, n));
+  };
+  walk(r, null);
+}
+/** eras III–VII keep their own templates; only the closed-paper slips and the final sheet are adjusted */
 function withStampSlot(root: DcNode): DcNode {
   const r = JSON.parse(JSON.stringify(root)) as DcNode;
   stampSlots(r);
+  endingSheet(r, false);
   return r;
 }
 const rootFor = (era: number) => {
@@ -280,8 +309,8 @@ export function Game() {
       desk: s.screen === 'office' && !G.officeDone(s) && !v.isDialog && !ui.hudOpen && !ui.album && !ui.info ? <DeskProps props={skin(s).props} /> : null
     };
     // the closed paper above the next one, in every era (a carbon copy, a fax, a sent mail, a chat bubble…)
-    const slip = (inline: boolean) => (v.hasStamp && s.lastDec ? <StampSlip era={s.era} no={s.doc} answer={s.lastDec.t} word={v.stampT} S={v.S} k={v.docKey} inline={inline} /> : null);
-    v.slots = { ...(v.slots || {}), stamp: slip(false), stampDlg: slip(true) };
+    // zoning: the slip belongs to the free leather above a paper document, never on a letter, a call or a chat
+    v.slots = { ...(v.slots || {}), stamp: v.hasStamp && s.lastDec && !v.isDialog ? <StampSlip era={s.era} no={s.doc} answer={s.lastDec.t} word={v.stampT} S={v.S} k={v.docKey} /> : null };
     return v;
   }, [s, ui, run, setUi, scenes, pano]);
   useEffect(() => { if (!MAP_SCREENS.has(s.screen)) setMapOpen(false); }, [s.screen]);
@@ -297,6 +326,8 @@ export function Game() {
           <>
             {s.screen === 'form' ? <Onboarding s={s} run={run} /> : s.screen === 'chronicle' ? <Chronicle key="chron" s={s} run={run} /> : <DcView root={rootFor(s.era)} view={view} />}
             {scenes && s.era === 2 && s.screen === 'office' && view.isDialog && <PhoneRing k={String(view.docKey)} />}
+            {/* the end of an era: the heir and the family's goal in the new era are chosen together (every era) */}
+            {s.screen === 'ending' && ui.dreamFor && s.ending?.eraOver && <DreamPick s={s} heirId={ui.dreamFor} onBack={() => setUi({ dreamFor: null })} onPick={(d) => { const id = ui.dreamFor!; setUi({ dreamFor: null }); run((x) => G.pickHeir(x, id, d)); }} />}
             {s.screen === 'form' && <button className="b3d" aria-label="Меню" onClick={() => setPaused(true)} style={{ position: 'absolute', left: 8, top: 8, zIndex: 80, padding: '4px 8px', fontSize: 12, letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Old Standard TT', serif", border: '1px solid #6E531E', borderRadius: 3, background: 'linear-gradient(180deg,#3A2A1A,#241A10)', color: '#E6D9BC', cursor: 'pointer' }}>МЕНЮ</button>}
           </>
         )}

@@ -288,10 +288,10 @@ function payOut(n: GameState, cost: number) {
 }
 
 /** how a service ends when the era itself ends under it */
+// The stamp says plainly what happened to this head's service; what ended the era (the war of 1914, the war of 1941)
+// is told by the chronicle's newspaper right after, so the final sheet does not name it (Max, 21.11).
 const ERA_END: Record<number, [string, string]> = {
-  0: ['Доба скінчилася', 'Світ, у якому ви служили, скінчився раніше за вашу службу.'],
-  1: ['Війна', 'Липень 1914-го. Імператор оголосив війну Конкордії, і стара служба скінчилася разом зі старим світом.'],
-  2: ['Нова війна', 'Червень 1941-го. Архіви управи палять у дворі, місто евакуюють. Служба скінчилася разом із цілою добою.']
+  0: ['Кінець служби', '']
 };
 
 function finish(n: GameState, kind: EndKind, title: string, text: string): GameState {
@@ -792,7 +792,8 @@ export function electionNight(s: GameState, stuff: boolean): GameState {
 // ============================================================ actions: will / next generation
 
 /** Pick an heir. Same era for generation 2; at the end of an era the heir opens the next one. */
-export function pickHeir(s: GameState, heirId: string): GameState {
+/** dream: the family's goal for the new era, chosen with the heir when the era ends (its index in the new era's dreams) */
+export function pickHeir(s: GameState, heirId: string, dream?: number): GameState {
   const e = s.ending;
   if (s.screen !== 'ending' || !e) throw new Error('Not at the will');
   const h = s.heirs.find((x) => x.id === heirId);
@@ -801,7 +802,7 @@ export function pickHeir(s: GameState, heirId: string): GameState {
   const n = newGame(s.rng, nextEra);
   n.rng = s.rng; n.history = clone(s.history);
   const tr = h.trait === null ? null : getEra(nextEra).traits[h.trait] || null;
-  n.screen = 'morning'; n.surname = s.surname; n.first = h.first; n.gender = h.g; n.dream = s.dream; n.face = h.face ?? null;
+  n.screen = 'morning'; n.surname = s.surname; n.first = h.first; n.gender = h.g; n.dream = e.eraOver && dream !== undefined ? dream : s.dream; n.face = h.face ?? null;
   n.gen = e.eraOver ? 1 : s.gen + 1;
   if (!e.eraOver) n.year = s.year + 1;
   const H = RULES.heir;

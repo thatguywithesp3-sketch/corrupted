@@ -70,6 +70,8 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
               {page.opts.map((x, i) => (
                 <button key={i} className="b3d" onClick={() => setPicked(i)} style={{ minHeight: 48, padding: '8px 12px', textAlign: 'left', fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: INK, background: '#FBF6E6', border: `1.5px solid ${INK}`, boxShadow: '0 2px 0 rgba(31,26,20,.6)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, animation: `chr-fade .4s ease-out ${0.25 + i * 0.08}s both` }}>
                   <span>{x.t}</span>
+                  {/* what the choice means, before it is made */}
+                  <span style={{ fontSize: 13, fontWeight: 400, fontStyle: 'italic', lineHeight: 1.3, color: MUTE }}>{x.sub}</span>
                   <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {Object.entries(x.d).filter(([, v]) => v).map(([k, v]) => (
                       <span key={k} style={{ fontSize: 12, fontWeight: 700, padding: '0 6px', borderRadius: 8, color: good(k, v!) ? '#1E5A34' : '#8E1F12', background: good(k, v!) ? 'rgba(63,138,90,.14)' : 'rgba(184,50,42,.12)' }}>{LABEL[k]} {v! > 0 ? '+' : '−'}{Math.abs(v!)}</span>
