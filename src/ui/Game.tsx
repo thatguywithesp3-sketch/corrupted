@@ -73,6 +73,21 @@ function withSlots(root: DcNode): DcNode {
   mark(r);
   stampSlots(r);
   endingSheet(r, true);
+  // zoning: the pencilled resolution («На розгляд. — К.», Era II) gets its own strip at the top of the paper; the
+  // letterhead under it moves down instead of running into the scribble
+  const pencil = (n: DcNode) => {
+    if (n.t === 'x') return;
+    const i = n.ch.findIndex((c) => c.t === 'if' && c.v === '{{L.pencil}}');
+    if (i >= 0) {
+      // the letterhead (it may sit inside a condition): the first element after the scribble with the double rule under it
+      const find = (m: DcNode): Extract<DcNode, { t: 'e' }> | null => { if (m.t === 'x') return null; if (m.t === 'e' && /border-bottom: 3px double/.test(m.a.style || '')) return m; for (const c of m.ch) { const f = find(c); if (f) return f; } return null; };
+      const head = n.ch.slice(i + 1).map(find).find(Boolean);
+      if (head) head.a.style = (head.a.style || '') + '; margin-top: {{pencilGap}}';
+      (n.ch[i] as Extract<DcNode, { t: 'if' }>).ch.forEach((c) => { if (c.t === 'e') c.a.style = (c.a.style || '').replace('top: 6px', 'top: 4px').replace('font-size: 16px', 'font-size: 14px').replace('rotate(-10deg)', 'rotate(-5deg)'); });
+    }
+    n.ch.forEach(pencil);
+  };
+  pencil(r);
   dialogZones(r);
   // the objects on the desk lie inside the desk's own layer, right over the blotter and under everything else
   // (the template root is an isolated stacking context, so outside it they would paint over the HUD and the papers)

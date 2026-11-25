@@ -1,16 +1,16 @@
-// Era II (1914–1941) lives through four powers in a row (art/LORE.md → «Перехід», docs/era2-concept.md). The office is
+// Era II (1914–1941) lives through five powers in a row (art/LORE.md → «Перехід», docs/era2-concept.md). The office is
 // the same, but its name, the paper on the table, the patron above and the very meaning of the rank change with
-// each power: the imperial city government until 1917, the Provisional Government until 1918, the councils of the
-// civil war until 1922, the settled socialist state (СТСД) after that.
-export type Regime = 'empire' | 'provisional' | 'civil' | 'soviet';
+// each power: the imperial city government until 1917, the Provisional Government until 1918, the Valdorian People's
+// Republic (ВНР) 1918–1919, the councils of the civil war 1920–1921, the settled socialist state (СТСД) from 1922.
+export type Regime = 'empire' | 'provisional' | 'vnr' | 'civil' | 'soviet';
 
 /** the first year of each power in Era II */
-export const REGIME_FROM: Record<Exclude<Regime, 'empire'>, number> = { provisional: 1917, civil: 1918, soviet: 1922 };
+export const REGIME_FROM: Record<Exclude<Regime, 'empire'>, number> = { provisional: 1917, vnr: 1918, civil: 1920, soviet: 1922 };
 
 /** the power in charge this year (Era II only; other eras have one power each) */
 export function regimeOf(s: { era: number; year: number }): Regime | null {
   if (s.era !== 2) return null;
-  return s.year >= REGIME_FROM.soviet ? 'soviet' : s.year >= REGIME_FROM.civil ? 'civil' : s.year >= REGIME_FROM.provisional ? 'provisional' : 'empire';
+  return s.year >= REGIME_FROM.soviet ? 'soviet' : s.year >= REGIME_FROM.civil ? 'civil' : s.year >= REGIME_FROM.vnr ? 'vnr' : s.year >= REGIME_FROM.provisional ? 'provisional' : 'empire';
 }
 
 /** the city paper's name in a given year: «Вісник» → «Аурумська правда» (1917–1920) → «Трибуна праці» (from 1920) */
@@ -26,9 +26,13 @@ export const REGIME_TURN: Record<Exclude<Regime, 'empire'>, { h: string; b: stri
     h: 'Влада в місті — у руках Тимчасового уряду',
     b: 'Градоначальника заарештовано, поліцію замінила народна міліція. Звертатися тепер треба «громадянине». На бланках управи орла вже зішкребли, а нових ще не надрукували.'
   },
+  vnr: {
+    h: 'Управа присягає Вальдорській Народній Республіці',
+    b: 'Над Ратушею — жовто-чорно-блакитний прапор. Губернський комісар ВНР роздає нові печатки з написами вальдорською, а службовцям — словники. Бланки старі, шапки нові.'
+  },
   civil: {
-    h: 'Місто переходить із рук у руки',
-    b: 'Ради, Вальдорська Народна Республіка, знову ради: печатки міняються частіше, ніж бланки. Ревком сидить у тому самому кабінеті, де вчора сидів комісар.'
+    h: 'Місто взяли ради',
+    b: 'Уряд ВНР відплив із архівами. Ревком сидить у тому самому кабінеті, де вчора сидів губернський комісар, і печатки знову перерізають за ніч.'
   },
   soviet: {
     h: 'Громадянську війну закінчено. Владу рад установлено назавжди',
@@ -92,5 +96,6 @@ export function instName(s: { era: number; year: number }, id: 'charity' | 'pres
   if (id === 'charity') return reg === 'civil' || reg === 'soviet' ? 'Дитбудинок' : 'Сиротинець';
   if (id === 'whisper') return reg === 'soviet' && y < 1929 ? 'Непманський ринок' : 'Ринок';
   if (!reg || reg === 'empire') return 'Жандармерія';
+  if (reg === 'vnr') return 'Державна варта';
   return reg === 'provisional' ? 'Міліція' : reg === 'civil' ? 'Губчека' : y < 1934 ? 'ДПУ' : 'НКВС';
 }

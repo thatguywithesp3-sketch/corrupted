@@ -712,7 +712,7 @@ function instActsRaw(s: GameState, id: InstId): ActOption[] {
       ? [{ act: 'dismiss', t: 'Розпустити шептунів', sub: `Заощадите ${fmt(F.whisper.cost)} кр. на рік, але чутки підуть без нагляду.`, can: true, risk: 0, odds: 1, gain: 0, gainT: `−${fmt(F.whisper.cost)} кр. витрат` }]
       : [{ act: 'hire', t: 'Найняти шептунів', sub: `${fmt(F.whisper.cost)} кр. щороку брудними. Щороку ризик −${F.whisper.calmYr}, народ +${F.whisper.peopleYr}.`, can: dirtyTotal(s) >= F.whisper.cost, why: `Бракує брудних: потрібно ${fmt(F.whisper.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.whisper.calmYr} щороку`, cost: F.whisper.cost, perYear: true }];
     case 'works': {
-      const reg = s.era === 2 ? (s.year >= 1922 ? 'trust' : s.year >= 1918 ? 'rev' : 'war') : 'city';
+      const reg = s.era === 2 ? (s.year >= 1922 ? 'trust' : s.year >= 1920 ? 'rev' : 'war') : 'city';
       const orderT = { city: ['Казенне замовлення', 'Чавун для нового мосту й ліхтарів Ринкової — за вашим підписом. Ливарня знає, кому дякувати.'], war: ['Армійське замовлення', 'Снаряди й колеса для фронту. Ціна в кошторисі вища за ціну в цеху, різниця — ваша.'], rev: ['Реквізиція для ревкому', 'Ливарня «добровільно» віддає метал революції. Частина металу знаходить покупців.'], trust: ['Постачання тресту', 'Вугілля й руда для «Аурумсталі» через «свою» артіль. План виконано, артіль задоволена.'] }[reg];
       const gain = reg === 'war' ? Math.round(F.order.gain * 1.6) : F.order.gain;
       const out: ActOption[] = [{ act: 'order', t: orderT[0], sub: `${orderT[1]} Якщо ревізор помітить різницю — ризик +${F.order.backfire}.`, can: true, risk: F.order.risk, odds: F.order.odds, gain }];
@@ -722,7 +722,7 @@ function instActsRaw(s: GameState, id: InstId): ActOption[] {
       return out;
     }
     case 'univ': {
-      const placed = fm.uni || [], soviet = s.era === 2 && s.year >= 1918;
+      const placed = fm.uni || [], soviet = s.era === 2 && s.year >= 1920;
       const kid = s.kids.filter((k) => !k.gone && k.age >= 12 && k.age <= 24 && !placed.includes(k.id) && k.prep < 100).sort((a, z) => z.age - a.age)[0];
       const price = soviet ? F.enroll.bribe : F.enroll.clean;
       const out: ActOption[] = [{
@@ -737,8 +737,8 @@ function instActsRaw(s: GameState, id: InstId): ActOption[] {
       return out;
     }
     case 'okhrana':
-      // from 1918 the same building belongs to the organs: other moves, other prices
-      if (s.era === 2 && s.year >= 1918) {
+      // from 1920 (the councils) the same building belongs to the organs: other moves, other prices
+      if (s.era === 2 && s.year >= 1920) {
         const top = (s.city?.rivals || []).filter((r) => !r.ally).sort((a, z) => z.power - a.power)[0];
         return [
           { act: 'denounce', t: 'Замовити донос', sub: top ? `Анонімний лист про «колишнього» — ${rivalCase(top, 'acc')}. Вплив суперника −${F.denounce.power}, але органи запам’ятають і вас: ризик +${F.denounce.mark}.` : 'Нема на кого.', can: !!top && dirtyTotal(s) >= F.denounce.cost, why: top ? `Бракує брудних: потрібно ${fmt(F.denounce.cost)} кр.` : 'Суперників немає', risk: F.denounce.mark, odds: F.denounce.odds, gain: 0, gainT: `вплив суперника −${F.denounce.power}`, cost: F.denounce.cost },
@@ -801,7 +801,7 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
   } else if (act === 'stake') {
     fm.stake = true; res.title = 'Пай у ливарні оформлено'; res.text = `Нотар засвідчив, Солонари погодилися: тепер ливарня щороку платить і вам. Чесні гроші — найрідший товар у цьому місті.`;
   } else if (act === 'enroll') {
-    const placed = (fm.uni ||= []), soviet = n.era === 2 && n.year >= 1918;
+    const placed = (fm.uni ||= []), soviet = n.era === 2 && n.year >= 1920;
     const kid = n.kids.filter((k) => !k.gone && k.age >= 12 && k.age <= 24 && !placed.includes(k.id) && k.prep < 100).sort((a, z) => z.age - a.age)[0];
     if (kid) { kid.prep = Math.min(100, kid.prep + F.enroll.prep); placed.push(kid.id); }
     res.title = soviet ? `${kid?.first || 'Дитина'} — студент робфаку` : `${kid?.first || 'Дитина'} вступає до університету`;

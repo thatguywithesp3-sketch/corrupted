@@ -299,7 +299,7 @@ function eraHeader(n: GameState, kind: EndKind): string {
   if (n.era !== 2) return '';
   const reg = regimeOf(n);
   if (kind === 'retire') return paperOf(n) + ' · Оголошення';
-  if (kind === 'collapse') return 'Телеграма · ' + (reg === 'empire' ? 'Канцелярія генерал-губернатора' : reg === 'provisional' ? 'Комісаріат міліції' : reg === 'civil' ? 'Губчека' : 'Губвиконком');
+  if (kind === 'collapse') return 'Телеграма · ' + (reg === 'empire' ? 'Канцелярія генерал-губернатора' : reg === 'provisional' ? 'Комісаріат міліції' : reg === 'vnr' ? 'Державна варта' : reg === 'civil' ? 'Губчека' : 'Губвиконком');
   return '';
 }
 function finish(n: GameState, kind: EndKind, title: string, text: string): GameState {

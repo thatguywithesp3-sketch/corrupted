@@ -168,6 +168,7 @@ export function buildView(ctx: Ctx): any {
     return { ic: icon(m, 16), val: String(x), color: Cc[m], border: danger ? '1.5px solid #E8603F' : '1.5px solid transparent', plain: true, hasD: d !== 0, arrow: d > 0 ? '▲' : '▼', arrowColor: '#E6D9BC', hasPv: false, dTxt: '', was: '', dBg: '', dFg: '' };
   });
   v.L = L;
+  v.pencilGap = L.pencil ? '30px' : '0px';
   v.hudGauges = L.hud === 'gauge'; v.hudLamps = L.hud === 'lamps'; v.hudLcd = L.hud === 'lcd'; v.hudGloss = L.hud === 'gloss'; v.hudChips = L.hud === 'chips'; v.hudRings = L.hud === 'rings';
   v.hudBars = !(v.hudGauges || v.hudLamps || v.hudLcd || v.hudGloss || v.hudChips || v.hudRings);
   const meterKeys = [['patron', 'Покровит.', 'p'], ['people', 'Народ', 'n'], ['system', 'Система', 's'], ['threat', 'Ризик', 'i']] as const;
@@ -271,7 +272,7 @@ export function buildView(ctx: Ctx): any {
   const soon = s.year < T.from, rk = G.rankName(s).toLowerCase();
   const dreamProg2 = [s.industry ? 'трест «Аурумсталь» ваш — втримайте його до кінця служби' : soon ? 'нагода прибрати до рук велике підприємство ще трапиться — збирайте чисті гроші' : s.rank < T.rank ? 'спершу треба дорости до третього рівня — зараз ' + rk : fmt(s.clean) + ' з ' + fmt(T.price) + ' чистими на крісло директора тресту «Аурумсталь»',
     soon ? 'зараз ' + rk + '; головне — втриматися на службі, хоч би хто правив містом' : s.rank >= 1 ? 'ви вже в апараті рад: ' + rk + ' — тепер лише не впасти' : 'зараз ' + rk + ', треба хоча б на рівень вище',
-    (s.year < 1918 ? 'загроза ' : 'увага органів ') + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat,
+    (s.year < 1920 ? 'загроза ' : 'увага органів ') + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat,
     'зараз ' + rk + ', а вершина — ' + (soon ? 'перша особа держави' : 'генеральний секретар партії')][s.dream] || '';
   v.dreamText = C.dreams[s.dream].t + ': ' + (s.era === 2 ? dreamProg2 : dreamProg) + '.';
   v.paperName = G.paperOf(s);

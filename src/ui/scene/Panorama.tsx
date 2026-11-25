@@ -54,6 +54,8 @@ function voices(s: GameState, kind: PanoKind): Voice[] {
         ['Вікна заклеєно навхрест: кажуть, з моря видно місто', 'У порту розвантажують снаряди до ночі', 'У кав’ярні сперечаються, коли скінчиться війна. Ставки ростуть']],
       provisional: [['Хтось уночі збив кречета з воріт управи. Двірник підмів і пішов', 'На площі мітинг: говорять усі, слухає ніхто', 'Жандармів більше нема. Міліції ще нема'],
         ['Солдати з фронту продають шинелі на Ринковій', 'У трамваї курять. Кондуктор каже: тепер свобода', 'Ціни на хліб змінюються двічі на день']],
+      vnr: [['Маляр на драбині перефарбовує вивіску аптеки: третя за тиждень', 'Над Ратушею — жовто-чорно-блакитний прапор. Дехто знімає капелюх, дехто — ні', 'Службовці управи йдуть на роботу зі словниками під пахвою'],
+        ['У театрі сьогодні вперше — вальдорською. Квитків нема', 'На Ринковій сперечаються, як буде «квитанція» по-новому', 'Державна варта патрулює набережну. Кокарди нові, обличчя знайомі']],
       civil: [['Уночі стріляли біля вокзалу. Зранку ніхто нічого не чув', 'На стіні три шари листівок: ради, республіка, знову ради', 'Черга по хліб починається до світанку'],
         ['Комендантська година. Вулиці порожні, крім патрулів', 'У гавані ще горить склад, підпалений позавчора', 'Хто має срібло, міняє на борошно. Хто має борошно, мовчить']],
       soviet: [['Непман на Ринковій відкрив другу крамницю й найняв прикажчика', 'Над Ратушею — новий прапор, під Ратушею — старі ями', 'Біля «Трибуни праці» читають стінну газету'],
@@ -84,6 +86,7 @@ const NIGHTFOLK = ['w-merchant', 'w-lady', 'w-worker', 'w-sailor', 'w-reader', '
 const ERA2_FOLK: Record<G.Regime, { walk: string[]; port: string[]; night: string[]; v: string[]; idle: string[] }> = {
   empire: { walk: ['w2-soldier', 'w2-woman', 'w2-invalid', 'w2-newsboy', 'w2-trader', 'w2-student', 'w2-granny', 'w-lady', 'w-worker', 'w-merchant'], port: ['w2-soldier', 'w2-sailor', 'w-docker', 'w-porter', 'w2-worker'], night: ['w2-soldier', 'w2-sailor', 'w-merchant', 'w2-woman'], v: ['v-tram', 'v2-cart', 'v2-lorry', 'v-fiacre'], idle: ['i2-kitchen', 'i2-queue', 'i-gossip'] },
   provisional: { walk: ['w2-soldier', 'w2-militia', 'w2-woman', 'w2-student', 'w2-newsboy', 'w2-invalid', 'w2-girl', 'w2-trader', 'w-worker'], port: ['w2-sailor', 'w2-soldier', 'w-docker', 'w2-worker'], night: ['w2-militia', 'w2-sailor', 'w2-soldier', 'w2-student'], v: ['v-tram', 'v2-lorry', 'v2-cart', 'v-fiacre'], idle: ['i2-agitator', 'i2-queue', 'i-talk'] },
+  vnr: { walk: ['w2-soldier', 'w2-militia', 'w2-woman', 'w2-student', 'w2-newsboy', 'w2-invalid', 'w2-girl', 'w2-trader', 'w-worker'], port: ['w2-sailor', 'w2-soldier', 'w-docker', 'w2-worker'], night: ['w2-militia', 'w2-sailor', 'w2-soldier', 'w2-student'], v: ['v-tram', 'v2-lorry', 'v2-cart', 'v-fiacre'], idle: ['i2-agitator', 'i2-queue', 'i-talk'] },
   civil: { walk: ['w2-soldier', 'w2-commissar', 'w2-militia', 'w2-woman', 'w2-granny', 'w2-invalid', 'w2-worker', 'w2-sailor'], port: ['w2-sailor', 'w2-soldier', 'w-docker', 'w2-worker'], night: ['w2-militia', 'w2-soldier', 'w2-commissar', 'w2-sailor'], v: ['v2-lorry', 'v2-cart', 'v2-lorry', 'v2-cart'], idle: ['i2-queue', 'i2-agitator', 'i2-kitchen'] },
   soviet: { walk: ['w2-worker', 'w2-girl', 'w2-trader', 'w2-commissar', 'w2-newsboy', 'w2-student', 'w2-woman', 'w2-granny', 'w2-sailor'], port: ['w-docker', 'w-porter', 'w2-worker', 'w2-sailor'], night: ['w2-worker', 'w2-girl', 'w2-militia', 'w2-trader'], v: ['v-tram', 'v2-car', 'v2-cart', 'v2-lorry'], idle: ['i2-agitator', 'i-kiosk', 'i-talk'] }
 };
@@ -102,12 +105,13 @@ function poolsFor(era: number, reg: G.Regime | 'empire', night: boolean): Pools 
 /** the flag over the town hall tower, by power: the empire's stripes, the red flag of 1917, the red flag with the
  *  СРС anchor and hammer from 1918 */
 function TowerFlag({ reg }: { reg: G.Regime | 'empire' }) {
-  const red = reg !== 'empire';
+  const red = reg !== 'empire' && reg !== 'vnr';
   return (
     <span aria-hidden="true" style={{ position: 'absolute', left: '29.15%', top: '2%', width: 0, height: 0, zIndex: 3 }}>
       <span style={{ position: 'absolute', left: 0, top: 0, width: 1.5, height: 26, background: '#2A2018' }} />
       <svg width="26" height="17" viewBox="0 0 26 17" style={{ position: 'absolute', left: 1.5, top: 1, transformOrigin: '0 50%', animation: 'pano-flag 1.6s ease-in-out infinite alternate', filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,.4)) saturate(.85)' }}>
-        {red ? <path d="M0 0 Q7 -1.5 13 1 T26 1 V16 Q19 14 13 16.5 T0 16 Z" fill="#B3261E" />
+        {reg === 'vnr' ? <><path d="M0 0 Q7 -1.5 13 1 T26 1 V6 Q19 4.5 13 6.3 T0 6 Z" fill="#E3B23C" /><path d="M0 6 Q7 4.5 13 6.3 T26 6 V11 Q19 9.5 13 11.3 T0 11 Z" fill="#1F1A14" /><path d="M0 11 Q7 9.5 13 11.3 T26 11 V16 Q19 14 13 16.5 T0 16 Z" fill="#6FA3D8" /></>
+          : red ? <path d="M0 0 Q7 -1.5 13 1 T26 1 V16 Q19 14 13 16.5 T0 16 Z" fill="#B3261E" />
           : <><path d="M0 0 Q7 -1.5 13 1 T26 1 V6 Q19 4.5 13 6.3 T0 6 Z" fill="#B3261E" /><path d="M0 6 Q7 4.5 13 6.3 T26 6 V11 Q19 9.5 13 11.3 T0 11 Z" fill="#F2EBDD" /><path d="M0 11 Q7 9.5 13 11.3 T26 11 V16 Q19 14 13 16.5 T0 16 Z" fill="#E0B23A" /></>}
         {(reg === 'civil' || reg === 'soviet') && <image href="art/brand/srs-emblem.png" x="8" y="2.5" width="8.5" height="11" />}
       </svg>

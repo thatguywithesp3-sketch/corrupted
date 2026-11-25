@@ -13,8 +13,8 @@ const NPC: Record<string, string> = { pike: 'pike', dobbs: 'dobbs', otto: 'otto'
 // (the governor-general → the commissar → the revolutionary committee → the party secretary; the rittmeister →
 // the chekist → the organs); the Provisional Government's militia has no face of its own.
 const NPC2: Record<string, string> = { pike: 'e2-goltz', dobbs: 'e2-milch', otto: 'e2-karl', journo: 'e2-reporter' };
-const BOSS2 = { empire: 'e2-governor', provisional: 'e2-commissar', civil: 'e2-revcom', soviet: 'e2-secretary' } as const;
-const POLICE2 = { empire: 'rittmeister', provisional: null, civil: 'e2-chekist', soviet: 'e2-organs' } as const;
+const BOSS2 = { empire: 'e2-governor', provisional: 'e2-commissar', vnr: 'e2-vnr-commissar', civil: 'e2-revcom', soviet: 'e2-secretary' } as const;
+const POLICE2 = { empire: 'rittmeister', provisional: null, vnr: 'e2-varta', civil: 'e2-chekist', soviet: 'e2-organs' } as const;
 export function npcPortrait(s: { era: number; year: number }, key: string): string | null {
   if (s.era === 1) return NPC[key] ? P(NPC[key]) : null;
   const reg = regimeOf(s);

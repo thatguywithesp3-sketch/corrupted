@@ -303,6 +303,7 @@ const INTERIOR_WAR: Record<G.InstId, string> = {
   works: 'Усередині: жінки й підлітки точать снарядні гільзи, ряди готових снарядів, армійський приймальник у шинелі з управителем рахують ящики.',
   univ: 'Усередині: аудиторія перетворена на шпиталь, ліжка між лавами, сестри милосердя; кілька студентів у кутку над книгами.'
 };
+const VARTA = 'Усередині: офіцер Державної варти з жовто-чорно-блакитною кокардою над досьє, писар перекладає ромейські справи вальдорською зі словником, на стіні — прапор республіки, у кутку — вилучені ромейські листівки.';
 const MILITIA = 'Усередині: студенти-міліціонери з білими пов’язками й старими гвинтівками, на стіні світлий прямокутник від портрета імператора, сам портрет лежить долілиць; начальник з червоним бантом палить жандармські справи в грубці.';
 /** Era II, from 1918: the same buildings under the new order (public/art/interiors/<id>-e2.jpg) */
 const INTERIOR2: Record<G.InstId, string> = {
@@ -326,6 +327,7 @@ function instTitle(s: GameState, p: G.Inst): string {
 function instSub(s: GameState, p: G.Inst): string {
   if (s.era !== 2) return p.sub;
   const n = G.instName(s, p.id);
+  if (p.id === 'okhrana' && n === 'Державна варта') return 'Державна варта Вальдорської республіки. Ті самі шафи з досьє, нові кокарди — і нова тека: «ромейські агітатори».';
   if (p.id === 'okhrana' && n !== 'Жандармерія') return n === 'Міліція' ? 'Народна міліція замість поліції. Ті самі люди, нові кокарди.' : 'Тут знають усе про всіх. І про вас теж: ваша папка лежить у тій самій шафі.';
   if (p.id === 'charity' && n === 'Дитбудинок') return 'Дитячий будинок у колишньому маєтку. Пожертви тепер звуться «шефською допомогою».';
   if (p.id === 'press' && s.year >= 1917) return 'Газета пише те, що треба. Питання лише — кому треба.';
@@ -347,7 +349,7 @@ function InstCard({ p, s }: { p: G.Inst; s: GameState }) {
   return (
     <div className="tx-paper" style={{ position: 'relative', background: '#F5EDD7', padding: '20px 12px 12px', boxShadow: '0 10px 18px rgba(0,0,0,0.55), inset 0 0 22px rgba(140,110,50,0.22)', transform: 'rotate(-0.3deg)', zIndex: 2, borderTop: '6px solid #B8913C' }}>
       {/* what it looks like inside: the engraving heads the card edge to edge and speaks for itself */}
-      <img src={interiorSrc(s, p.id)} alt={({ '': INTERIOR, '-e2a': INTERIOR_WAR, '-e2p': { ...INTERIOR_WAR, okhrana: MILITIA }, '-e2': INTERIOR2 } as const)[interiorPeriod(s, p.id)][p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      <img src={interiorSrc(s, p.id)} alt={({ '': INTERIOR, '-e2a': INTERIOR_WAR, '-e2p': { ...INTERIOR_WAR, okhrana: MILITIA }, '-e2v': { ...INTERIOR_WAR, okhrana: VARTA }, '-e2': INTERIOR2 } as const)[interiorPeriod(s, p.id)][p.id]} onError={(e) => { e.currentTarget.style.display = 'none'; }}
         style={{ display: 'block', width: 'calc(100% + 24px)', margin: '-20px -12px 10px', aspectRatio: '2 / 1', objectFit: 'cover', objectPosition: '50% 40%', filter: 'sepia(0.12) contrast(1.03)', borderBottom: `3px double ${INK}` }} />
       <Clip side="top" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

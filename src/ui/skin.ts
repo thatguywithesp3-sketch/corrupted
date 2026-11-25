@@ -3,11 +3,12 @@
 // masthead and the rubber stamps on the plan — each power one step further from the empire, never all at once:
 //   empire        leather, cut-glass inkwell, crowns           (Era I as it was)
 //   provisional   the same leather gone dull, an inkwell, paper money in bundles, the stamp pad
+//   vnr           the dull leather, an inkwell, a Valdorian dictionary and new stamps (the ВНР, 1918–1919)
 //   civil         a bare plywood board, a tin mug with bread, the field telephone, the stamp pad
 //   soviet        red baize, tea in a metal holder, the telephone, the stamp pad
 import * as G from '../engine';
 
-export type Skin = 'empire' | 'provisional' | 'civil' | 'soviet';
+export type Skin = 'empire' | 'provisional' | 'vnr' | 'civil' | 'soviet';
 export const skinOf = (s: { era: number; year: number }): Skin => G.regimeOf(s) || 'empire';
 
 type Prop = { src: string; x: number; y: number; w: number; rot?: number; glint?: [number, number, number] };
@@ -48,6 +49,18 @@ export const SKIN: Record<Skin, {
     mapNotes: [{ at: 'okhrana', t: 'колишня жандармерія', col: '#4A4038', dx: -4, dy: 9.5 }],
     mapFilter: 'sepia(.08)'
   },
+  vnr: {
+    desk: { img: 'linear-gradient(rgba(24,16,8,0.3), rgba(24,16,8,0.3)), url(art/desk/leather.jpg)', size: '100% 100%, 200px 200px' },
+    props: [
+      { src: 'art/desk/inkwell.png', x: 24, y: 8, w: 108, rot: -4, glint: [24, 18, 0] },
+      { src: 'art/desk/notes.png', x: 150, y: 58, w: 120, rot: 5 },
+      { src: 'art/desk/pad.png', x: 270, y: 30, w: 100, rot: -4 }
+    ],
+    paper: { bg: '#EDE5CC', head: '#1F1A14', headFont: "'Ruslan Display', serif", headSize: 28, motto: 'ВАЛЬДОРІЯ ВІЛЬНА · ВИХОДИТЬ ДЕРЖАВНОЮ МОВОЮ', vol: 'Рік I', price: 'Ціна 50 кр.', rule: '#2F4A8A' },
+    mapStamp: { t: 'ВАЛЬДОРСЬКА НАРОДНА РЕСПУБЛІКА ·', sub: 'ГУБКОМІСАРІАТ', col: '#2F4A8A', round: true },
+    mapNotes: [{ at: 'okhrana', t: 'Державна варта', col: '#4A4038', dx: -4, dy: 9.5 }, { at: 'press', t: 'вивіски — до суботи', col: '#2F4A8A', dx: -10, dy: 8.4 }],
+    mapFilter: 'sepia(.12)'
+  },
   civil: {
     desk: { img: 'linear-gradient(rgba(20,12,4,0.2), rgba(20,12,4,0.2)), url(art/desk/plywood.jpg)', size: '100% 100%, 260px 260px' },
     props: [
@@ -82,21 +95,23 @@ const y = (s: { era: number; year: number }) => (s.era === 2 ? s.year : 0);
 /** which drawing of a place to show. Era I: the 1870s. Era II: the war years 1914–1917 (-e2a; the gendarmerie under
  *  the empire, the people's militia from 1917, -e2p), then the institutions under the councils from 1918 and the
  *  magnates' houses under the settled state from 1922 (-e2) */
-export function interiorPeriod(s: { era: number; year: number }, id: string): '' | '-e2a' | '-e2p' | '-e2' {
+export function interiorPeriod(s: { era: number; year: number }, id: string): '' | '-e2a' | '-e2p' | '-e2v' | '-e2' {
   if (s.era !== 2) return '';
   if (id.charAt(0) === 'r') return s.year >= 1922 ? '-e2' : '-e2a';
-  if (s.year >= 1918) return '-e2';
+  if (s.year >= 1920) return '-e2';
+  // the ВНР keeps the war-years rooms; its State Guard has its own office (okhrana-e2v)
+  if (id === 'okhrana' && s.year >= 1918) return '-e2v';
   return id === 'okhrana' && s.year >= 1917 ? '-e2p' : '-e2a';
 }
 export const interiorSrc = (s: { era: number; year: number }, id: string) => `art/interiors/${id}${interiorPeriod(s, id)}.jpg`;
 /** map buildings redrawn for Era II: red flags from the revolution of 1917 (town hall, militia, the paper), the trust and the communal flats from 1922 */
-const MAP_E2: Record<string, number> = { ratusha: 1917, gendarm: 1917, orphanage: 1918, press: 1917, market: 1918, station: 1918, foundry: 1922, weisman: 1922, graf: 1922, cathedral: 1922, customs: 1922, univ: 1922, shop1: 1922, shop2: 1922, shop3: 1922, shop4: 1922 };
+const MAP_E2: Record<string, number> = { ratusha: 1917, gendarm: 1917, orphanage: 1920, press: 1917, market: 1920, station: 1920, foundry: 1922, weisman: 1922, graf: 1922, cathedral: 1922, customs: 1922, univ: 1922, shop1: 1922, shop2: 1922, shop3: 1922, shop4: 1922 };
 export const mapArt = (s: { era: number; year: number }, art: string) => (MAP_E2[art] && y(s) >= MAP_E2[art] ? art + '-e2' : art);
 /** Era II newspaper sketches: the same scene names, drawn for 1914–1930 (public/art/news/e2) */
 const NEWS_E2 = new Set(['garrison', 'docks', 'court', 'quarantine', 'bourse', 'harbour', 'council', 'raid', 'bank', 'heir', 'delegates', 'gendarmes', 'fair', 'fire', 'press', 'estate', 'family', 'contractor', 'insider', 'scandal', 'promo', 'portrait']);
 /** scenes whose Era II drawing belongs to the new order: before this year the paper prints the war-years drawing
  *  (public/art/news/e2a, the empire 1914–1916: troop trains, the duma, the imperial court, gendarmes) */
-const NEWS_FROM: Record<string, number> = { delegates: 1918, council: 1918, court: 1918, raid: 1918, bank: 1918, estate: 1918, heir: 1918, gendarmes: 1917, fair: 1921, harbour: 1919, bourse: 1917, portrait: 1917 };
+const NEWS_FROM: Record<string, number> = { delegates: 1920, council: 1920, court: 1920, raid: 1920, bank: 1920, estate: 1920, heir: 1920, gendarmes: 1917, fair: 1921, harbour: 1920, bourse: 1917, portrait: 1917 };
 export function newsSrc(s: { era: number; year: number }, scene: string): string {
   if (s.era !== 2 || !NEWS_E2.has(scene)) return `art/news/${scene}.jpg`;
   return NEWS_FROM[scene] && s.year < NEWS_FROM[scene] ? `art/news/e2a/${scene}.jpg` : `art/news/e2/${scene}.jpg`;
@@ -139,12 +154,14 @@ export function planLook(s: { era: number; year: number }): PlanLook {
 }
 
 /** the state's sign on letterheads and official letters (art/LORE.md → «Символіка»): the empire's falcon until 1917,
- *  nothing under the Provisional Government, the СРС anchor and hammer in the civil war, the СТСД arms from 1922 */
+ *  nothing under the Provisional Government, the Valdorian flag under the ВНР, the СРС anchor and hammer in the
+ *  civil war, the СТСД arms from 1922 */
 /** gold on red needs a red ground: on paper the new state's signs are printed in black ink */
 export const ARMS_INK = 'brightness(0) opacity(0.82)';
 export function stateArms(s: { era: number; year: number }): { src: string; alt: string; label: string; ink?: boolean } | null {
   const reg = s.era === 1 ? 'empire' : G.regimeOf(s);
   if (reg === 'empire') return { src: 'art/brand/romei-arms.png', alt: 'Герб Ромейської імперії', label: 'КАНЦЕЛЯРІЯ ГУБЕРНАТОРА ВАЛЬДОРІЇ' };
+  if (reg === 'vnr') return { src: 'art/brand/vnr-flag.svg', alt: 'Прапор Вальдорської Народної Республіки: жовтий, чорний, блакитний', label: 'ВАЛЬДОРСЬКА НАРОДНА РЕСПУБЛІКА · ГУБКОМІСАРІАТ' };
   if (reg === 'civil') return { src: 'art/brand/srs-emblem.png', alt: 'Емблема Союзу Ромейських Соціалістів: якір і молот', label: 'ГУБЕРНСЬКИЙ РЕВКОМ', ink: true };
   if (reg === 'soviet') return { src: 'art/brand/ststd-arms.png', alt: 'Герб Союзу Трудових Соціалістичних Держав', label: 'ГУБВИКОНКОМ · СТСД', ink: true };
   return null;
