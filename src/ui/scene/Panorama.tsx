@@ -5,6 +5,8 @@
 // Morning comes before the paper; evening comes before the dark ledger. Tap to go on; it also leaves by itself.
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { RomeiFlag } from './Heraldry';
+import { Crowd, type Pools } from './Crowd';
+import { CROWD } from './crowdMap';
 import type { GameState } from '../../engine';
 import * as G from '../../engine';
 
@@ -46,6 +48,22 @@ function voices(s: GameState, kind: PanoKind): Voice[] {
       : ['У шинку на Подолі співають пісню, якої немає в імперському співанику', 'Імперський патруль сьогодні не вийшов: нема чим платити', 'У вікнах Старого міста світло до півночі — сперечаються про мову', 'На вокзалі проводжають делегатів до столиці. Мало хто вірить, що їх почують'];
     out.push({ t: BG[(s.year + (kind === 'morning' ? 0 : 1)) % BG.length], tone: 'neu' });
   }
+  if (s.era === 2 && out.length < 2) {
+    const BG2: Record<G.Regime, [string[], string[]]> = {
+      empire: [['На вокзалі знову проводжають ешелон: оркестр, хустки, мовчання', 'Цукор зник із прилавків, а з ним і продавці цукру', 'Біля шпиталю в маєтку черга з листами до поранених'],
+        ['Вікна заклеєно навхрест: кажуть, з моря видно місто', 'У порту розвантажують снаряди до ночі', 'У кав’ярні сперечаються, коли скінчиться війна. Ставки ростуть']],
+      provisional: [['Хтось уночі збив кречета з воріт управи. Двірник підмів і пішов', 'На площі мітинг: говорять усі, слухає ніхто', 'Жандармів більше нема. Міліції ще нема'],
+        ['Солдати з фронту продають шинелі на Ринковій', 'У трамваї курять. Кондуктор каже: тепер свобода', 'Ціни на хліб змінюються двічі на день']],
+      vnr: [['Маляр на драбині перефарбовує вивіску аптеки: третя за тиждень', 'Над Ратушею — жовто-чорно-блакитний прапор. Дехто знімає капелюх, дехто — ні', 'Службовці управи йдуть на роботу зі словниками під пахвою'],
+        ['У театрі сьогодні вперше — вальдорською. Квитків нема', 'На Ринковій сперечаються, як буде «квитанція» по-новому', 'Державна варта патрулює набережну. Кокарди нові, обличчя знайомі']],
+      civil: [['Уночі стріляли біля вокзалу. Зранку ніхто нічого не чув', 'На стіні три шари листівок: ради, республіка, знову ради', 'Черга по хліб починається до світанку'],
+        ['Комендантська година. Вулиці порожні, крім патрулів', 'У гавані ще горить склад, підпалений позавчора', 'Хто має срібло, міняє на борошно. Хто має борошно, мовчить']],
+      soviet: [['Непман на Ринковій відкрив другу крамницю й найняв прикажчика', 'Над Ратушею — новий прапор, під Ратушею — старі ями', 'Біля «Трибуни праці» читають стінну газету'],
+        ['На заводі нічна зміна: місто знову димить', 'У клубі колишнього собору показують кіно', 'Двірник знає про будинок більше, ніж усі мешканці разом']]
+    };
+    const reg = G.regimeOf(s) || 'empire', bg = BG2[reg][kind === 'morning' ? 0 : 1];
+    out.push({ t: bg[(s.year + s.served) % bg.length], tone: 'neu' });
+  }
   // the harbour stop always gets the port: trade in the morning, the sleeping harbour at night
   const up = c ? c.econ.trade >= c.prev.trade : true;
   const port: Voice = kind === 'morning'
@@ -55,101 +73,51 @@ function voices(s: GameState, kind: PanoKind): Voice[] {
 }
 
 // ---------------------------------------------------------------- the city's life: townsfolk from the same engraving
-// Sprites (public/art/life/*.webp) were drawn in the panorama's own technique: walkers in side view facing right,
-// horse-drawn vehicles facing right, people at rest. A figure lives on a lane of the painted ground (the market square,
-// the pier, the embankment); its size follows the depth of the picture, it bobs with each step, leans a little into
-// the walk, casts a soft shadow and takes the light of the hour (warm dawn, blue night with lanterns).
+// Sprites (public/art/life/*.webp) are drawn in the panorama's own technique; where they walk and how they move and
+// take the light lives in Crowd.tsx and crowdMap.ts. Here: who is out, by era and by power.
 
-/** width / height of each sprite */
-const SPR: Record<string, number> = { 'i-beggar': 0.875, 'i-chestnut': 0.719, 'i-couple': 0.594, 'i-gossip': 0.896, 'i-guard': 0.292, 'i-kiosk': 0.646, 'i-rest': 1.25, 'i-talk': 0.667, 'v-barrels': 2.679, 'v-fiacre': 2.238, 'v-landau': 2.571, 'v-milk': 2.464, 'v-tram': 2.5, 'w-barrow': 1.031, 'w-docker': 0.562, 'w-fishwife': 0.51, 'w-flowergirl': 0.542, 'w-gendarme': 0.552, 'w-lady': 0.521, 'w-lamplighter': 0.771, 'w-merchant': 0.521, 'w-nanny': 1.062, 'w-oldman': 0.552, 'w-paperboy': 0.573, 'w-porter': 0.646, 'w-priest': 0.573, 'w-reader': 0.573, 'w-sailor': 0.594, 'w-student': 0.531, 'w-sweep': 0.573, 'w-washer': 0.583, 'w-worker': 0.583, 'w-yoke': 0.667 };
-/** a grown man's height in px on a ground line (y in % of the picture): further = smaller, as in the painting */
-const personH = (y: number, ground: 'square' | 'pier' | 'prom' | 'roof') => ({ square: 15.5 + (y - 56) * 0.9, pier: 12.5 + (y - 56) * 0.7, prom: 17 + (y - 64) * 0.8, roof: 21 })[ground];
-
-type Fig = { id: string; x0: number; x1?: number; y: number; ground: 'square' | 'pier' | 'prom' | 'roof'; speed?: number; phase?: number; lantern?: 'hand' | 'pole' | 'cab'; flip?: boolean; at?: number; dur?: number };
-const LOOK = {
-  morning: 'sepia(.22) saturate(.9) contrast(.96) brightness(.97)',
-  evening: 'brightness(.5) saturate(.55) sepia(.2) hue-rotate(-12deg) contrast(1.05)'
-};
-const glowAt = (left: string, top: string, r = 7) => <span style={{ position: 'absolute', left, top, width: r * 2, height: r * 2, marginLeft: -r, marginTop: -r, borderRadius: '50%', background: 'radial-gradient(circle, #FFEAB0, rgba(255,200,110,.5) 30%, rgba(255,190,90,0) 70%)', mixBlendMode: 'screen', animation: 'pano-flick 1.8s ease-in-out infinite' }} />;
-
-/** one figure. Walkers and vehicles go x0 → x1 along their lane, endlessly (a negative delay puts them mid-walk at the
- *  start), fading in and out at the ends of the lane; idle figures stay and sway. */
-function Figure({ f, night }: { f: Fig; night: boolean }) {
-  const kind = f.id[0], h = personH(f.y, f.ground) * (kind === 'v' ? 1.25 : kind === 'i' && f.id === 'i-rest' ? 0.8 : 1), w = h * (SPR[f.id] || 0.6);
-  const moving = f.x1 !== undefined && f.x1 !== f.x0, left = moving && f.x1! < f.x0;
-  // a walk is ~0.8 % of the picture a second, a trotting horse ~2 %; the lane's length sets the loop
-  const speed = f.speed ?? (kind === 'v' ? 2 : 0.75), dur = f.dur ?? (moving ? Math.abs(f.x1! - f.x0) / speed : 0);
-  const delay = f.at ?? -(f.phase ?? 0.5) * dur;
-  const step = kind === 'v' ? 0.36 : 0.52 + (h % 3) * 0.04; // a trot is quicker than a step; people differ a little
-  const z = Math.round(f.y * 10);
-  const img = (
-    <img src={`art/life/${f.id}.webp`} alt="" draggable={false} style={{ position: 'absolute', left: -w / 2, top: -h, width: w, height: h, transform: left || f.flip ? 'scaleX(-1)' : undefined, filter: night ? LOOK.evening : LOOK.morning }} />
-  );
-  return (
-    <span aria-hidden="true" style={{ position: 'absolute', left: `${f.x0}%`, top: `${f.y}%`, width: 0, height: 0, zIndex: z, ['--x0' as string]: `${f.x0}%`, ['--x1' as string]: `${f.x1 ?? f.x0}%`, ['--y0' as string]: `${f.y}%`, animation: moving ? `pano-lane ${dur}s linear ${delay}s infinite` : undefined } as CSSProperties}>
-      {/* the shadow stays on the ground: long and to the left in the low morning sun, a soft pool at night */}
-      <span style={{ position: 'absolute', left: -w * (night ? 0.32 : 0.55), top: -1.6, width: w * (night ? 0.64 : 0.95), height: Math.max(2.2, h * 0.11), borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(20,12,4,.42), rgba(20,12,4,0) 70%)', filter: 'blur(.6px)' }} />
-      {/* the body: bobs with each step and leans into the walk; at rest it only breathes and sways */}
-      <span style={{ position: 'absolute', left: 0, top: 0, width: 0, height: 0, transformOrigin: '0 0', animation: moving ? `pano-gait ${step}s ease-in-out ${delay}s infinite` : `pano-sway ${3.2 + (h % 2)}s ease-in-out ${-(f.phase ?? 0) * 3}s infinite alternate` }}>
-        {img}
-        {f.lantern === 'hand' && glowAt(`${(left ? -1 : 1) * w * 0.32}px`, `${-h * 0.42}px`, 7)}
-        {f.lantern === 'pole' && glowAt(`${(left ? -1 : 1) * w * 0.42}px`, `${-h * 0.98}px`, 9)}
-        {f.lantern === 'cab' && glowAt(`${(left ? -1 : 1) * w * 0.05}px`, `${-h * 0.62}px`, 9)}
-      </span>
-    </span>
-  );
-}
-
-/** a busy lane: n walkers spread along it, both ways, varied people */
-const lane = (ids: string[], n: number, x0: number, x1: number, y: number, ground: Fig['ground'], seed: number): Fig[] => {
-  let a = seed; const r = () => ((a = (a * 16807) % 2147483647) / 2147483647);
-  return Array.from({ length: n }, (_, i) => {
-    const back = r() < 0.5, yy = y + (r() - 0.5) * 1.6;
-    return { id: ids[Math.floor(r() * ids.length) % ids.length], x0: back ? x1 : x0, x1: back ? x0 : x1, y: yy, ground, speed: 0.6 + r() * 0.35, phase: (i + r() * 0.6) / n };
-  });
-};
-const TOWNSFOLK = ['w-merchant', 'w-lady', 'w-worker', 'w-washer', 'w-paperboy', 'w-priest', 'w-student', 'w-fishwife', 'w-oldman', 'w-nanny', 'w-flowergirl', 'w-reader', 'w-yoke', 'w-porter'];
+const TOWNSFOLK = ['w-clerk', 'w-merchant', 'w-lady', 'w-worker', 'w-washer', 'w-paperboy', 'w-priest', 'w-student', 'w-fishwife', 'w-oldman', 'w-nanny', 'w-flowergirl', 'w-reader', 'w-yoke', 'w-porter'];
 const PORTFOLK = ['w-docker', 'w-porter', 'w-sailor', 'w-worker', 'w-fishwife', 'w-barrow'];
 const NIGHTFOLK = ['w-merchant', 'w-lady', 'w-worker', 'w-sailor', 'w-reader', 'w-oldman', 'w-student'];
 
-/** who is out in the morning: a busy market square, a working pier, people on the embankment */
-const MORNING_LIFE: Fig[] = [
-  // the market square (stop 2): three lanes of people, vehicles crossing, people standing about
-  ...lane(TOWNSFOLK, 9, 35, 60, 57.9, 'square', 11),
-  ...lane(TOWNSFOLK, 7, 36, 59, 55.4, 'square', 23),
-  ...lane(TOWNSFOLK, 5, 38, 57, 52.9, 'square', 37),
-  { id: 'v-tram', x0: 33, x1: 62, y: 58.3, ground: 'square', speed: 2.1, phase: 0.08 },
-  { id: 'v-barrels', x0: 62, x1: 33, y: 56.6, ground: 'square', speed: 1.6, phase: 0.55 },
-  { id: 'v-milk', x0: 34, x1: 61, y: 54.3, ground: 'square', speed: 1.4, phase: 0.6 },
-  { id: 'v-fiacre', x0: 61, x1: 34, y: 52.1, ground: 'square', speed: 2.2, phase: 0.25 },
-  { id: 'i-chestnut', x0: 47.6, y: 56.2, ground: 'square', phase: 0.2 },
-  { id: 'i-gossip', x0: 53.2, y: 58.1, ground: 'square', phase: 0.6 },
-  { id: 'i-talk', x0: 39.6, y: 55.0, ground: 'square', phase: 0.4 },
-  { id: 'i-kiosk', x0: 57.8, y: 55.0, ground: 'square', phase: 0.1 },
-  { id: 'i-guard', x0: 49.6, y: 51.8, ground: 'square', phase: 0.8 },
-  // the pier (stop 3): dockers carrying cargo, two resting, a cart along the quay
-  ...lane(PORTFOLK, 7, 74, 84, 56.2, 'pier', 51),
-  { id: 'i-rest', x0: 79.2, y: 55.3, ground: 'pier', phase: 0.5 },
-  { id: 'v-barrels', x0: 85, x1: 73, y: 57.8, ground: 'pier', speed: 1.2, phase: 0.35 },
-  // the embankment below (stop 3): a morning stroll
-  ...lane(['w-lady', 'w-merchant', 'w-nanny', 'w-oldman', 'w-flowergirl', 'w-priest', 'w-paperboy'], 5, 73.5, 84, 64.2, 'prom', 63),
-  { id: 'i-couple', x0: 79.6, y: 63.8, ground: 'prom', phase: 0.3 }
-];
-/** who is out in the evening: the lamplighter, cabs with lanterns, a patrol, late walkers, dockers at rest */
-const EVENING_LIFE: Fig[] = [
-  ...lane(NIGHTFOLK, 5, 36, 59, 57.6, 'square', 17),
-  ...lane(NIGHTFOLK, 3, 38, 57, 54.2, 'square', 29),
-  { id: 'v-fiacre', x0: 62, x1: 33, y: 56.4, ground: 'square', speed: 2.2, phase: 0.62, lantern: 'cab' },
-  { id: 'v-landau', x0: 33, x1: 62, y: 58.2, ground: 'square', speed: 1.9, phase: 0.3, lantern: 'cab' },
-  { id: 'i-beggar', x0: 49.8, y: 52.3, ground: 'square', phase: 0.5 },
-  { id: 'i-couple', x0: 41, y: 55.8, ground: 'square', phase: 0.2 },
-  // the patrol walks the pier with a lantern; dockers smoke on their sacks
-  { id: 'w-gendarme', x0: 84, x1: 74, y: 56.4, ground: 'pier', speed: 0.7, phase: 0.15, lantern: 'hand' },
-  { id: 'w-gendarme', x0: 84.8, x1: 74.8, y: 56.8, ground: 'pier', speed: 0.7, phase: 0.11 },
-  { id: 'i-rest', x0: 79.2, y: 55.3, ground: 'pier', phase: 0.5 },
-  ...lane(['w-sailor', 'w-worker', 'w-docker'], 3, 74, 84, 55.8, 'pier', 71),
-  ...lane(['w-lady', 'w-merchant', 'w-oldman'], 3, 73.5, 84, 64.2, 'prom', 83)
-];
+/** Era II (art/life/w2-*, v2-*, i2-*): who is out depends on the power. The war years: soldiers, sailors, soldiers'
+ *  wives, the wounded, a field kitchen, army carts and lorries. 1917: the same, plus the militia and the meetings.
+ *  The civil war: patrols, commissars, queues, no cabs. Under the councils: workers, nepmen, a tram and a motor car. */
+const ERA2_FOLK: Record<G.Regime, { walk: string[]; port: string[]; night: string[]; v: string[]; idle: string[] }> = {
+  empire: { walk: ['w2-soldier', 'w2-woman', 'w2-invalid', 'w2-newsboy', 'w2-trader', 'w2-student', 'w2-granny', 'w-lady', 'w-worker', 'w-merchant'], port: ['w2-soldier', 'w2-sailor', 'w-docker', 'w-porter', 'w2-worker'], night: ['w2-soldier', 'w2-sailor', 'w-merchant', 'w2-woman'], v: ['v-tram', 'v2-cart', 'v2-lorry', 'v-fiacre'], idle: ['i2-kitchen', 'i2-queue', 'i-gossip'] },
+  provisional: { walk: ['w2-soldier', 'w2-militia', 'w2-woman', 'w2-student', 'w2-newsboy', 'w2-invalid', 'w2-girl', 'w2-trader', 'w-worker'], port: ['w2-sailor', 'w2-soldier', 'w-docker', 'w2-worker'], night: ['w2-militia', 'w2-sailor', 'w2-soldier', 'w2-student'], v: ['v-tram', 'v2-lorry', 'v2-cart', 'v-fiacre'], idle: ['i2-agitator', 'i2-queue', 'i-talk'] },
+  vnr: { walk: ['w2-soldier', 'w2-militia', 'w2-woman', 'w2-student', 'w2-newsboy', 'w2-invalid', 'w2-girl', 'w2-trader', 'w-worker'], port: ['w2-sailor', 'w2-soldier', 'w-docker', 'w2-worker'], night: ['w2-militia', 'w2-sailor', 'w2-soldier', 'w2-student'], v: ['v-tram', 'v2-lorry', 'v2-cart', 'v-fiacre'], idle: ['i2-agitator', 'i2-queue', 'i-talk'] },
+  civil: { walk: ['w2-soldier', 'w2-commissar', 'w2-militia', 'w2-woman', 'w2-granny', 'w2-invalid', 'w2-worker', 'w2-sailor'], port: ['w2-sailor', 'w2-soldier', 'w-docker', 'w2-worker'], night: ['w2-militia', 'w2-soldier', 'w2-commissar', 'w2-sailor'], v: ['v2-lorry', 'v2-cart', 'v2-lorry', 'v2-cart'], idle: ['i2-queue', 'i2-agitator', 'i2-kitchen'] },
+  soviet: { walk: ['w2-worker', 'w2-girl', 'w2-trader', 'w2-commissar', 'w2-newsboy', 'w2-student', 'w2-woman', 'w2-granny', 'w2-sailor'], port: ['w-docker', 'w-porter', 'w2-worker', 'w2-sailor'], night: ['w2-worker', 'w2-girl', 'w2-militia', 'w2-trader'], v: ['v-tram', 'v2-car', 'v2-cart', 'v2-lorry'], idle: ['i2-agitator', 'i-kiosk', 'i-talk'] }
+};
+/** who walks where: the street and the square get townsfolk, the quay dockers and sailors, the road vehicles */
+function poolsFor(era: number, reg: G.Regime | 'empire', night: boolean): Pools {
+  if (era === 2) {
+    const f = ERA2_FOLK[reg];
+    return { street: night ? f.night : f.walk, square: night ? f.night : f.walk, quay: night ? [...f.port.slice(0, 2), f.night[0]] : f.port, road: f.v, water: ['b-row', 'b-launch', 'b-barge'],
+      idle: { square: night ? ['i-couple', 'i-beggar'] : f.idle, quay: ['i-rest'], street: night ? [] : ['i-talk'] } };
+  }
+  return { street: night ? NIGHTFOLK : TOWNSFOLK, square: night ? NIGHTFOLK : TOWNSFOLK, quay: night ? ['w-gendarme', 'w-sailor', 'w-worker', 'w-docker'] : PORTFOLK,
+    road: night ? ['v-fiacre', 'v-landau'] : ['v-tram', 'v-fiacre', 'v-milk', 'v-barrels', 'v-landau'], water: ['b-row', 'b-sail', 'b-launch', 'b-barge'],
+    idle: { square: night ? ['i-beggar', 'i-couple'] : ['i-chestnut', 'i-gossip', 'i-talk', 'i-kiosk', 'i-guard'], quay: ['i-rest', 'i-couple'], street: night ? [] : ['i-talk'] } };
+}
+
+/** the flag over the town hall tower, by power: the empire's stripes, the red flag of 1917, the red flag with the
+ *  СРС anchor and hammer from 1918 */
+function TowerFlag({ reg }: { reg: G.Regime | 'empire' }) {
+  const red = reg !== 'empire' && reg !== 'vnr';
+  return (
+    <span aria-hidden="true" style={{ position: 'absolute', left: '29.15%', top: '2%', width: 0, height: 0, zIndex: 3 }}>
+      <span style={{ position: 'absolute', left: 0, top: 0, width: 1.5, height: 26, background: '#2A2018' }} />
+      <svg width="26" height="17" viewBox="0 0 26 17" style={{ position: 'absolute', left: 1.5, top: 1, transformOrigin: '0 50%', animation: 'pano-flag 1.6s ease-in-out infinite alternate', filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,.4)) saturate(.85)' }}>
+        {reg === 'vnr' ? <><path d="M0 0 Q7 -1.5 13 1 T26 1 V6 Q19 4.5 13 6.3 T0 6 Z" fill="#E3B23C" /><path d="M0 6 Q7 4.5 13 6.3 T26 6 V11 Q19 9.5 13 11.3 T0 11 Z" fill="#1F1A14" /><path d="M0 11 Q7 9.5 13 11.3 T26 11 V16 Q19 14 13 16.5 T0 16 Z" fill="#6FA3D8" /></>
+          : red ? <path d="M0 0 Q7 -1.5 13 1 T26 1 V16 Q19 14 13 16.5 T0 16 Z" fill="#B3261E" />
+          : <><path d="M0 0 Q7 -1.5 13 1 T26 1 V6 Q19 4.5 13 6.3 T0 6 Z" fill="#B3261E" /><path d="M0 6 Q7 4.5 13 6.3 T26 6 V11 Q19 9.5 13 11.3 T0 11 Z" fill="#F2EBDD" /><path d="M0 11 Q7 9.5 13 11.3 T26 11 V16 Q19 14 13 16.5 T0 16 Z" fill="#E0B23A" /></>}
+        {(reg === 'civil' || reg === 'soviet') && <image href="art/brand/srs-emblem.png" x="8" y="2.5" width="8.5" height="11" />}
+      </svg>
+    </span>
+  );
+}
 
 const Smoke = ({ x, y, d = 0, s = 1 }: { x: number; y: number; d?: number; s?: number }) => (
   <span aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 0, height: 0 }}>
@@ -167,8 +135,8 @@ const scatter = (n: number, seed: number, x0: number, x1: number, y0: number, y1
 };
 const MOTES = scatter(20, 31, 0, 100, 10, 95), FLOCK = scatter(11, 41, 0, 90, 0, 40).map(([x, y, d, k]) => [x, y, d / 10, k * 1.3] as const);
 const GLINTS = scatter(40, 7, 57, 99, 30, 64), STARS = scatter(36, 11, 0, 100, 1, 17);
-/** windows of the painted town (rows of houses), lit in a wave as the camera passes */
-const WINDOWS = [...scatter(14, 23, 3, 30, 52, 92), ...scatter(14, 29, 34, 60, 40, 70), ...scatter(10, 37, 62, 82, 44, 66)];
+/** windows of the painted town, lit in a wave as the camera passes: the Old Town houses, the facades above the square, the roofs in front of the harbour (never on the cobbles or the water) */
+const WINDOWS = [...scatter(14, 23, 3, 30, 52, 92), ...scatter(14, 29, 36, 58, 38, 48), ...scatter(10, 37, 62, 82, 58, 70)];
 const Glint = ({ x, y, d, k }: { x: number; y: number; d: number; k: number }) => (
   <span aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 10 * k, height: 2.2 * k, marginLeft: -5 * k, borderRadius: 2, background: 'rgba(255,240,200,.95)', boxShadow: '0 0 6px rgba(255,230,170,.9)', mixBlendMode: 'screen', opacity: 0, animation: `pano-glint ${2.4 + k * 1.6}s ease-in-out ${d}s infinite` }} />
 );
@@ -181,13 +149,9 @@ const Gull = ({ x, y, d, dur, k }: { x: number; y: number; d: number; dur: numbe
   </svg>
 );
 
-/** street lamps of the painted town: the Old Town street (left), the market square, the quay */
-const LAMPS: [number, number, number][] = [[12, 88.5, 15], [17.5, 84, 14], [22.5, 80.5, 12], [27.5, 76.5, 10], [38.5, 55, 9], [43.5, 51, 10], [48, 53, 9], [52.5, 55.5, 9], [57, 56, 9], [69, 54, 10], [73.5, 53, 9], [78, 55, 9]];
 /** where the scraps of paper point: the three stops */
 const PLACES = ['Старе місто', 'Ринкова площа', 'Гавань'];
-/** the lamplighter's walk across the square; each square lamp comes on as he reaches it */
-const LL = { x0: 46.4, x1: 52.8, d: 2.6, dur: 7 };
-const lampOnAt = (x: number) => (x >= LL.x0 && x <= LL.x1 ? LL.d + ((x - LL.x0) / (LL.x1 - LL.x0)) * LL.dur + 0.1 : seenAt(x) + 0.3);
+
 
 const CSS = `
 @keyframes pano-cam {
@@ -212,6 +176,7 @@ const CSS = `
 @keyframes pano-smoke { 0% { opacity: 0; transform: translate(0,0) scale(.4); } 20% { opacity: .55; } 100% { opacity: 0; transform: translate(18px,-70px) scale(1.9); } }
 @keyframes pano-beam { from { transform: rotate(-40deg); } to { transform: rotate(320deg); } }
 @keyframes pano-gull { from { transform: translate(0,0); } to { transform: translate(900px,-60px); } }
+@keyframes pano-flag { from { transform: skewY(-3deg) scaleX(.96); } to { transform: skewY(3deg) scaleX(1); } }
 @keyframes pano-wing { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.35); } }
 @keyframes pano-grain { 0% { transform: translate(0,0); } 20% { transform: translate(-40px,22px); } 40% { transform: translate(28px,-36px); } 60% { transform: translate(-18px,-12px); } 80% { transform: translate(36px,30px); } 100% { transform: translate(0,0); } }
 @keyframes pano-glint { 0%,100% { opacity: 0; transform: scaleX(.4); } 45% { opacity: .9; transform: scaleX(1); } 60% { opacity: 0; } }
@@ -238,6 +203,14 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
   useEffect(() => { const t = setTimeout(leave, (T + 0.6) * 1000); return () => clearTimeout(t); }); // eslint-disable-line react-hooks/exhaustive-deps
   const era = s.era, img = (n: string) => `art/city/e${era}-${n}.jpg`;
   const night = kind === 'evening', morning = !night;
+  // Era II is painted from the same viewpoint, so lamps, windows, lanes and the tower line up with Era I's
+  const reg: G.Regime | 'empire' = era === 2 ? G.regimeOf(s) || 'empire' : 'empire', lit = era <= 2;
+  const pools = useMemo(() => poolsFor(era, reg, night), [era, reg, night]);
+  // the lamps of this painting; the lamplighter lights the ones along his walk as he reaches them
+  const cmap = CROWD[(era === 2 ? 2 : 1) as 1 | 2], LLD = 2.6, LLT = 7;
+  const ll = cmap.lamplighter;
+  const lampOnAt = (x: number, y: number) => (x >= ll.from[0] && x <= ll.to[0] && Math.abs(y - ll.from[1]) < 80 ? LLD + ((x - ll.from[0]) / (ll.to[0] - ll.from[0])) * LLT + 0.1 : seenAt(x / 16) + 0.3);
+  const overAnim = night ? `pano-fadein 5.5s ease-in-out 2.2s forwards` : 'pano-fadeout 4.2s ease-in-out .3s both';
   const ink = night ? '#E8DDC2' : '#FFF3DA';
   // the notes: one per stop; the last one stays until the end
   const port = lines[lines.length - 1];
@@ -253,13 +226,15 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
           <img src={img(night ? 'evening' : 'morning')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT }} />
           {morning && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT, animation: 'pano-fadeout 4.2s ease-in-out .3s both' }} />}
           {night && <img src={img('night')} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: SOFT, opacity: 0, animation: `pano-fadein 5.5s ease-in-out 2.2s forwards` }} />}
+          {/* the townsfolk walk the painted ground; lamps and windows light them from above */}
+          {lit && <Crowd era={era as 1 | 2} evening={night} pools={pools} under={img(night ? 'evening' : 'morning')} over={img('night')} overAnim={overAnim} soft={SOFT} lamplighterAt={night ? [LLD, LLT] : undefined} reduced={typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches} />}
           {morning && <span aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(200deg, rgba(255,214,150,.34), rgba(255,200,130,.08) 50%, transparent 70%)', mixBlendMode: 'screen', opacity: 0, animation: 'pano-fadein 4s ease-in 3.2s forwards' }} />}
           {night && <span aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,16,44,.45), rgba(10,16,44,.15) 60%, rgba(10,16,44,.35))', mixBlendMode: 'multiply', opacity: 0, animation: 'pano-fadein 6s ease-in 2s forwards' }} />}
 
           {/* street lamps go out (morning) or come on (evening) as the camera reaches them */}
-          {era === 1 && LAMPS.map(([x, y, r], i) => <Lamp key={i} x={x} y={y} r={r} on={night} at={night ? lampOnAt(x) : seenAt(x) + 0.4} />)}
+          {lit && cmap.lamps.map(([x, y, r], i) => <Lamp key={i} x={x / 16} y={y / 9} r={r} on={night} at={night ? lampOnAt(x, y) : seenAt(x / 16) + 0.4} />)}
           {/* windows light up in a wave in the evening */}
-          {night && era === 1 && WINDOWS.map(([x, y, , k], i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 4 * k, height: 6 * k, background: '#FFCB6B', boxShadow: '0 0 8px 2px rgba(255,190,90,.7)', mixBlendMode: 'screen', opacity: 0, animation: `pano-win .6s ease-out ${seenAt(x) + (i % 4) * 0.25}s forwards` }} />)}
+          {night && lit && WINDOWS.map(([x, y, , k], i) => <span key={i} aria-hidden="true" style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: 4 * k, height: 6 * k, background: '#FFCB6B', boxShadow: '0 0 8px 2px rgba(255,190,90,.7)', mixBlendMode: 'screen', opacity: 0, animation: `pano-win .6s ease-out ${seenAt(x) + (i % 4) * 0.25}s forwards` }} />)}
 
           {/* the sky */}
           {morning && <>
@@ -284,11 +259,8 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
             <span aria-hidden="true" style={{ position: 'absolute', left: '50%', right: 0, top: '52%', height: 90, background: 'linear-gradient(180deg, transparent, rgba(170,180,210,.35), transparent)', filter: 'blur(10px)', animation: 'pano-mist 16s ease-in-out infinite' }} />
           </>}
 
-          {/* the city's life */}
-          {era === 1 && (night ? EVENING_LIFE : MORNING_LIFE).map((f, i) => <Figure key={i} f={f} night={night} />)}
-          {/* the lamplighter crosses the square lighting the lamps one by one */}
-          {night && era === 1 && <Figure f={{ id: 'w-lamplighter', x0: LL.x0, x1: LL.x1, y: 56.9, ground: 'square', lantern: 'pole', at: LL.d, dur: LL.dur }} night />}
-          {morning && era === 1 && <>
+          {era === 2 && <TowerFlag reg={reg} />}
+          {morning && lit && <>
             <span aria-hidden="true" style={{ position: 'absolute', left: '84%', top: '60%', animation: `pano-boat ${T}s linear both` }}><svg width="26" height="8" viewBox="0 0 26 8"><path d="M0 3 H26 L22 7 H4 Z" fill={INKC} /><path d="M10 3 L6 -2 M16 3 L20 -2" stroke={INKC} strokeWidth=".8" /></svg></span>
             {/* pigeons burst off the town hall tower */}
             <span aria-hidden="true" style={{ position: 'absolute', left: '29%', top: '14%', width: 0, height: 0, animation: 'pano-flock 5s cubic-bezier(.3,.1,.6,1) 1.2s both' }}>
@@ -310,8 +282,8 @@ export function Panorama({ s, kind, onDone }: { s: GameState; kind: PanoKind; on
 
       {/* the title: big for a moment, then it settles into a small plaque */}
       <div style={{ position: 'absolute', left: 16, right: 16, top: '24%', textAlign: 'center', color: ink, textShadow: '0 2px 12px rgba(0,0,0,.85), 0 0 30px rgba(0,0,0,.6)', fontFamily: "'Old Standard TT', serif", animation: 'pano-title 2.9s ease-out .15s both', pointerEvents: 'none' }}>
-        {morning && era === 1 && <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><RomeiFlag w={40} style={{ boxShadow: '0 2px 8px rgba(0,0,0,.6)' }} /></div>}
-        {morning && <div style={{ fontSize: 10, letterSpacing: 1.6, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap' }}>{era === 1 ? 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ · РОМЕЙСЬКА ІМПЕРІЯ' : 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ'}</div>}
+        {morning && lit && reg === 'empire' && <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><RomeiFlag w={40} style={{ boxShadow: '0 2px 8px rgba(0,0,0,.6)' }} /></div>}
+        {morning && <div style={{ fontSize: 10, letterSpacing: 1.6, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap' }}>{reg === 'empire' && era <= 2 ? 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ · РОМЕЙСЬКА ІМПЕРІЯ' : reg === 'soviet' ? 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ · СТСД' : 'ПОРТ-АУРУМ · ВАЛЬДОРІЯ'}</div>}
         <div style={{ fontFamily: "'Ruslan Display', serif", fontSize: 64, lineHeight: 1, marginTop: 6 }}>{night ? 'Вечір' : 'Ранок'}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 6 }}>
           <span style={{ width: 40, height: 1, background: ink, opacity: 0.6 }} />

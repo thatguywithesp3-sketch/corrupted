@@ -3,7 +3,7 @@
 // The arms: a black gyrfalcon (кречет) under a crown, holding a key (money, the «key to the Third Rome») and an anchor
 // (the port), on a white-over-yellow shield; the official drawing is public/art/brand/romei-arms.png. The same falcon is
 // on the coins of the Romean crown and on the emperor's order.
-// The crown sign: Р under a crown. Valdoria: blue-black-yellow (sea, land, sun), banned until Era IV.
+// The crown sign: Р under a crown. Valdoria: yellow-black-blue (sunny sky, land, sea), banned until Era IV.
 import type { CSSProperties } from 'react';
 
 export const ROMEI = { red: '#B8322A', white: '#F4EFE2', yellow: '#E2B33C', ink: '#1F1A14' };
@@ -71,13 +71,13 @@ export function RomeiFlag({ w = 36, arms = true, style }: { w?: number; arms?: b
   );
 }
 
-/** the banned Valdorian flag: blue, black, yellow (sea, land, sun) */
+/** the banned Valdorian flag: yellow, black, blue (sunny sky, land, sea) */
 export function ValdorFlag({ w = 36, style }: { w?: number; style?: CSSProperties }) {
   return (
     <svg viewBox="0 0 72 48" width={w} height={(w * 2) / 3} style={style} role="img" aria-label="Вальдорський прапор">
-      <rect width="72" height="16" fill={VALDOR.blue} />
+      <rect width="72" height="16" fill={VALDOR.yellow} />
       <rect y="16" width="72" height="16" fill={VALDOR.black} />
-      <rect y="32" width="72" height="16" fill={VALDOR.yellow} />
+      <rect y="32" width="72" height="16" fill={VALDOR.blue} />
     </svg>
   );
 }

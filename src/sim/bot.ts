@@ -1,7 +1,7 @@
 import {
   acceptOffer, allTo, campaignAct, currentDoc, declineScheme, electionNight, liveKids, lockSafe, pickHeir, pickOption,
   setAppetite, setHero, signForm, signScheme, sleep, toOffice, toggleKidPay, newGame, restart,
-  isFatal, schemeDelta, officeDone, endDay, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, CITY_RULES, RULES, dirtyTotal, chronPick
+  isFatal, schemeDelta, officeDone, endDay, enabledOptions, kidStashTarget, totalMoney, getEra, actOnBiz, actOnRival, bizActs, rivalActs, didAct, actOnInst, instActs, CITY_RULES, RULES, dirtyTotal, chronPick
 } from '../engine';
 import type { Delta, GameState } from '../engine';
 
@@ -34,11 +34,12 @@ function score(s: GameState, d: Delta): number {
 
 /** One city move for the morning, or null when the bot makes none. */
 /** keepClean: clean money the bot will not spend on charity (it is saving it for something) */
-export function cityMove(s: GameState, policy: CityPolicy = 'none', keepClean = 0): GameState | null {
-  const n = cityMoveRaw(s, policy, keepClean);
+/** clean: the bot is after a clean name and takes no kickbacks or bought diplomas */
+export function cityMove(s: GameState, policy: CityPolicy = 'none', keepClean = 0, clean = false): GameState | null {
+  const n = cityMoveRaw(s, policy, keepClean, clean);
   return n === s ? null : n; // the move could not be made
 }
-function cityMoveRaw(s: GameState, policy: CityPolicy, keepClean: number): GameState | null {
+function cityMoveRaw(s: GameState, policy: CityPolicy, keepClean: number, clean: boolean): GameState | null {
   if (policy === 'none') return null;
   const c = s.city;
   if (!c) return null;
@@ -59,8 +60,22 @@ function cityMoveRaw(s: GameState, policy: CityPolicy, keepClean: number): GameS
       if (m) return actOnRival(s, r.id, m.act as 'bribe' | 'expose' | 'marry');
     }
     if (s.threat >= 65) return null; // lie low
+    // the foundry and the university, the way an attentive player would use them
+    const free = (id: string) => !didAct(c, 'i:' + id), opt = (id: 'works' | 'univ', act: string) => free(id) ? instActs(s, id).find((o) => o.act === act && o.can) : undefined;
+    const affordable = (o: { cost?: number; clean?: boolean }) => !o.clean || s.clean - (o.cost || 0) >= keepClean;
+    const enroll = opt('univ', 'enroll'); // a child of the house at the university: the next head starts a rank higher
+    if (enroll && !clean && affordable(enroll)) return actOnInst(s, 'univ', 'enroll');
+    const stake = opt('works', 'stake'); // a foundry share pays off only when bought early
+    if (stake && !clean && s.served <= 5 && affordable(stake)) return actOnInst(s, 'works', 'stake');
+    const dip = opt('univ', 'diploma');
+    if (dip && !clean && s.system <= 55 && s.threat < 35) return actOnInst(s, 'univ', 'diploma');
   }
   let best: { id: string; act: string; v: number } | null = null;
+  // the state order with a kickback weighs like any shop move: money against the risk it brings
+  if (policy === 'wise' && !clean && !didAct(c, 'i:works')) {
+    const o = instActs(s, 'works').find((x) => x.act === 'order' && x.can);
+    if (o) { const v = o.odds * o.gain - o.risk * (s.threat > 45 ? 70 : 35); if (v > 0) best = { id: 'i:works', act: 'order', v }; }
+  }
   for (const b of c.biz) {
     if (b.status !== 'open' || didAct(c, b.id)) continue;
     for (const o of bizActs(s, b)) {
@@ -70,6 +85,7 @@ function cityMoveRaw(s: GameState, policy: CityPolicy, keepClean: number): GameS
       if (v > 0 && (!best || v > best.v)) best = { id: b.id, act: o.act, v };
     }
   }
+  if (best && best.id === 'i:works') return actOnInst(s, 'works', 'order');
   return best ? actOnBiz(s, best.id, best.act as 'inspect') : null;
 }
 
@@ -194,7 +210,7 @@ export function goalStep(s: GameState, g: GoalBot): GameState {
     case 'morning': {
       let n = s;
       const keep = g.dream === 0 && !n.estate ? RULES.estate.price : g.dream === 1 || g.dream === 3 ? (getEra(n.era).ranks[n.rank + 1]?.cost ?? RULES.presidentFee) : 0;
-      for (let k = 0; k < g.cityMoves; k++) { const m = cityMove(n, 'wise', keep); if (!m || m === n) break; n = m; }
+      for (let k = 0; k < g.cityMoves; k++) { const m = cityMove(n, 'wise', keep, g.dream === 2); if (!m || m === n) break; n = m; }
       return toOffice(n);
     }
     case 'office': {

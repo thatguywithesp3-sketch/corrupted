@@ -427,14 +427,15 @@ describe('the chronicle between Era I and Era II', () => {
   });
 });
 
-describe('Era II: four powers in a row', () => {
+describe('Era II: five powers in a row', () => {
   it('the same post changes its name with the power, and so does the paper', () => {
     const s = { ...G.newGame(3, 2), rank: 1, gender: 'm' as const };
     const at = (year: number) => ({ ...s, year });
     expect(G.regimeOf(at(1915))).toBe('empire');
     expect(G.rankName(at(1915))).toBe('Бургомістр');
     expect(G.rankName(at(1917))).toBe('Міський комісар');
-    expect(G.rankName(at(1919))).toBe('Голова міського ревкому');
+    expect(G.rankName(at(1919))).toBe('Міський голова');
+    expect(G.rankName(at(1921))).toBe('Голова міського ревкому');
     expect(G.rankName(at(1925))).toBe('Голова міськвиконкому');
     expect(G.rankName({ ...at(1925), gender: 'f' })).toBe('Голова міськвиконкому');
     expect(G.paperOf(at(1915))).toBe('Вісник Порт-Аурума');
@@ -449,7 +450,8 @@ describe('Era II: the city under each power', () => {
     const at = (year: number) => ({ era: 2, year });
     expect(G.instName(at(1915), 'okhrana')).toBe('Жандармерія');
     expect(G.instName(at(1917), 'okhrana')).toBe('Міліція');
-    expect(G.instName(at(1919), 'okhrana')).toBe('Губчека');
+    expect(G.instName(at(1919), 'okhrana')).toBe('Державна варта');
+    expect(G.instName(at(1921), 'okhrana')).toBe('Губчека');
     expect(G.instName(at(1925), 'okhrana')).toBe('ДПУ');
     expect(G.instName(at(1936), 'okhrana')).toBe('НКВС');
     expect(G.instName(at(1921), 'press')).toBe('«Трибуна праці»');
@@ -467,5 +469,18 @@ describe('Era II: the city under each power', () => {
     expect(G.condOk({ ...s, year: 1915 }, war.cond)).toBe(true);
     expect(G.condOk({ ...s, year: 1925 }, war.cond)).toBe(false);
     expect(G.condOk({ ...s, year: 1925 }, nep.cond)).toBe(true);
+  });
+});
+
+describe('foundry and university', () => {
+  it('a new head brings no diploma; a collapse loses the foundry share', () => {
+    const s = G.ensureCity({ ...G.toOffice(G.signForm(G.newGame(9))), clean: 5000, cash: 2000 } as GameState);
+    let n = G.actOnInst(s, 'works', 'stake');
+    n = G.actOnInst(n, 'univ', 'diploma');
+    expect(n.city!.fame!.stake && n.city!.fame!.diploma).toBe(true);
+    const heir = G.inheritCity(n.city!, false), fall = G.inheritCity(n.city!, true);
+    expect(heir.fame!.diploma).toBeUndefined();
+    expect(heir.fame!.stake).toBe(true);
+    expect(fall.fame!.stake).toBeUndefined();
   });
 });

@@ -32,7 +32,14 @@ export const CITY_RULES = {
     // informer; buying yourself off is dear and not for ever; being useful keeps your file at the bottom of the drawer
     denounce: { cost: 300, power: 14, heat: 3, odds: 0.75, mark: 5 },
     buyoff: { cost: 900, calm: 16, odds: 0.7, backfire: 6 },
-    useful: { calm: 8, people: 5 }
+    useful: { calm: 8, people: 5 },
+    // the foundry: a share that pays every year (lost when the councils nationalise industry in 1922), and a state
+    // order placed at the foundry with a kickback for the one who signed it
+    stake: { clean: 1800, incomeYr: 140 },
+    order: { gain: 350, risk: 5, system: 2, odds: 0.8, backfire: 8 },
+    // the university: a place for a child of the house (readiness of an heir), a diploma for oneself
+    enroll: { clean: 500, bribe: 650, prep: 20 },
+    diploma: { cost: 300, system: 6, risk: 3 }
   }
 };
 
@@ -63,8 +70,8 @@ export type BizStatus = 'open' | 'roof' | 'closed';
 export type BizAct = 'inspect' | 'seal' | 'roof' | 'outbid';
 export type RivalAct = 'bribe' | 'expose' | 'marry';
 /** the four ways to whitewash a name: charity, the press, whisperers in the taverns, the gendarmerie */
-export type InstId = 'charity' | 'press' | 'whisper' | 'okhrana';
-export type InstAct = 'donate' | 'fund' | 'article' | 'share' | 'hire' | 'dismiss' | 'silence' | 'denounce' | 'buyoff' | 'useful';
+export type InstId = 'charity' | 'press' | 'whisper' | 'okhrana' | 'works' | 'univ';
+export type InstAct = 'donate' | 'fund' | 'article' | 'share' | 'hire' | 'dismiss' | 'silence' | 'denounce' | 'buyoff' | 'useful' | 'stake' | 'order' | 'enroll' | 'diploma';
 export type RivalStyle = 'expander' | 'smear' | 'informer';
 
 /** A local magnate: wants the same shops and roofs we do, and hunts us when he is angry. */
@@ -122,7 +129,7 @@ export interface CityState {
   today: ActResult[];
   last: ActResult | null;
   /** standing arrangements that keep the family name clean (absent in old saves) */
-  fame?: { fund?: boolean; share?: boolean; whisper?: boolean };
+  fame?: { fund?: boolean; share?: boolean; whisper?: boolean; /** a share in the foundry */ stake?: boolean; /** our own bought diploma */ diploma?: boolean; /** children placed at the university */ uni?: string[] };
   /** tribute that went into the drawer this evening */
   tribute: number;
 }
@@ -193,9 +200,9 @@ const FLAVOR: [string, string][] = [
   ['Студенти зібралися на вечір вальдорської поезії', 'Читали з рукописів: друкованих збірок ще немає. Поліція постояла під вікнами й пішла.'],
   ['У гімназіях дозволили факультатив рідної мови', 'Дві години на тиждень, після обіду. Записалося більше, ніж очікували.'],
   ['Делегати від Вальдорії поїхали до столиці', 'Везуть прохання про портові мита. Повернутися обіцяли до осені.'],
-  // the Valdorian flag (blue, black, yellow: sea, land, sun) is banned; it only shows up in police reports
+  // the Valdorian flag (yellow, black, blue: sunny sky, land, sea) is banned; it only shows up in police reports
   ['Жандарми накрили криївку вальдорських націоналістів', 'У погребі на Подолі знайшли два прапори й скриню листівок. Господар каже, що погріб здавав під картоплю.'],
-  ['Жандарми накрили криївку вальдорських націоналістів', 'На горищі гімназії вилучено блакитно-чорно-жовтий прапор. Учні клянуться, що це латки для театру.'],
+  ['Жандарми накрили криївку вальдорських націоналістів', 'На горищі гімназії вилучено жовто-чорно-блакитний прапор. Учні клянуться, що це латки для театру.'],
   ['На маяку знову вивісили заборонений прапор', 'Висів до світанку. Доглядач маяка спав і нічого не бачив, як і минулого разу.']
 ];
 
@@ -266,6 +273,11 @@ export function cityMorning(s: GameState, c: CityState) {
   if (fm.fund) { s.threat = Math.max(0, s.threat - F.fund.calmYr); s.people = clampN(s.people + F.fund.peopleYr, 0, 100); }
   if (fm.share) s.threat = Math.max(0, s.threat - F.share.calmYr);
   if (fm.whisper) { s.threat = Math.max(0, s.threat - F.whisper.calmYr); s.people = clampN(s.people + F.whisper.peopleYr, 0, 100); }
+  // the share in the foundry pays clean money; under the councils industry belongs to the state
+  if (fm.stake) {
+    if (s.era === 2 && s.year >= 1922) { fm.stake = false; c.news.push({ kind: 'flavor', head: 'Ливарню націоналізовано', text: 'Тепер це трест «Аурумсталь». Пайовикам дякують за «тимчасове зберігання народного майна».' }); }
+    else s.clean += F.stake.incomeYr;
+  }
   // our "roofs": quiet money, but every roof is one more person who knows
   const roofs = c.biz.filter((b) => b.status === 'roof');
   if (roofs.length) s.threat += roofs.length;
@@ -524,10 +536,18 @@ export const rivalPortrait = (r: Rival) => r.portrait || `art/rivals/${r.id}${r.
 
 /** The city the heir takes over (same era): the shops, our roofs, the magnates and their grudges stay;
  *  each magnate's house passes to its own heir. A collapse loses our roofs: owners stop paying a fallen family. */
+/** a new head of the house: the diploma was the old head's own and the university list named the old head's
+ *  children; after a collapse the foundry share goes with the confiscated roofs */
+function newHead(c: CityState, collapse: boolean) {
+  if (!c.fame) return;
+  delete c.fame.diploma; delete c.fame.uni;
+  if (collapse) delete c.fame.stake;
+}
 export function inheritCity(old: CityState, collapse: boolean): CityState {
   const c: CityState = structuredClone(old);
   c.done = []; c.today = []; c.last = null; c.tribute = 0; c.news = [];
   if (collapse) c.biz.forEach((b) => { if (b.status === 'roof') { b.status = 'open'; b.tribute = 0; b.grudge = 0; } });
+  newHead(c, collapse);
   c.rivals.forEach((r) => {
     const h = RIVAL_HEIRS[r.id];
     if (!h || (r.gen && r.gen > 1)) return;
@@ -580,7 +600,9 @@ export function rivalNight(s: GameState, c: CityState) {
     } else if (pick === 1) {
       if (r.style === 'smear') {
         const cut = c.fame?.share ? K.fame.share.smearCut : 1; s.threat += Math.round(K.smear.threat * sev * cut); s.people = clampN(s.people - Math.round(K.smear.people * sev * cut), 0, 100); r.last = sx(r, 'облив', 'облила') + ' брудом у пресі';
-        c.news.push({ kind: 'attack', rival: r.id, head: `Брудна преса: ${r.name}`, text: SMEAR[cint(c, SMEAR.length)] });
+        // Berg's paper follows the power: «Голос Порту» until the councils make her «Трибуна праці» (1920)
+        const smear = SMEAR[cint(c, SMEAR.length)], trib = s.era === 2 && s.year >= 1920;
+        c.news.push({ kind: 'attack', rival: r.id, head: `Брудна преса: ${r.name}`, text: trib ? smear.replace('У «Голосі Порту»', 'У «Трибуні праці»').replace('«Голос Порту»', '«Трибуна праці»') : smear });
       } else if (r.style === 'informer') {
         s.patron = clampN(s.patron - K.inform.patron * sev, 0, 100); s.threat += K.inform.threat * sev; r.last = sx(r, 'поскаржився', 'поскаржилась') + ' губернатору';
         c.news.push({ kind: 'attack', rival: r.id, head: `Донос: ${r.name}`, text: INFORM[cint(c, INFORM.length)] });
@@ -659,12 +681,14 @@ export function actOnRival(s: GameState, id: string, act: RivalAct): GameState {
 // ---------------------------------------------------------------- the good name
 
 export interface Inst { id: InstId; t: string; place: string; sub: string; x: number; y: number; art: string }
-/** the four places in the city where a name is washed; positions are on the plan (same units as the shops) */
+/** the places in the city where a name is washed and favours are bought; positions are on the plan (same units as the shops) */
 export const INSTS: Inst[] = [
-  { id: 'charity', t: 'Сиротинець святої Анни', place: 'при монастирі', sub: 'Пожертви бачать усі. Добрі справи — найкраща відповідь на чутки.', x: 133, y: 93, art: 'orphanage' },
-  { id: 'press', t: 'Редакція «Вісника»', place: 'Старе місто', sub: 'Газета пише те, за що їй платять. Або те, чим володіє її пайовик.', x: 84, y: 44, art: 'press' },
-  { id: 'whisper', t: 'Ринкові шептуни', place: 'Торговий майдан', sub: 'Люди в шинках і на ринку щодня розповідають, яка ви порядна людина.', x: 104, y: 98, art: 'market' },
-  { id: 'okhrana', t: 'Жандармське управління', place: 'Замкова вулиця', sub: 'Ротмістр уміє зробити так, що критики раптом замовкають.', x: 74, y: 75, art: 'gendarm' }
+  { id: 'charity', t: 'Сиротинець святої Анни', place: 'при монастирі', sub: 'Пожертви бачать усі. Добрі справи — найкраща відповідь на чутки.', x: 48, y: 152, art: 'orphanage' },
+  { id: 'press', t: 'Редакція «Вісника»', place: 'Старе місто', sub: 'Газета пише те, за що їй платять. Або те, чим володіє її пайовик.', x: 132, y: 62, art: 'press' },
+  { id: 'whisper', t: 'Ринкові шептуни', place: 'Торговий майдан', sub: 'Люди в шинках і на ринку щодня розповідають, яка ви порядна людина.', x: 150, y: 184, art: 'market' },
+  { id: 'works', t: 'Ливарня Солонарів', place: 'Заводи', sub: 'Чавун для мостів, ліхтарів і гармат. Хто підписує замовлення, той знає, скільки з нього лишається.', x: 230, y: 318, art: 'foundry' },
+  { id: 'univ', t: 'Імператорський університет', place: 'Університетський сад', sub: 'Місце для дітей роду, диплом для вас самих. Наука, як і все в цьому місті, має свою ціну.', x: 165, y: 346, art: 'univ' },
+  { id: 'okhrana', t: 'Жандармське управління', place: 'Замкова вулиця', sub: 'Ротмістр уміє зробити так, що критики раптом замовкають.', x: 88, y: 96, art: 'gendarm' }
 ];
 export const instOf = (id: string) => INSTS.find((i) => 'i:' + i.id === id || i.id === id) || null;
 
@@ -687,9 +711,34 @@ function instActsRaw(s: GameState, id: InstId): ActOption[] {
     case 'whisper': return fm.whisper
       ? [{ act: 'dismiss', t: 'Розпустити шептунів', sub: `Заощадите ${fmt(F.whisper.cost)} кр. на рік, але чутки підуть без нагляду.`, can: true, risk: 0, odds: 1, gain: 0, gainT: `−${fmt(F.whisper.cost)} кр. витрат` }]
       : [{ act: 'hire', t: 'Найняти шептунів', sub: `${fmt(F.whisper.cost)} кр. щороку брудними. Щороку ризик −${F.whisper.calmYr}, народ +${F.whisper.peopleYr}.`, can: dirtyTotal(s) >= F.whisper.cost, why: `Бракує брудних: потрібно ${fmt(F.whisper.cost)} кр.`, risk: 0, odds: 1, gain: 0, gainT: `ризик −${F.whisper.calmYr} щороку`, cost: F.whisper.cost, perYear: true }];
+    case 'works': {
+      const reg = s.era === 2 ? (s.year >= 1922 ? 'trust' : s.year >= 1920 ? 'rev' : 'war') : 'city';
+      const orderT = { city: ['Казенне замовлення', 'Чавун для нового мосту й ліхтарів Ринкової — за вашим підписом. Ливарня знає, кому дякувати.'], war: ['Армійське замовлення', 'Снаряди й колеса для фронту. Ціна в кошторисі вища за ціну в цеху, різниця — ваша.'], rev: ['Реквізиція для ревкому', 'Ливарня «добровільно» віддає метал революції. Частина металу знаходить покупців.'], trust: ['Постачання тресту', 'Вугілля й руда для «Аурумсталі» через «свою» артіль. План виконано, артіль задоволена.'] }[reg];
+      const gain = reg === 'war' ? Math.round(F.order.gain * 1.6) : F.order.gain;
+      const out: ActOption[] = [{ act: 'order', t: orderT[0], sub: `${orderT[1]} Якщо ревізор помітить різницю — ризик +${F.order.backfire}.`, can: true, risk: F.order.risk, odds: F.order.odds, gain }];
+      if (reg === 'city' || reg === 'war') out.push(fm.stake
+        ? { act: 'stake', t: 'Пай у ливарні ваш', sub: '', can: false, why: `Щороку +${fmt(F.stake.incomeYr)} кр. чистими`, risk: 0, odds: 1, gain: 0 }
+        : { act: 'stake', t: 'Купити пай у ливарні', sub: `Чистими, через нотаря. Далі ливарня щороку платить вам +${fmt(F.stake.incomeYr)} кр. — чесний дохід, який не треба відмивати.`, can: s.clean >= F.stake.clean, why: `Потрібно ${fmt(F.stake.clean)} кр. чистими`, risk: 0, odds: 1, gain: F.stake.incomeYr, perYear: true, cost: F.stake.clean, clean: true });
+      return out;
+    }
+    case 'univ': {
+      const placed = fm.uni || [], soviet = s.era === 2 && s.year >= 1920;
+      const kid = s.kids.filter((k) => !k.gone && k.age >= 12 && k.age <= 24 && !placed.includes(k.id) && k.prep < 100).sort((a, z) => z.age - a.age)[0];
+      const price = soviet ? F.enroll.bribe : F.enroll.clean;
+      const out: ActOption[] = [{
+        act: 'enroll', t: soviet ? 'Влаштувати на робфак' : 'Влаштувати дитину в університет',
+        sub: kid ? (soviet ? `${kid.first} — «з робітників»: довідку про походження напише хто треба. Готовність спадкоємця +${F.enroll.prep}.` : `${kid.first} складе вступні «з першого разу», якщо ректор отримає подарунок. Готовність спадкоємця +${F.enroll.prep}.`) : 'Немає дитини відповідного віку (12–24 роки).',
+        can: !!kid && (soviet ? dirtyTotal(s) >= price : s.clean >= price), why: kid ? (soviet ? `Бракує брудних: потрібно ${fmt(price)} кр.` : `Потрібно ${fmt(price)} кр. чистими`) : 'Немає дитини 12–24 років',
+        risk: 0, odds: 1, gain: 0, gainT: `готовність +${F.enroll.prep}`, cost: price, clean: !soviet
+      }];
+      out.push(fm.diploma
+        ? { act: 'diploma', t: 'Диплом у рамці на стіні', sub: '', can: false, why: 'Ваш диплом уже висить у кабінеті', risk: 0, odds: 1, gain: 0 }
+        : { act: 'diploma', t: soviet ? 'Диплом партшколи' : 'Купити диплом', sub: soviet ? `Корочка про «закінчену» партшколу відкриває двері в апараті. Система +${F.diploma.system}.` : `Диплом правника без жодного іспиту. У кабінеті солідніше, в апараті вас поважають більше. Система +${F.diploma.system}.`, can: dirtyTotal(s) >= F.diploma.cost, why: `Бракує брудних: потрібно ${fmt(F.diploma.cost)} кр.`, risk: F.diploma.risk, odds: 1, gain: 0, gainT: `система +${F.diploma.system}`, cost: F.diploma.cost });
+      return out;
+    }
     case 'okhrana':
-      // from 1918 the same building belongs to the organs: other moves, other prices
-      if (s.era === 2 && s.year >= 1918) {
+      // from 1920 (the councils) the same building belongs to the organs: other moves, other prices
+      if (s.era === 2 && s.year >= 1920) {
         const top = (s.city?.rivals || []).filter((r) => !r.ally).sort((a, z) => z.power - a.power)[0];
         return [
           { act: 'denounce', t: 'Замовити донос', sub: top ? `Анонімний лист про «колишнього» — ${rivalCase(top, 'acc')}. Вплив суперника −${F.denounce.power}, але органи запам’ятають і вас: ризик +${F.denounce.mark}.` : 'Нема на кого.', can: !!top && dirtyTotal(s) >= F.denounce.cost, why: top ? `Бракує брудних: потрібно ${fmt(F.denounce.cost)} кр.` : 'Суперників немає', risk: F.denounce.mark, odds: F.denounce.odds, gain: 0, gainT: `вплив суперника −${F.denounce.power}`, cost: F.denounce.cost },
@@ -743,6 +792,23 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
   } else if (act === 'buyoff') {
     if (crand(c) < F.buyoff.odds) { calm(F.buyoff.calm); res.title = 'Папка схудла'; res.text = 'Слідчий узяв конверт і кілька аркушів із вашої справи. Інші аркуші лишилися — на згадку.'; }
     else { res.ok = false; n.threat += F.buyoff.backfire; res.d.i = F.buyoff.backfire; res.title = 'Слідчий виявився чесним'; res.text = 'Конверт додано до справи як речовий доказ. Тепер у папці на одну сторінку більше.'; }
+  } else if (act === 'order') {
+    const gain = opt.gain;
+    if (crand(c) < F.order.odds) {
+      n.cash += gain; res.cash = gain; n.threat += F.order.risk; res.d.i = F.order.risk; n.system = clamp100(n.system + F.order.system); res.d.s = F.order.system;
+      res.title = 'Замовлення підписано'; res.text = 'Ливарня отримала роботу, кошторис — зайві нулі, а ваша шухляда — конверт. Усі задоволені, поки ніхто не рахує.';
+    } else { res.ok = false; n.threat += F.order.backfire; res.d.i = F.order.backfire; res.title = 'Ревізор перерахував кошторис'; res.text = 'Зайві нулі помітили. Замовлення скасовано, а у вашій справі з’явилася нова сторінка.'; }
+  } else if (act === 'stake') {
+    fm.stake = true; res.title = 'Пай у ливарні оформлено'; res.text = `Нотар засвідчив, Солонари погодилися: тепер ливарня щороку платить і вам. Чесні гроші — найрідший товар у цьому місті.`;
+  } else if (act === 'enroll') {
+    const placed = (fm.uni ||= []), soviet = n.era === 2 && n.year >= 1920;
+    const kid = n.kids.filter((k) => !k.gone && k.age >= 12 && k.age <= 24 && !placed.includes(k.id) && k.prep < 100).sort((a, z) => z.age - a.age)[0];
+    if (kid) { kid.prep = Math.min(100, kid.prep + F.enroll.prep); placed.push(kid.id); }
+    res.title = soviet ? `${kid?.first || 'Дитина'} — студент робфаку` : `${kid?.first || 'Дитина'} вступає до університету`;
+    res.text = soviet ? 'Довідка про походження лягла в справу, конверт — у кишеню секретаря приймальної комісії.' : 'Ректор тиснув руку батькові довше, ніж зазвичай. Вступний іспит пройшов «блискуче».';
+  } else if (act === 'diploma') {
+    fm.diploma = true; n.threat += F.diploma.risk; res.d.i = F.diploma.risk; n.system = clamp100(n.system + F.diploma.system); res.d.s = F.diploma.system;
+    res.title = 'Диплом у рамці'; res.text = 'Каліграфія, печатка, підпис декана, якого ви жодного разу не бачили. У кабінеті тепер солідніше.';
   } else if (act === 'useful') {
     calm(F.useful.calm); n.people = clamp100(n.people - F.useful.people); res.d.n = -F.useful.people;
     res.title = 'Ви тепер «свій» в органах'; res.text = 'Щотижня — коротка записка про апарат. Ваша папка лягла на дно шухляди. Чужі — нагорі.';
@@ -756,5 +822,6 @@ export function actOnInst(s: GameState, id: InstId, act: InstAct): GameState {
 export function carryCity(old: CityState): CityState {
   const c: CityState = JSON.parse(JSON.stringify(old));
   c.done = []; c.today = []; c.last = null; c.tribute = 0; c.news = [];
+  newHead(c, false);
   return c;
 }

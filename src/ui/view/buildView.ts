@@ -6,6 +6,7 @@
 import * as G from '../../engine';
 import type { Delta, GameState, Kin } from '../../engine';
 import { kinPortrait, npcPortrait } from '../people';
+import { skin, stateArms, ARMS_INK } from '../skin';
 
 export interface UiState {
   pend: string | null;
@@ -13,6 +14,8 @@ export interface UiState {
   hudOpen: boolean;
   info: G.Meter | null;
   album: boolean;
+  /** at the end of an era: the heir picked, waiting for the family's goal in the new era */
+  dreamFor?: string | null;
 }
 export const freshUi = (): UiState => ({ pend: null, pendD: null, hudOpen: false, info: null, album: false });
 
@@ -165,6 +168,7 @@ export function buildView(ctx: Ctx): any {
     return { ic: icon(m, 16), val: String(x), color: Cc[m], border: danger ? '1.5px solid #E8603F' : '1.5px solid transparent', plain: true, hasD: d !== 0, arrow: d > 0 ? '▲' : '▼', arrowColor: '#E6D9BC', hasPv: false, dTxt: '', was: '', dBg: '', dFg: '' };
   });
   v.L = L;
+  v.pencilGap = L.pencil ? '30px' : '0px';
   v.hudGauges = L.hud === 'gauge'; v.hudLamps = L.hud === 'lamps'; v.hudLcd = L.hud === 'lcd'; v.hudGloss = L.hud === 'gloss'; v.hudChips = L.hud === 'chips'; v.hudRings = L.hud === 'rings';
   v.hudBars = !(v.hudGauges || v.hudLamps || v.hudLcd || v.hudGloss || v.hudChips || v.hudRings);
   const meterKeys = [['patron', 'Покровит.', 'p'], ['people', 'Народ', 'n'], ['system', 'Система', 's'], ['threat', 'Ризик', 'i']] as const;
@@ -263,14 +267,20 @@ export function buildView(ctx: Ctx): any {
   const dreamProg = [s.dreamDone ? 'маєток на Замковому пагорбі куплено' : s.estate ? 'маєток уже належить роду — збережіть його до кінця служби' : fmt(s.clean) + ' з ' + fmt(G.RULES.estate.price) + ' чистими на маєток', 'зараз ' + G.rankName(s).toLowerCase() + ', а треба ' + G.rankName(s, last).toLowerCase(), 'загроза ' + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat, 'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — Палац дожа'][s.dream];
   // Era II goals speak of the trust and the new power, not of the manor and the doge
   const T = G.RULES.trust;
-  const dreamProg2 = [s.industry ? 'трест «Аурумсталь» ваш — втримайте його до кінця служби' : s.year < T.from ? 'трест «Аурумсталь» роздаватимуть лише за влади рад (з ' + T.from + ')' : s.rank < T.rank ? 'спершу треба дорости до третього рівня — зараз ' + G.rankName(s).toLowerCase() : fmt(s.clean) + ' з ' + fmt(T.price) + ' чистими на крісло директора',
-    s.year < T.from ? 'зараз ' + G.rankName(s).toLowerCase() + '; головне — дожити до влади, що встоїть' : s.rank >= 1 ? 'ви вже в апараті рад: ' + G.rankName(s).toLowerCase() + ' — тепер лише не впасти' : 'зараз ' + G.rankName(s).toLowerCase() + ', треба хоча б на рівень вище',
-    'увага органів ' + tv + ' — на пенсії має бути менше ' + G.RULES.dreamCleanThreat,
-    'зараз ' + G.rankName(s).toLowerCase() + ', а вершина — генеральний секретар партії'][s.dream] || '';
+  // no spoilers: until the councils come (1922) the goal speaks only of what the player already knows (Max, 21.11);
+  // the trust, the apparatus and the party appear in the line once they exist in the city
+  const soon = s.year < T.from, rk = G.rankName(s).toLowerCase();
+  const dreamProg2 = [s.industry ? 'трест «Аурумсталь» ваш — втримайте його до кінця служби' : soon ? 'нагода прибрати до рук велике підприємство ще трапиться — збирайте чисті гроші' : s.rank < T.rank ? 'спершу треба дорости до третього рівня — зараз ' + rk : fmt(s.clean) + ' з ' + fmt(T.price) + ' чистими на крісло директора тресту «Аурумсталь»',
+    soon ? 'зараз ' + rk + '; головне — втриматися на службі, хоч би хто правив містом' : s.rank >= 1 ? 'ви вже в апараті рад: ' + rk + ' — тепер лише не впасти' : 'зараз ' + rk + ', треба хоча б на рівень вище',
+    (s.year < 1920 ? 'загроза ' : 'увага органів ') + tv + ' — на відставці має бути менше ' + G.RULES.dreamCleanThreat,
+    'зараз ' + rk + ', а вершина — ' + (soon ? 'перша особа держави' : 'генеральний секретар партії')][s.dream] || '';
   v.dreamText = C.dreams[s.dream].t + ': ' + (s.era === 2 ? dreamProg2 : dreamProg) + '.';
   v.paperName = G.paperOf(s);
+  // the blotter under the papers: leather under the empire, plywood in the civil war, red baize under the councils
+  const dk = skin(s).desk; v.deskImg = dk.img; v.deskSize = dk.size;
   // the imperial arms belong on the letterhead only while there is an empire
-  v.armsDisp = s.era === 1 || (s.era === 2 && s.year < G.REGIME_FROM.provisional) ? 'block' : 'none';
+  const arms = stateArms(s);
+  v.armsDisp = arms ? 'block' : 'none'; v.armsSrc = arms?.src || ''; v.armsAlt = arms?.alt || ''; v.armsLabel = arms?.label || ''; v.armsFilter = arms?.ink ? ARMS_INK : 'none';
   v.toOffice = () => run(G.toOffice);
 
   // ---- office
@@ -305,21 +315,24 @@ export function buildView(ctx: Ctx): any {
       Object.assign(v.dg, { name: dc.from, role: 'хоче поставити вам кілька запитань', kindLabel: 'ЖУРНАЛІСТ', bg: 'linear-gradient(180deg, #7FAEE3, #2A3A6A)', sil: '#141C30', hasBadge: true, badge: 'ПРЕСА', badgeBg: '#8E2A1F', mood: tv >= 60 ? 'Має докази' : 'Шукає докази', moodBg: tv >= 60 ? '#F08A6E' : '#F2DFA8', pills: [pill('threat', 'ризик ' + tv, tv >= 60 ? 'bad' : 'neu')] });
     } else {
       kd = 'boss';
-      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', arms: s.era === 1 || (s.era === 2 && s.year < G.REGIME_FROM.provisional), bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
+      Object.assign(v.dg, { name: dc.from, role: 'ваш покровитель', kindLabel: 'ПОКРОВИТЕЛЬ', arms: !!arms, bg: 'linear-gradient(180deg, #D9A441, #6E531E)', sil: '#2A1E0A', hasBadge: true, badge: '★', badgeBg: '#6E531E', mood: s.patron >= 85 ? 'Бачить у вас суперника' : s.patron >= 60 ? 'Прихильний' : s.patron >= 40 ? 'Вичікує' : 'Незадоволений', moodBg: s.patron >= 85 ? '#F08A6E' : s.patron >= 60 ? '#9CDDB5' : s.patron >= 40 ? '#E6D9BC' : '#F08A6E', pills: [pill('patron', 'прихильність ' + cl(s.patron), 'neu')] });
     }
     // a painted portrait when there is one for this person; the cut-paper silhouette otherwise
-    const photo = w.kind === 'rival' ? (s.era === 1 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s.era, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s.era, w.kind);
+    const photo = w.kind === 'rival' ? (s.era <= 2 ? (() => { const r = s.city?.rivals.find((x) => x.id === w.id); return r ? G.rivalPortrait(r) : `art/rivals/${w.id}.jpg`; })() : null) : w.kind === 'acc' ? npcPortrait(s, w.acc) : w.kind === 'fam' ? (() => { const k = s.kids.concat(s.sibs).find((x) => x.id === w.id); return k ? kinPortrait(s.era, k) : null; })() : npcPortrait(s, w.kind);
     if (photo) Object.assign(v.dg, { photo, photoOn: true, silOn: false, ovalFilter: 'none' });
     const says: Record<string, string> = { kid: 'Нам треба поговорити.', acc: 'Треба поговорити. Без свідків.', journo: 'Кілька запитань для завтрашнього номера. Коментар дасте?', boss: 'Маю до вас делікатне прохання.' };
     const g = dc.gist || dc.q.replace(/^[^«]*«/, '').replace(/»\.?$/, '');
-    const hh = 20 + (s.served % 3), mm = 10 + ((s.served * 7) % 49), md = dlgW.medium;
+    const hh = 20 + (s.served % 3), mm = 10 + ((s.served * 7) % 49), md = dlgW.medium, ph = md === 'phone';
     Object.assign(v.dg, {
-      isLetter: md === 'letter', isCall: md === 'call', isChat: md === 'chat', say: dc.say || says[kd], gist: g, sign: v.dg.name, initial: v.dg.name.replace(/^(Пан|Пані|Писар) /, '').charAt(0),
-      hatOn: md === 'letter' && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: w.kind === 'rival' ? 'передав посильний' : dlgW.place ? dlgW.place[kd] : '',
+      isLetter: md === 'letter' || ph, isCall: md === 'call', isChat: md === 'chat', say: dc.say || says[kd], gist: g, sign: v.dg.name, initial: v.dg.name.replace(/^(Пан|Пані|Писар) /, '').charAt(0),
+      hatOn: (md === 'letter' || ph) && kd !== 'journo' && kd !== 'kid', hatH: dlgW.hat || '0px', place: w.kind === 'rival' ? (ph ? 'дзвонить сам' : 'передав посильний') : dlgW.place ? dlgW.place[kd] : '',
+      // Era II: the call is written down in the reception as a telephonogram — a numbered form with the time,
+      // who passed it and who took it; the photograph is clipped to it from the file
+      isPhone: ph, notPhone: !ph, phNo: String(40 + s.served * 3 + s.doc), phTime: hh + ':' + mm, studio: ph ? (w.kind === 'fam' ? 'ФОТО З ВАШОГО СТОЛУ' : 'З ОСОБОВОЇ СПРАВИ') : 'ФОТОАТЕЛЬЄ «АУРУМ»', signLine: ph ? 'Прийняв черговий секретар' : '— ' + v.dg.name,
       device: kd === 'kid' && md === 'call' ? (s.era >= 5 ? 'Мобільний · дзвонить родина' : 'Домашній телефон') : dlgW.device || '', timer: '00:' + (10 + ((s.served * 13) % 49)),
       glow: dlgW.glow || '#1D2A3A', accent: dlgW.accent || '#4F8BE0', status: kd === 'journo' ? 'друкує…' : 'в мережі', app: dlgW.app || '', chatNote: dlgW.note || '', time1: hh + ':' + mm, time2: hh + ':' + (mm + 1),
-      screenBg: md === 'letter' ? '#2A1A10' : md === 'chat' ? '#0E1621' : '#0D1117', optsBg: md === 'letter' ? '#2A1A10' : md === 'chat' ? '#17212B' : '#0D1117',
-      optsLabelC: md === 'letter' ? '#D9B870' : '#9AA6B2', optsFont: md === 'letter' ? 'inherit' : "-apple-system, 'Segoe UI', Roboto, sans-serif", replyLabel: dlgW.reply
+      screenBg: md === 'letter' || ph ? '#2A1A10' : md === 'chat' ? '#0E1621' : '#0D1117', optsBg: md === 'letter' || ph ? '#2A1A10' : md === 'chat' ? '#17212B' : '#0D1117',
+      optsLabelC: md === 'letter' || ph ? '#D9B870' : '#9AA6B2', optsFont: md === 'letter' || ph ? 'inherit' : "-apple-system, 'Segoe UI', Roboto, sans-serif", replyLabel: dlgW.reply
     });
   }
   v.q = ''; v.apOpts = []; v.opts = []; v.accNote = ''; v.gainPills = []; v.schemeOpts = [];
@@ -484,11 +497,15 @@ export function buildView(ctx: Ctx): any {
     fx: h.trait === null ? (h.nephew ? 'Покровитель −10' : '—') : TR[h.trait].fx + (h.prep >= 80 ? ' · старт на посаду вище' : ''),
     stars: stars(h.prep), hasAssets: h.assets > 0, assets: '+ ' + fmt(h.assets) + ' кр. на ' + (h.g === 'f' ? 'її' : 'його') + ' ім’я',
     minor: h.age < G.RULES.heir.minorAge, minorText: 'Неповнолітн' + (h.g === 'f' ? 'я' : 'ій') + ': до повноліття опікун забере 30% статку',
-    l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => run((x) => G.pickHeir(x, h.id)),
+    l: h.l, lc: h.l <= 30 ? '#B8331E' : '#2F7A50', pick: () => (e.eraOver && s.era < 7 ? setUi({ dreamFor: h.id }) : run((x) => G.pickHeir(x, h.id))),
     // a child or a teenager is shown as they look now (the same face as in the family album), an adult as the future head
     ...(() => { const kid = h.age < 18 && !h.nephew ? kinPortrait(s.era, h, false) : null; const f = kid || G.portraitFor(e.eraOver ? s.era + 1 : s.era, 2, h.g, h.face); return { hasFace: !!f, face: f || '' }; })()
   }));
   v.eraOver = e.eraOver; v.dynastyOver = e.dynastyOver;
+  // the closing note of an era on the shared skeleton (eras I–II); eras III–VII carry their own in their templates
+  v.eraNote = s.era === 2
+    ? { top: '1941 · Буремні роки завершено', big: 'Рід ' + s.surname + ' входить у воєнну добу', sub: 'Далі — Епоха III: з цим статком, цим іменем і всіма ворогами, яких ви нажили.' }
+    : { top: '1914 · Позолочений вік завершено', big: 'Рід ' + s.surname + ' входить у Буремні роки', sub: 'Далі — Епоха II: з цим статком, цим іменем і всіма ворогами, яких ви нажили.' };
   v.showRestart = e.dynastyOver || e.campaignOver;
   v.restart = () => run((x) => G.restart(x));
 
