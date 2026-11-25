@@ -78,7 +78,7 @@ No text, no letters, no numbers, no signage, no captions, no coats of arms or sy
 | `delegates` | делегати до столиці | a delegation of merchants in fur coats boarding a train to the capital with a rolled petition, citizens waving them off on the platform |
 | `bourse` | облігації | the stock exchange floor, brokers shouting, a large board with falling arrows only (no numbers), a nervous official holding a bundle of imperial bonds |
 | `bank` | банк «Аурум» | a grand bank façade with columns; depositors crowd the closed doors while a carriage loaded with suitcases leaves around the corner |
-| `hideout` | криївка на Подолі (картка ордера) | a night raid on a printer's cellar: gendarmes in blue uniforms with lanterns pull rolled banners striped light blue, black and yellow out of a crate, a hand press and scattered leaflets, a printer in an apron held by the arm, neighbours watching from the stairs |
+| `hideout` | криївка на Подолі (картка ордера) | a night raid on a printer's cellar: gendarmes in blue uniforms with lanterns pull rolled banners striped yellow, black and light blue (yellow on top) out of a crate, a hand press and scattered leaflets, a printer in an apron held by the arm, neighbours watching from the stairs |
 | `guild` | гільдії | guild elders in fur-trimmed robes around a long table with a salt barrel in the middle, shaking hands over a sealed contract |
 | `court` | суд; свідчення; провал роду | a city courtroom, a witness pointing a finger, the judge peering over spectacles, journalists scribbling in the gallery |
 | `insider` | інсайдер у газеті | a smoky dockside tavern where a nervous informant whispers to a reporter in a flat cap who writes in a notebook |

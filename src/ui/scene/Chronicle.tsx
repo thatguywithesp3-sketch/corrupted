@@ -25,11 +25,13 @@ const CSS = `
 
 export function Chronicle({ s, run }: { s: GameState; run: Run }) {
   const pages = G.chronPages(s), step = s.chron?.step ?? 0, page = pages[step];
+  // two steps, like a stamp in the office: a tap marks a choice (another tap changes it), the button below records it
+  const [sel, setSel] = useState<number | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   if (!page) return null;
   const P = PAPER[page.paper], last = step === pages.length - 1;
   const o = picked === null ? null : page.opts[picked];
-  const next = () => { const i = picked!; setPicked(null); run((x) => G.chronPick(x, i)); };
+  const next = () => { if (picked === null) { if (sel !== null) setPicked(sel); return; } const i = picked; setPicked(null); setSel(null); run((x) => G.chronPick(x, i)); };
   const tilt = step % 2 ? '0.6deg' : '-0.5deg';
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'radial-gradient(ellipse at 50% 0%, #4A3420, #1A120A 70%)', display: 'flex', flexDirection: 'column', fontFamily: SERIF, color: INK, overflow: 'hidden' }}>
@@ -48,7 +50,7 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
         <div style={{ flexShrink: 0, padding: '12px 12px 8px', background: P.band || 'transparent', color: P.band ? P.ink : INK, textAlign: 'center', borderBottom: `3px double ${P.band ? '#3A0E08' : INK}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {page.paper === 'visnyk' && <img src="art/brand/romei-arms.png" alt="" style={{ height: 34 }} />}{page.paper === 'tribuna' && <img src="art/brand/srs-emblem.png" alt="" style={{ height: 34, filter: ARMS_INK }} />}
-            {page.paper === 'pravda' && <span aria-hidden="true" title="герб вирізано" style={{ width: 26, height: 34, border: '1.5px dashed rgba(31,26,20,.45)', borderRadius: '40% 40% 50% 50%' }} />}
+            {/* «Аурумська правда» (1917–1919): the imperial arms are gone and nothing has replaced them yet, so the masthead stands bare */}
             <span style={{ fontFamily: P.font, fontSize: page.paper === 'pravda' ? 24 : 20, fontWeight: 700, letterSpacing: page.paper === 'pravda' ? 1 : 0.3, lineHeight: 1.05, whiteSpace: 'nowrap' }}>{P.title}</span>
             {page.paper === 'visnyk' && <img src="art/brand/romei-arms.png" alt="" style={{ height: 34 }} />}{page.paper === 'tribuna' && <img src="art/brand/srs-emblem.png" alt="" style={{ height: 34, filter: ARMS_INK }} />}
           </div>
@@ -68,7 +70,7 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
               <div style={{ fontSize: 10, letterSpacing: 2, fontWeight: 700, color: MUTE }}>ЩО РОБИТЬ {s.first.toUpperCase()} {s.surname.toUpperCase()}</div>
               {page.opts.map((x, i) => (
-                <button key={i} className="b3d" onClick={() => setPicked(i)} style={{ minHeight: 48, padding: '8px 12px', textAlign: 'left', fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: INK, background: '#FBF6E6', border: `1.5px solid ${INK}`, boxShadow: '0 2px 0 rgba(31,26,20,.6)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, animation: `chr-fade .4s ease-out ${0.25 + i * 0.08}s both` }}>
+                <button key={i} className="b3d" aria-pressed={sel === i} onClick={() => setSel(i)} style={{ minHeight: 48, padding: '8px 12px', textAlign: 'left', fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: INK, background: sel === i ? '#FFF3C4' : '#FBF6E6', border: `${sel === i ? 2.5 : 1.5}px solid ${sel === i ? RED : INK}`, boxShadow: sel === i ? '0 0 0 3px rgba(184,50,42,.18), 0 2px 0 rgba(31,26,20,.6)' : '0 2px 0 rgba(31,26,20,.6)', opacity: sel === null || sel === i ? 1 : 0.6, transition: 'opacity .2s, background .2s', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, animation: `chr-fade .4s ease-out ${0.25 + i * 0.08}s both` }}>
                   <span>{x.t}</span>
                   {/* what the choice means, before it is made */}
                   <span style={{ fontSize: 13, fontWeight: 400, fontStyle: 'italic', lineHeight: 1.3, color: MUTE }}>{x.sub}</span>
@@ -92,9 +94,11 @@ export function Chronicle({ s, run }: { s: GameState; run: Run }) {
 
       {/* turn the page */}
       <div style={{ flexShrink: 0, padding: '12px 12px 16px' }}>
-        <button className="b3d" disabled={o === null} onClick={next} style={{ width: '100%', minHeight: 52, padding: '12px 16px', fontFamily: SERIF, fontSize: 16, fontWeight: 700, textAlign: 'center', color: o ? '#1F1A14' : '#8A7A5A', background: o ? 'linear-gradient(180deg,#E8CB7A,#B8913C 60%,#9A7630)' : 'linear-gradient(180deg,#3A2E1E,#2A2016)', border: '1.5px solid #6E531E', borderRadius: 4, cursor: o ? 'pointer' : 'default', boxShadow: o ? '0 3px 0 #5A4012' : 'none' }}>
-          {o === null ? 'Оберіть, що робить голова роду' : last ? (pages[0].year === G.CHRONICLE[0].year ? `До служби: ${page.year} →` : 'До ранку →') : `Далі: ${pages[step + 1].year} →`}
+        {(() => { const on = o !== null || sel !== null; return (
+        <button className="b3d" disabled={!on} onClick={next} style={{ width: '100%', minHeight: 52, padding: '12px 16px', fontFamily: SERIF, fontSize: 16, fontWeight: 700, textAlign: 'center', color: on ? '#1F1A14' : '#8A7A5A', background: on ? 'linear-gradient(180deg,#E8CB7A,#B8913C 60%,#9A7630)' : 'linear-gradient(180deg,#3A2E1E,#2A2016)', border: '1.5px solid #6E531E', borderRadius: 4, cursor: on ? 'pointer' : 'default', boxShadow: on ? '0 3px 0 #5A4012' : 'none' }}>
+          {o === null ? (sel === null ? 'Оберіть, що робить голова роду' : 'Підписати: «' + page.opts[sel].t + '»') : last ? (pages[0].year === G.CHRONICLE[0].year ? `До служби: ${page.year} →` : 'До ранку →') : `Далі: ${pages[step + 1].year} →`}
         </button>
+        ); })()}
       </div>
     </div>
   );

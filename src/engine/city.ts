@@ -200,9 +200,9 @@ const FLAVOR: [string, string][] = [
   ['Студенти зібралися на вечір вальдорської поезії', 'Читали з рукописів: друкованих збірок ще немає. Поліція постояла під вікнами й пішла.'],
   ['У гімназіях дозволили факультатив рідної мови', 'Дві години на тиждень, після обіду. Записалося більше, ніж очікували.'],
   ['Делегати від Вальдорії поїхали до столиці', 'Везуть прохання про портові мита. Повернутися обіцяли до осені.'],
-  // the Valdorian flag (blue, black, yellow: sea, land, sun) is banned; it only shows up in police reports
+  // the Valdorian flag (yellow, black, blue: sunny sky, land, sea) is banned; it only shows up in police reports
   ['Жандарми накрили криївку вальдорських націоналістів', 'У погребі на Подолі знайшли два прапори й скриню листівок. Господар каже, що погріб здавав під картоплю.'],
-  ['Жандарми накрили криївку вальдорських націоналістів', 'На горищі гімназії вилучено блакитно-чорно-жовтий прапор. Учні клянуться, що це латки для театру.'],
+  ['Жандарми накрили криївку вальдорських націоналістів', 'На горищі гімназії вилучено жовто-чорно-блакитний прапор. Учні клянуться, що це латки для театру.'],
   ['На маяку знову вивісили заборонений прапор', 'Висів до світанку. Доглядач маяка спав і нічого не бачив, як і минулого разу.']
 ];
 
@@ -600,7 +600,9 @@ export function rivalNight(s: GameState, c: CityState) {
     } else if (pick === 1) {
       if (r.style === 'smear') {
         const cut = c.fame?.share ? K.fame.share.smearCut : 1; s.threat += Math.round(K.smear.threat * sev * cut); s.people = clampN(s.people - Math.round(K.smear.people * sev * cut), 0, 100); r.last = sx(r, 'облив', 'облила') + ' брудом у пресі';
-        c.news.push({ kind: 'attack', rival: r.id, head: `Брудна преса: ${r.name}`, text: SMEAR[cint(c, SMEAR.length)] });
+        // Berg's paper follows the power: «Голос Порту» until the councils make her «Трибуна праці» (1920)
+        const smear = SMEAR[cint(c, SMEAR.length)], trib = s.era === 2 && s.year >= 1920;
+        c.news.push({ kind: 'attack', rival: r.id, head: `Брудна преса: ${r.name}`, text: trib ? smear.replace('У «Голосі Порту»', 'У «Трибуні праці»').replace('«Голос Порту»', '«Трибуна праці»') : smear });
       } else if (r.style === 'informer') {
         s.patron = clampN(s.patron - K.inform.patron * sev, 0, 100); s.threat += K.inform.threat * sev; r.last = sx(r, 'поскаржився', 'поскаржилась') + ' губернатору';
         c.news.push({ kind: 'attack', rival: r.id, head: `Донос: ${r.name}`, text: INFORM[cint(c, INFORM.length)] });

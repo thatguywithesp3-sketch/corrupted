@@ -2,7 +2,7 @@ import { getEra, str, ERA_COUNT } from './content';
 import { rand, randInt } from './rng';
 import { RULES } from './rules';
 import { startChronicle, eventFor, startEvent } from './chronicle';
-import { REGIME_TURN, dressRivals, regimeOf } from './regime';
+import { REGIME_TURN, dressRivals, regimeOf, paperOf } from './regime';
 import { carryCity, CITY_V, cityEvening, cityMorning, inheritCity, initCity } from './city';
 import { applyStory, cardById, dealYear, deckOf } from './deck';
 import { clamp100, fmt, fk, kinFor, mapText } from './text';
@@ -294,6 +294,14 @@ const ERA_END: Record<number, [string, string]> = {
   0: ['Кінець служби', '']
 };
 
+/** Era II: the final sheet's masthead follows the power of the year (the paper's name, the office that sends the wire) */
+function eraHeader(n: GameState, kind: EndKind): string {
+  if (n.era !== 2) return '';
+  const reg = regimeOf(n);
+  if (kind === 'retire') return paperOf(n) + ' · Оголошення';
+  if (kind === 'collapse') return 'Телеграма · ' + (reg === 'empire' ? 'Канцелярія генерал-губернатора' : reg === 'provisional' ? 'Комісаріат міліції' : reg === 'civil' ? 'Губчека' : 'Губвиконком');
+  return '';
+}
 function finish(n: GameState, kind: EndKind, title: string, text: string): GameState {
   const E = RULES.endings, stash = n.cash + n.floor + n.wh;
   let inherit = 0, lost = 0;
@@ -314,7 +322,7 @@ function finish(n: GameState, kind: EndKind, title: string, text: string): GameS
   const campaignOver = eraOver && n.era >= ERA_COUNT;
   n.ending = {
     kind, title, text, inherit, lost, dream, dynastyOver, eraOver, campaignOver,
-    header: S(n, 'end.header.' + kind),
+    header: eraHeader(n, kind) || S(n, 'end.header.' + kind),
     life: S(n, 'end.life', { rank: rankName(n), from: n.year - n.served, to: n.year, gen: n.gen }),
     kidAssets: liveKids(n).reduce((a, k) => a + k.assets, 0)
   };
@@ -724,7 +732,11 @@ export function sleep(s: GameState): GameState {
 function regimeTurn(s: GameState, n: GameState) {
   const was = regimeOf({ era: s.era, year: n.year - 1 }), now = regimeOf(n);
   if (!now || now === 'empire' || was === now) return;
+  const before: Record<string, string> = {};
+  n.city?.rivals.forEach((r) => { before[r.id] = r.name; });
   dressRivals(n.city, now);
+  // the city's news of the night was written under the old names: the morning paper prints them under the new ones
+  n.city?.news.forEach((x) => { const r = x.rival ? n.city!.rivals.find((y) => y.id === x.rival) : null; const old = x.rival ? before[x.rival] : ''; if (r && old && old !== r.name) { x.head = x.head.split(old).join(r.name); x.text = x.text.split(old).join(r.name); } });
   const t = REGIME_TURN[now];
   n.headline = t.h; n.body = t.b; n.art = now === 'soviet' ? 'council' : 'portrait';
   n.report.push(line(`Посаду перейменовано: тепер ви — ${rankName(n).toLowerCase()}.`, 'neu', 'patron', true));
